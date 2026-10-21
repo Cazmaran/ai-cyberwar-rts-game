@@ -17,5 +17,5 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npm run sim -- --matches 5 --minutes 20
+      - run: npm run sim -- --matches 5 --minutes 20 --max-ms 10000
       - run: npm run build

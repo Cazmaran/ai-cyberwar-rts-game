@@ -1,0 +1,7 @@
+# Default reviewer for everything
+* @djsoapyknuckles
+
+# Design and governance: owner approval required
+/docs/TENETS.md @djsoapyknuckles
+/docs/PILLARS.md @djsoapyknuckles
+/LICENSE @djsoapyknuckles

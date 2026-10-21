@@ -15,9 +15,9 @@ Open-source 2D real-time strategy game. Humans fight an AI faction, commanded by
 
 | Path | What lives here | Rules |
 |---|---|---|
-| `src/sim/` | Deterministic game simulation | No DOM, no PixiJS, no `Math.random()`, no `Date`/wall-clock time. Randomness only via the world's seeded `Rng`. |
+| `src/sim/` | Deterministic game simulation | No DOM, no PixiJS, no `Math.random()`, no `Date`/wall-clock time. Randomness only via the world's seeded `Rng` (use `rng.int`). Game state uses integers / fixed-point only, never floats, so replays match on every machine. |
 | `src/render/` | Drawing and input | Reads sim state; never mutates it directly. Player actions become commands applied by the sim. |
-| `src/ai/` | AI opponent (scripted and LLM) | Talks to the sim through commands only. Must tolerate invalid or slow LLM output. |
+| `src/ai/` | AI opponent (scripted and LLM) | Talks to the sim through commands only. Obeys the APM cap and reaction delay. Must tolerate invalid or slow LLM output. Player chat never becomes commands. |
 | `scripts/` | Node CLI tools (headless sim runner) | |
 | `tests/` | Vitest tests (`*.test.ts`) | |
 | `docs/` | Roadmap, pillars, decisions, journal | |
@@ -30,6 +30,7 @@ npm run dev        # play in browser at the printed URL
 npm test           # unit + determinism tests
 npm run typecheck
 npm run sim -- --matches 10 --minutes 20 --seed 1   # headless matches, no screen
+npm run sim -- --matches 5 --max-ms 10000          # fail if any match exceeds the time budget (CI)
 npm run build
 ```
 
@@ -40,7 +41,10 @@ npm run build
 3. `npm run typecheck` and `npm test` pass (CI enforces this).
 4. Determinism kept: same seed + same commands = same result.
 5. Gameplay changes: run `npm run sim`. Stat changes: include before/after balance numbers in the PR.
-6. Every player action goes through the command API, so humans and LLMs use the same controls. No UI-only or AI-only shortcuts.
+6. Every player action goes through the layered command API (unit orders + high-level orders), so humans and LLMs use the same controls. No UI-only or AI-only shortcuts.
+7. Small PR: soft limit ~400 changed lines, excluding data files and lockfiles. Split bigger work.
+8. Commits signed off (`git commit -s`, DCO).
+9. Anything saved to disk (replays, saves, AI memory, lore) carries the game + data version.
 
 ## Conventions
 

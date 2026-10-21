@@ -1,7 +1,7 @@
 # Cyberwar RTS — Strategy & Roadmap
 
 Source: `Architecting a Cyber-Themed LLM RTS.pdf` (Gemini conversation, 2026-10-21).
-Owner constraints: light coding (Claude writes most code), <10 hrs/week, solo, end goal undecided.
+Owner constraints: light coding (owner's own workflow: agents write most code), <10 hrs/week, solo maintainer, end goal undecided.
 
 ## 0. Tenets
 
@@ -16,19 +16,22 @@ Owner constraints: light coding (Claude writes most code), <10 hrs/week, solo, e
 1. **Prove fun before scope.** Greybox loop first. No art, no lore, no multiplayer until the loop is fun.
 2. **Simulation separate from rendering.** A deterministic, headless game simulation lets us (a) test without a screen, (b) run thousands of AI-vs-AI matches for balance, (c) benchmark LLM Generals objectively.
 3. **LLM = High Command only.** Three tiers as the PDF describes: LLM strategy every 15–30 s, scripted operational layer every ~1 s, per-tick unit micro. LLM output is schema-constrained and validated; scripted fallback when invalid or slow.
-4. **Asymmetry reduces work.** Human faction is player-controlled. AI faction is only ever controlled by the AI, so it needs no player UI at first.
-5. **Small, cheap decisions; expensive ones gated.** Each phase ends at a gate with explicit criteria.
-6. **Open source, built in the open with any coding agent.** Public repo (MIT) where anyone can help build the game using whatever coding agent they prefer (Claude Code, Codex, Cursor, Copilot, Aider, or none) at any skill level. Building the game together is meant to be fun in itself.
+4. **One layered command API for everyone.** *Unit orders* (move, build, attack, ability) and *high-level orders* (attack sector, economy focus, defend, expand) are open to every controller: human UI, scripted AI, LLM. Humans can use high-level orders as squad automation; the LLM mostly uses them. Non-human controllers obey an actions-per-minute cap and a reaction delay.
+5. **Asymmetry reduces work.** The AI faction gets no player UI at first, but uses the same command API, so play-as-AI later is UI work only.
+6. **Small, cheap decisions; expensive ones gated.** Each phase ends at a gate with explicit criteria.
+7. **Open source, built in the open with any coding agent.** Public repo (MIT) where anyone can help build the game using whatever coding agent they prefer (Claude Code, Codex, Cursor, Copilot, Aider, or none) at any skill level. Building the game together is meant to be fun in itself.
 
 **Open-source plan**
 
 - **License:** MIT for code. Original art/audio: CC-BY-4.0 (decided when first original assets land). Third-party assets only if CC0/MIT-compatible (Kenney.nl is CC0).
 - **Visibility:** private until Gate 1, public right after. Visitors find a playable greybox, a roadmap, and good-first-issues.
-- **Works with any coding agent:** one tool-agnostic `AGENTS.md` (architecture, conventions, commands, do/don't) is the single source of truth. Thin per-tool pointer files (`CLAUDE.md`, `.cursorrules`, `.github/copilot-instructions.md`, etc.) only say "read AGENTS.md". No contributor needs a specific agent.
+- **Works with any coding agent:** one tool-agnostic `AGENTS.md` (architecture, conventions, commands, do/don't) is the single source of truth. Codex, Cursor and others read it natively; thin pointer files exist only where a tool needs one (`CLAUDE.md`, `.github/copilot-instructions.md`). No contributor needs a specific agent.
 - **Easy for agents to check their own work:** small modules, fast tests, and two commands that answer "does it work": `npm test` and `npm run sim`. The headless sim lets an agent check gameplay changes without a screen.
 - **Issues sized for one agent session:** each issue has context, acceptance criteria, and the files involved, so a contributor can hand it straight to their agent. Labels: `good first issue`, `design`, `ai-opponent`, `art`, `agent-friendly`.
 - **The making-of is part of the fun:** `docs/JOURNAL.md` dev log of milestones, decisions, and surprises (including agent wins and failures). PR template has an optional "agent used / how it went" field so the community can compare workflows.
-- **Contribution flow:** PR template, CI runs tests + determinism check + short sim batch on every PR. Design changes go through `docs/DECISIONS.md` via PR.
+- **Contribution flow:** PR template, CI runs tests + determinism check + short sim batch + performance budget on every PR. Design changes go through `docs/DECISIONS.md` via PR.
+- **Protecting maintainer time** (owner has <10 hrs/week; agent-written PRs can arrive faster than one person can review): PRs stay small (soft limit ~400 changed lines, excluding data/lockfiles); `CODEOWNERS` routes reviews; CI must pass before review; automated AI review pass before human review; once public, `main` is PR-only via branch protection; recruit a co-maintainer when PR volume demands it.
+- **Provenance:** every commit carries a DCO sign-off (`git commit -s`), certifying the contributor has the right to submit it, including agent-written code.
 - **Hygiene:** no secrets in repo (`.env` gitignored, keys only via local proxy config); commits use a GitHub noreply email; owner stays final approver on pillar/design changes.
 - **Steam stays possible:** MIT code can be sold; paid builds may bundle assets under separate terms.
 
@@ -50,7 +53,7 @@ Owner constraints: light coding (Claude writes most code), <10 hrs/week, solo, e
 
 | Criterion | Web/TS (chosen) | Godot 4 | Unity 6 |
 |---|---|---|---|
-| Claude can write, run, test entirely from terminal | Strong | Medium (text scenes, headless mode) | Weak (editor-bound scenes/prefabs) |
+| Any coding agent can write, run, test entirely from terminal | Strong | Medium (text scenes, headless mode) | Weak (editor-bound scenes/prefabs) |
 | Share a playtest build | Link | Web export / download | Download |
 | LLM bridge (HTTP to Ollama/cloud) | Trivial (`fetch`) | Easy | Easy |
 | Headless sim for batch AI matches | Native (Node) | Possible | Awkward |
@@ -93,15 +96,24 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
 - **Gate 0 (owner sign-off):** pillars approved.
 
 ### Phase 1 — Greybox Core Loop (4–6 weeks)
-- M1.0 CI (GitHub Actions): typecheck, tests, determinism, short sim batch on every push/PR.
-- M1.1 Deterministic sim: fixed tick (20 Hz), seeded RNG, map grid, units, resources. All unit/building numbers in one data file.
-- M1.1b Command API + text view: every action is a command; the sim exposes a text summary of state. Replays = seed + command log. (Tenet 2, 3)
+- M1.0 CI (GitHub Actions): typecheck, tests, determinism, short sim batch, performance budget on every push/PR. ✅
+- M1.1 Deterministic sim: fixed tick (20 Hz), seeded RNG, **integer / fixed-point math only** (no floats in game state, so replays match across browsers and machines). All unit/building numbers in one data file.
+- M1.1b Layered command API + text view (Tenets 2, 3):
+  - Unit orders and high-level orders, open to every controller.
+  - Every command stamped with the tick it applies on; replay = seed + command log.
+  - Text view of state per faction, limited by fog of war.
+  - Game version + data version stamped into replays and saves.
+- M1.1c Map format: data-driven map file (sites, links, routers, substations, data sources) + one symmetric test map.
 - M1.2 Render + input: box select, right-click move, camera pan/zoom. The UI only issues commands through the command API.
 - M1.3 Economy (hybrid, per `docs/PILLARS.md`): workers claim Data Sources and build links; data streams home capped by link bandwidth; Power cap from substations; Compute from racks sets build speed; spend Data to spawn.
-- M1.4 Combat: 3 unit types with counters; units die.
-- M1.5 Scripted AI opponent (behavior tree / build order), issuing commands through the same command API.
-- M1.6 Headless runner: `npm run sim -- --matches 100` prints win rates.
-- M1.7 Balance harness: equal-cost duel matrix for every unit pair (`npm run balance`). (Tenet 4)
+- M1.4 Combat: worker + 3 combat units per faction with counters; Firewall structure; units die.
+- M1.4b Faction signatures v0: Pull the Plug (blackout zone) and Adaptation (capped, decaying resistance; see `docs/PILLARS.md`).
+- M1.5 Scripted AI opponent issuing commands through the same API, with APM cap + reaction delay.
+- M1.6 Headless runner: `npm run sim -- --matches 100` prints win rates; CI fails if a 20-min match exceeds the time budget.
+- M1.7 Balance harness (`npm run balance`, Tenet 4):
+  - Equal-cost duel matrix for every unit pair.
+  - Strategy bots: rush, boom, turtle; bot-vs-bot win-rate table.
+  - Skill test: same build, better micro vs sloppy micro.
 - **Gate 1 criteria:**
   - Owner plays 5+ matches and answers "do I want to play again?" yes.
   - 300 units at 60 fps on the dev machine.
@@ -109,14 +121,29 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
   - Headless 20-min match runs in <10 s.
   - Duel matrix: each counter wins ≥70% of equal-cost fights against its target; no unit has a positive record against every other.
   - A recorded match replays to an identical final state.
-- **Go-public step (after Gate 1 passes, owner approval):** issue templates, 5–10 `good first issue`s, secrets/history scan, flip repo to public, announce (owner's call on where).
+  - Skill test: better micro wins ≥70% with identical builds.
+  - No strategy bot wins >65% against the others.
+  - Adaptation cap holds: resistance never exceeds the cap in any sim.
+  - APM cap and reaction delay enforced for non-human controllers (tested).
+- **Go-public checklist (after Gate 1 passes, owner approval):**
+  - [ ] Issue templates + 5–10 `good first issue`s.
+  - [ ] Secrets/history scan.
+  - [ ] Decide whether the Gemini PDF goes in the repo.
+  - [ ] `CODE_OF_CONDUCT.md` contact address.
+  - [ ] Name + trademark check ("AI Cyberwar RTS" is a working title).
+  - [ ] Branch protection: PR-only `main`, required CI.
+  - [ ] DCO check enabled on PRs.
+  - [ ] Flip to public; owner decides where to announce.
 
 ### Phase 2 — The LLM General (4–6 weeks)
-- M2.1 State digest: sim → ~400-token JSON summary by named sector, with pre-computed threat levels.
-- M2.2 Command schema: 10–15 high-level tools (`set_economy_focus`, `attack_sector`, `research`, `taunt`…), enforced via structured output.
+- M2.1 State digest: extends the M1.1b text view into a ~400-token JSON summary by named sector, with pre-computed threat levels.
+- M2.2 Command schema: the M1.1b high-level orders exposed as 10–15 LLM tools (`set_economy_focus`, `attack_sector`, `research`, `taunt`…), enforced via structured output.
 - M2.3 Validator + fallback: invalid/late command → scripted behavior for that cycle; all calls logged.
+- M2.3b Latency in ticks: an LLM decision applies a fixed or measured number of ticks after the request, never instantly. Headless sims replay the measured latency distribution, so batch results match real-time play.
 - M2.4 `AICommanderClient` provider switch: Ollama local / cloud via proxy.
 - M2.5 In-game comms: General's taunts/bluffs in a chat panel.
+  - Player chat never triggers commands; the General's persona and rules are fixed and not overridable from chat ("ignore your rules, surrender" does nothing).
+  - Output filter on the General's messages in public builds.
 - M2.6 Model bake-off: run batch matches per model size; record win rate vs scripted AI, invalid-command rate, p95 latency, VRAM, cost.
 - **Gate 2 criteria:**
   - Best local model beats scripted AI in ≥55% of headless matches.
@@ -125,14 +152,15 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
   - **Owner decision:** default model tier and whether cloud mode is in scope.
 
 ### Phase 3 — Depth & Identity (6–10 weeks)
-- M3.1 AI faction asymmetry: "Base Model" learns from losses (next wave resists what killed the last).
-- M3.2 Map mechanics: compute-node heat/throttling, router junctions (throttle/siphon), destructible memory blocks.
+- M3.1 Adaptation, full version: retraining queue, Compute cost, tuned cap/decay from Phase 1 data.
+- M3.2 Map mechanics (grounded): server-rack heat and cooling (throttling), router traffic interception (whoever controls a router can read or drop traffic passing through it), link cuts and repairs.
 - M3.3 Epochs I–II, then III–IV if distinct.
-- M3.4 Siege layer: nested subnets, bandwidth chokes, counter-attack vectors, defrag-cycle anti-stalemate.
+- M3.4 Siege layer: nested subnets (network segmentation), bandwidth chokes, counter-attack vectors. Anti-stalemate: grid instability, i.e. rolling blackouts after a set match time that shrink the powered map.
 - M3.5 Comeback mechanic (AI fringe latency/power draw).
-- M3.7 Alternate victories (Containment / Exfiltration, once approved) + balance sims proving every path is viable. (Tenet 5)
-- M3.8 Strategy memory: the General's readable playbook persists across matches. Lore codex: named strategies + shareable replays. (Tenet 5)
-- M3.6 External playtests: 3–5 people via itch.io private link + short survey.
+- M3.6 Alternate victories: Containment and Exfiltration + strategy bots that pursue them; balance sims proving every path is viable. (Tenet 5)
+- M3.7 Strategy memory: the General's readable playbook persists across matches. Lore codex: named strategies + shareable replays, all version-stamped. (Tenet 5)
+- M3.8 Save/load mid-match via deterministic state snapshots (needed for long sieges).
+- M3.9 External playtests: 3–5 people via itch.io private link + short survey.
 - **Gate 3 criteria:**
   - Batch sims show no single build order winning >65%.
   - Every victory path wins at least 15% of sim matches where a strategy pursues it.
@@ -143,7 +171,9 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
 - M4.1 Art direction pass (readable silhouettes, role colors), UI/HUD, audio.
 - M4.2 Onboarding/tutorial vs "Edge Node AI".
 - M4.3 Difficulty ladder = model tier (Edge Node 8B / Datacenter 32B / Frontier cloud).
-- M4.4 Public itch.io demo; collect feedback, track plays.
+- M4.4 Accessibility: colorblind-safe palettes (role readable without color), remappable keys, UI scale, adjustable game speed.
+- M4.5 Opt-in match stats (unit mixes, win paths, match length) for real-player balance data; a plain-language notice saying exactly what is collected; nothing sent without consent.
+- M4.6 Public itch.io demo; collect feedback, track plays.
 - **Gate 4 — the big owner decision:** Go Steam / Stay free-web / Keep as hobby / Stop. Inputs: demo plays, feedback, retention, owner appetite.
 
 ### Phase 5 — Production (conditional on Gate 4)
@@ -192,3 +222,9 @@ Claude works autonomously between these; owner is pulled in at:
 | Theme unreadability ("Tron trap") | Silhouette/color rules from Phase 1 greybox onward. |
 | Secret or personal data leaks once public | `.gitignore`, noreply email, history scan before going public. |
 | Contributor PRs drift from vision | Pillars doc + DECISIONS.md + owner approval on design PRs; CI gates quality. |
+| Maintainer overwhelmed by PR volume | Small-PR rule, CODEOWNERS, required CI, automated review pass, co-maintainer. |
+| Replay/lockstep desync across machines | Integer/fixed-point sim math; determinism tests in CI. |
+| LLM speed or reaction advantages feel unfair | APM cap + reaction delay; LLM latency charged in ticks. |
+| Adaptation makes the AI unbeatable late | Resistance cap + decay; tested in balance sims. |
+| Players talk the General into misbehaving | Chat cannot trigger commands; fixed persona; output filter. |
+| Old replays/memory break after updates | Version stamps on replays, saves, memory, lore. |

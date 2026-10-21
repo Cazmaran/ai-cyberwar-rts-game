@@ -2,6 +2,20 @@
 
 Newest first. Each entry: date, decision, options considered, reason. Changes to design pillars need owner approval.
 
+## D-009 — 2026-10-21 — Docs review: architecture, fairness, balance, governance
+- **Decisions:**
+  - Layered command API (unit orders + high-level orders) open to every controller; humans can use high-level orders as automation.
+  - Non-human controllers: APM cap + reaction delay; LLM decisions apply a measured number of ticks after the request.
+  - Sim uses integer/fixed-point math only; commands tick-stamped; game + data version stamped on replays, saves, memory, lore.
+  - Faction signatures (simple versions) move into Phase 1; Adaptation gets a cap, decay, and recent-deaths window.
+  - Balance harness adds strategy bots, a skill test, and symmetric test maps; data-driven map format in Phase 1.
+  - Phase 3 terms re-grounded: rack heat, router traffic interception, link cuts, grid instability (rolling blackouts) as anti-stalemate.
+  - Alternate victories Containment / Exfiltration approved.
+  - Governance: small-PR rule, CODEOWNERS, DCO sign-off, branch protection + DCO check at go-public, CI performance budget.
+  - LLM chat can never trigger commands; output filter for public builds.
+  - Phase 4 adds accessibility and opt-in match stats; save/load snapshots in Phase 3; name/trademark check before going public.
+- **Reason:** owner-approved review of all docs against the five tenets; fixing architecture now is far cheaper than after Phase 1 code exists.
+
 ## D-008 — 2026-10-21 — Five design tenets adopted
 - **Decision:** `docs/TENETS.md` is the project charter: AI integration by design; human UI + LLM control surface in one package; test-driven; balance is critical; many paths to victory with strategy memory and lore.
 - **Consequences:** CI moves to the start of Phase 1; a single command API for UI, scripted AI and LLM; all stats in one data file; duel-matrix balance harness in Phase 1; alternate victories and strategy memory in Phase 3.

@@ -11,7 +11,8 @@ Welcome. You can contribute with any coding agent, or by hand, at any skill leve
 
 ## Making a change
 
-- Keep PRs small and focused on one issue.
+- Keep PRs small and focused on one issue (soft limit ~400 changed lines, excluding data files and lockfiles). The maintainer reviews in limited time; small PRs get merged, huge ones wait.
+- Sign off every commit (`git commit -s`). This is the [Developer Certificate of Origin](https://developercertificate.org/): you certify you have the right to submit the work, including code your agent wrote.
 - Before opening a PR: `npm run typecheck` and `npm test` pass. For gameplay changes, also run `npm run sim`.
 - Fill in the PR template. The "agent used / how it went" section is optional but encouraged.
 - You are responsible for code your agent writes. Read and understand it before submitting.

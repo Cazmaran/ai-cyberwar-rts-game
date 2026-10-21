@@ -7,6 +7,8 @@
 - [ ] `npm run typecheck`
 - [ ] `npm test`
 - [ ] `npm run sim` (gameplay changes)
+- [ ] Balance numbers before/after (stat changes)
+- [ ] Commits signed off (`git commit -s`)
 
 ## Agent used / how it went (optional)
 

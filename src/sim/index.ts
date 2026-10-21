@@ -4,6 +4,7 @@ export * from './data.ts';
 export * from './fixed.ts';
 export * from './game.ts';
 export * from './map.ts';
+export * from './rng.ts';
 export * from './sectors.ts';
 export * from './step.ts';
 export * from './view.ts';

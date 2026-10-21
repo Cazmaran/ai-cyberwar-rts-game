@@ -1,34 +1,61 @@
-// Headless match runner. Usage: npm run sim -- --matches 10 --minutes 20 --seed 1 [--max-ms 10000]
+// Headless match runner.
+// Usage: npm run sim -- --matches 10 --minutes 20 --seed 1 --human boom --ai rush [--max-ms 10000] [--verbose]
 // --max-ms: performance budget per match; exits non-zero if any match is slower (used by CI).
 import { parseArgs } from 'node:util';
-import { advance, createGame, hashWorld, TICK_RATE } from '../src/sim/index.ts';
+import { createScriptedBot, STRATEGIES } from '../src/ai/scripted.ts';
+import { runMatch } from '../src/harness/match.ts';
+import { describeView, factionView, hashWorld, TICK_RATE } from '../src/sim/index.ts';
 
 const { values } = parseArgs({
   options: {
     matches: { type: 'string', default: '1' },
     minutes: { type: 'string', default: '20' },
     seed: { type: 'string', default: '1' },
+    human: { type: 'string', default: 'boom' },
+    ai: { type: 'string', default: 'boom' },
     'max-ms': { type: 'string' },
+    verbose: { type: 'boolean', default: false },
   },
 });
 
+const humanStrategy = STRATEGIES[values.human];
+const aiStrategy = STRATEGIES[values.ai];
+if (!humanStrategy || !aiStrategy) {
+  console.error(`unknown strategy; choose from: ${Object.keys(STRATEGIES).join(', ')}`);
+  process.exit(2);
+}
+
 const matches = Number(values.matches);
-const ticks = Number(values.minutes) * 60 * TICK_RATE;
+const maxTicks = Number(values.minutes) * 60 * TICK_RATE;
 const baseSeed = Number(values.seed);
 const maxMs = values['max-ms'] === undefined ? Infinity : Number(values['max-ms']);
 
-const start = performance.now();
+const wins = { human: 0, ai: 0, draw: 0 };
+let totalTicks = 0;
 let slowest = 0;
+const start = performance.now();
 for (let i = 0; i < matches; i++) {
+  const seed = baseSeed + i;
   const matchStart = performance.now();
-  const game = createGame(baseSeed + i);
-  for (let t = 0; t < ticks; t++) advance(game);
-  const world = game.world;
+  const r = runMatch({
+    seed, maxTicks,
+    human: createScriptedBot('human', humanStrategy, seed),
+    ai: createScriptedBot('ai', aiStrategy, seed * 7919),
+  });
   const ms = performance.now() - matchStart;
   slowest = Math.max(slowest, ms);
-  console.log(`match ${i + 1}: seed ${world.seed} -> ${hashWorld(world)} (${ms.toFixed(0)} ms)`);
+  wins[r.winner ?? 'draw']++;
+  totalTicks += r.ticks;
+  const mins = (r.ticks / TICK_RATE / 60).toFixed(1);
+  console.log(`match ${i + 1}: seed ${seed} winner=${r.winner ?? 'draw'} after ${mins} min ${hashWorld(r.game.world)} (${ms.toFixed(0)} ms)`);
+  if (values.verbose) {
+    console.log(describeView(factionView(r.game.world, 'human')));
+    console.log(describeView(factionView(r.game.world, 'ai')));
+  }
 }
-console.log(`${matches} match(es), ${ticks} ticks each, ${(performance.now() - start).toFixed(0)} ms`);
+const pctOf = (n: number) => `${Math.round((100 * n) / matches)}%`;
+console.log(`human(${humanStrategy.name}) ${pctOf(wins.human)} | ai(${aiStrategy.name}) ${pctOf(wins.ai)} | draw ${pctOf(wins.draw)}`
+  + ` | avg ${(totalTicks / matches / TICK_RATE / 60).toFixed(1)} min | ${(performance.now() - start).toFixed(0)} ms total`);
 
 if (slowest > maxMs) {
   console.error(`FAIL: slowest match took ${slowest.toFixed(0)} ms, budget is ${maxMs} ms`);

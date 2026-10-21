@@ -60,11 +60,11 @@ describe('power and compute', () => {
     const game = newGame();
     updateEconomy(game.world);
     const h = game.world.factions.human;
-    expect(h.powerCap).toBe(10);
+    expect(h.powerCap).toBe(15);
     expect(h.compute).toBe(10);
     game.world.sites.get('h_sub')!.owner = 'human';
     updateEconomy(game.world);
-    expect(h.powerCap).toBe(10 + ECONOMY.substationPower);
+    expect(h.powerCap).toBe(15 + ECONOMY.substationPower);
   });
 
   it('training costs data, takes work/compute ticks, and waits for power headroom', () => {
@@ -76,13 +76,13 @@ describe('power and compute', () => {
     run(game, UNITS.field_engineer.work / 10 + 1);
     expect(workersOf(game, 'human')).toHaveLength(4);
 
-    // Fill the power cap (10): 4 workers + 6 more units = 10 used.
-    for (let i = 0; i < 6; i++) spawnUnit(game.world, 'field_engineer', 'human', 5 * TILE, 5 * TILE);
+    // Fill the power cap (15): 4 workers + 11 more units = 15 used.
+    for (let i = 0; i < 11; i++) spawnUnit(game.world, 'field_engineer', 'human', 5 * TILE, 5 * TILE);
     command(game, 'human', { type: 'train', building: core.id, unit: 'field_engineer' });
     run(game, UNITS.field_engineer.work / 10 + 20);
-    expect(workersOf(game, 'human')).toHaveLength(10);
+    expect(workersOf(game, 'human')).toHaveLength(15);
     game.world.sites.get('h_sub')!.owner = 'human';
     run(game, 2);
-    expect(workersOf(game, 'human')).toHaveLength(11);
+    expect(workersOf(game, 'human')).toHaveLength(16);
   });
 });

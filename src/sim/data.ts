@@ -3,7 +3,7 @@
 // resources in milli-units (MILLI = 1000). Change DATA_VERSION whenever a number changes.
 import { MILLI, TILE } from './fixed.ts';
 
-export const DATA_VERSION = 1;
+export const DATA_VERSION = 2;
 
 export type Faction = 'human' | 'ai';
 export const FACTIONS: readonly Faction[] = ['human', 'ai'];
@@ -91,8 +91,8 @@ export interface BuildingStats {
 }
 
 export const BUILDINGS: Record<BuildingTypeId, BuildingStats> = {
-  noc: { faction: 'human', hp: 1500, sight: 8 * TILE, radius: 1500, cost: 0, buildWork: 0, power: 10, compute: 10, blocksEnemies: false },
-  primary_cluster: { faction: 'ai', hp: 1500, sight: 8 * TILE, radius: 1500, cost: 0, buildWork: 0, power: 10, compute: 10, blocksEnemies: false },
+  noc: { faction: 'human', hp: 1500, sight: 8 * TILE, radius: 1500, cost: 0, buildWork: 0, power: 15, compute: 10, blocksEnemies: false },
+  primary_cluster: { faction: 'ai', hp: 1500, sight: 8 * TILE, radius: 1500, cost: 0, buildWork: 0, power: 15, compute: 10, blocksEnemies: false },
   soc: { faction: 'human', hp: 600, sight: 6 * TILE, radius: 1000, cost: 120 * MILLI, buildWork: 400, power: -1, compute: 0, blocksEnemies: false },
   training_cluster: { faction: 'ai', hp: 600, sight: 6 * TILE, radius: 1000, cost: 120 * MILLI, buildWork: 400, power: -1, compute: 0, blocksEnemies: false },
   server_rack: { faction: 'any', hp: 300, sight: 4 * TILE, radius: 700, cost: 100 * MILLI, buildWork: 300, power: -2, compute: 5, blocksEnemies: false },
@@ -113,7 +113,7 @@ export const ECONOMY = {
   /** Worker must be within this distance of a site or link endpoint to work on it. */
   workRange: 1500,
   /** Power supplied by an owned substation. */
-  substationPower: 10,
+  substationPower: 20,
 };
 
 export const PULL_THE_PLUG = {

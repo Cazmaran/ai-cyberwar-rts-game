@@ -17,6 +17,7 @@ Open-source 2D real-time strategy game. Humans fight an AI faction, commanded by
 |---|---|---|
 | `src/sim/` | Deterministic game simulation | No DOM, no PixiJS, no `Math.random()`, no `Date`/wall-clock time. Randomness only via the world's seeded `Rng` (use `rng.int`). Game state uses integers / fixed-point only, never floats, so replays match on every machine. |
 | `src/render/` | Drawing and input | Reads sim state; never mutates it directly. Player actions become commands applied by the sim. |
+| `src/harness/` | Headless match runner, fair-play pacing (APM cap, reaction delay) | Controllers only get `factionView` and issue commands. |
 | `src/ai/` | AI opponent (scripted and LLM) | Talks to the sim through commands only. Obeys the APM cap and reaction delay. Must tolerate invalid or slow LLM output. Player chat never becomes commands. |
 | `scripts/` | Node CLI tools (headless sim runner) | |
 | `tests/` | Vitest tests (`*.test.ts`) | |
@@ -29,7 +30,8 @@ npm install
 npm run dev        # play in browser at the printed URL
 npm test           # unit + determinism tests
 npm run typecheck
-npm run sim -- --matches 10 --minutes 20 --seed 1   # headless matches, no screen
+npm run sim -- --matches 10 --human boom --ai rush   # headless bot matches, prints win rates
+npm run sim -- --matches 1 --verbose                 # also print each side's text view at the end
 npm run sim -- --matches 5 --max-ms 10000          # fail if any match exceeds the time budget (CI)
 npm run build
 ```

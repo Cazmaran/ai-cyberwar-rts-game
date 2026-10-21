@@ -12,6 +12,8 @@ export type UnitOrder =
   | { type: 'attack'; units: number[]; target: number }
   | { type: 'stop'; units: number[] }
   | { type: 'build'; units: number[]; building: BuildingTypeId; x: number; y: number }
+  /** Send workers to help finish an existing, unfinished building. */
+  | { type: 'construct'; units: number[]; building: number }
   | { type: 'claim'; units: number[]; site: string }
   | { type: 'lightLink'; units: number[]; link: number }
   | { type: 'train'; building: number; unit: UnitTypeId }
@@ -58,6 +60,14 @@ export function applyCommand(world: World, faction: Faction, cmd: Command): stri
       if (workers.length === 0) return 'no workers selected';
       world.factions[faction].data -= stats.cost;
       const b = spawnBuilding(world, cmd.building, faction, cmd.x, cmd.y);
+      for (const w of workers) setOrder(w, { type: 'build', building: b.id });
+      return null;
+    }
+    case 'construct': {
+      const b = world.entities.get(cmd.building);
+      if (!b || b.kind !== 'building' || b.faction !== faction || b.built) return 'invalid building';
+      const workers = ownUnits(world, faction, cmd.units).filter((u) => UNITS[u.type].role === 'worker');
+      if (workers.length === 0) return 'no workers selected';
       for (const w of workers) setOrder(w, { type: 'build', building: b.id });
       return null;
     }

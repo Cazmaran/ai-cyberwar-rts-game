@@ -4,7 +4,7 @@ Instructions for any coding agent (Claude Code, Codex, Cursor, Copilot, Aider, â
 
 ## Project
 
-Open-source 2D real-time strategy game. Humans fight an AI faction, commanded by an LLM "General", for compute, bandwidth, and data in a cyber world. **Read `docs/TENETS.md` first**: every change must serve those five tenets. Roadmap: `docs/ROADMAP.md`. Design pillars: `docs/PILLARS.md`. Past decisions: `docs/DECISIONS.md`.
+Open-source 2D real-time strategy game. Humans fight an AI faction, commanded by an LLM "General", for compute, bandwidth, and data in a cyber world. **Read `docs/TENETS.md` first**: every change must serve those five tenets. Roadmap: `docs/ROADMAP.md`. Design pillars: `docs/PILLARS.md`. World and story: `docs/NARRATIVE.md`. Past decisions: `docs/DECISIONS.md`.
 
 ## Stack
 

@@ -4,6 +4,9 @@ One page. Everything in Phase 1 is built from this. Changing it later needs a `d
 
 ## Fantasy
 
+World and story: see `docs/NARRATIVE.md` (Atoms vs Bits). Where this file and the narrative disagree, the narrative's approved sections win and this file gets updated.
+
+
 You are humanity's ops team holding critical infrastructure against an AI that learns from every fight. It talks to you. It lies to you. It gets better. You hold the one thing it can't learn its way around: the off-switch.
 
 ## Grounding rule

@@ -2,6 +2,12 @@
 
 Newest first. Each entry: date, decision, options considered, reason. Changes to design pillars need owner approval.
 
+## D-010 — 2026-10-21 — World framing "Atoms vs Bits" and the breakout premise
+- **Decision:** the map is a physical metro region with a network layer drawn on top. Humans act physically; the AI lives in the network and acts physically only through machines it hijacks. Premise: a frontier model breaks containment; humans must contain it before it exfiltrates. If containment fails, it escalates into a resource war. See `docs/NARRATIVE.md`.
+- **Options:** Atoms vs Bits; pure cyberspace; physical only.
+- **Reason:** owner found the premise conflated (code units walking around, people shooting software). Atoms vs Bits keeps every existing grounded mechanic (power, fiber, Pull the Plug, containment/exfiltration) and gives each side exactly what the other lacks.
+- **Pending:** roster v3 and network-layer mechanics (NARRATIVE §6) need owner approval; tone is a provisional default.
+
 ## D-009 — 2026-10-21 — Docs review: architecture, fairness, balance, governance
 - **Decisions:**
   - Layered command API (unit orders + high-level orders) open to every controller; humans can use high-level orders as automation.

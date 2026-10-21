@@ -1,11 +1,12 @@
 import { Application, Text } from 'pixi.js';
-import { createWorld, step, TICK_RATE } from './sim/world.ts';
+import { advance, createGame, TICK_RATE } from './sim/index.ts';
 
 const app = new Application();
 await app.init({ resizeTo: window, background: '#111418', antialias: true });
 document.body.appendChild(app.canvas);
 
-const world = createWorld(Date.now() >>> 0);
+const game = createGame(Date.now() >>> 0);
+const world = game.world;
 const label = new Text({ text: '', style: { fill: '#d8e1ea', fontFamily: 'monospace', fontSize: 18 } });
 label.position.set(16, 16);
 app.stage.addChild(label);
@@ -16,7 +17,7 @@ let accumulator = 0;
 app.ticker.add((ticker) => {
   accumulator += ticker.deltaMS;
   while (accumulator >= msPerTick) {
-    step(world);
+    advance(game);
     accumulator -= msPerTick;
   }
   label.text = `AI Cyberwar RTS — greybox\nseed ${world.seed}  tick ${world.tick}`;

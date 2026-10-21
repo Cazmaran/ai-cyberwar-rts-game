@@ -1,7 +1,7 @@
 // Headless match runner. Usage: npm run sim -- --matches 10 --minutes 20 --seed 1 [--max-ms 10000]
 // --max-ms: performance budget per match; exits non-zero if any match is slower (used by CI).
 import { parseArgs } from 'node:util';
-import { createWorld, hashWorld, step, TICK_RATE } from '../src/sim/world.ts';
+import { advance, createGame, hashWorld, TICK_RATE } from '../src/sim/index.ts';
 
 const { values } = parseArgs({
   options: {
@@ -21,8 +21,9 @@ const start = performance.now();
 let slowest = 0;
 for (let i = 0; i < matches; i++) {
   const matchStart = performance.now();
-  const world = createWorld(baseSeed + i);
-  for (let t = 0; t < ticks; t++) step(world);
+  const game = createGame(baseSeed + i);
+  for (let t = 0; t < ticks; t++) advance(game);
+  const world = game.world;
   const ms = performance.now() - matchStart;
   slowest = Math.max(slowest, ms);
   console.log(`match ${i + 1}: seed ${world.seed} -> ${hashWorld(world)} (${ms.toFixed(0)} ms)`);

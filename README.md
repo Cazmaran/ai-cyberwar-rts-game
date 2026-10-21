@@ -2,7 +2,7 @@
 
 An open-source real-time strategy game. Humans fight an AI faction for compute, bandwidth, and data inside a living network. The enemy is commanded by an LLM "General" that plans, adapts, bluffs, and taunts you.
 
-**Status:** Phase 0, early foundation. Nothing playable yet. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+**Status:** Phase 1 greybox: playable in the browser against a scripted AI, balance tuning in progress. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Design tenets
 
@@ -24,7 +24,7 @@ Requires Node.js 22.18 or newer.
 
 ```sh
 npm install
-npm run dev      # open the printed URL
+npm run dev      # open the printed URL; add ?ai=rush|boom|turtle to pick the AI strategy
 npm test
 npm run sim      # run a match headless, no screen
 ```

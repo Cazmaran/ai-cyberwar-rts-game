@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-21 — Playable greybox
+
+- The browser build works: `npm run dev`. Select, move, claim sites, light links, build, train, Pull the Plug, and fight a scripted AI.
+- The UI has no special powers. Every click becomes a command from the same API the AI uses. Press `T` to see the text view an LLM General would read.
+- `?stress=300` spawns 300 fighting units with an FPS counter for the Gate 1 performance check.
+
 ## 2026-10-21 — The balance harness finds bugs before balance
 
 - Built `npm run balance`: equal-cost duel matrix, strategy tournament, skill test.

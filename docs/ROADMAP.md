@@ -96,24 +96,25 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
 - **Gate 0 (owner sign-off):** pillars approved.
 
 ### Phase 1 — Greybox Core Loop (4–6 weeks)
-- M1.0 CI (GitHub Actions): typecheck, tests, determinism, short sim batch, performance budget on every push/PR. ✅
-- M1.1 Deterministic sim: fixed tick (20 Hz), seeded RNG, **integer / fixed-point math only** (no floats in game state, so replays match across browsers and machines). All unit/building numbers in one data file.
-- M1.1b Layered command API + text view (Tenets 2, 3):
+- ✅ M1.0 CI (GitHub Actions): typecheck, tests, determinism, short sim batch, performance budget on every push/PR.
+- ✅ M1.1 Deterministic sim: fixed tick (20 Hz), seeded RNG, **integer / fixed-point math only** (no floats in game state, so replays match across browsers and machines). All unit/building numbers in one data file.
+- ✅ M1.1b Layered command API + text view (Tenets 2, 3):
   - Unit orders and high-level orders, open to every controller.
   - Every command stamped with the tick it applies on; replay = seed + command log.
   - Text view of state per faction, limited by fog of war.
   - Game version + data version stamped into replays and saves.
-- M1.1c Map format: data-driven map file (sites, links, routers, substations, data sources) + one symmetric test map.
-- M1.2 Render + input: box select, right-click move, camera pan/zoom. The UI only issues commands through the command API.
-- M1.3 Economy (hybrid, per `docs/PILLARS.md`): workers claim Data Sources and build links; data streams home capped by link bandwidth; Power cap from substations; Compute from racks sets build speed; spend Data to spawn.
-- M1.4 Combat: worker + 3 combat units per faction with counters; Firewall structure; units die.
-- M1.4b Faction signatures v0: Pull the Plug (blackout zone) and Adaptation (capped, decaying resistance; see `docs/PILLARS.md`).
-- M1.5 Scripted AI opponent issuing commands through the same API, with APM cap + reaction delay.
-- M1.6 Headless runner: `npm run sim -- --matches 100` prints win rates; CI fails if a 20-min match exceeds the time budget.
-- M1.7 Balance harness (`npm run balance`, Tenet 4):
+- ✅ M1.1c Map format: data-driven map file (sites, links, routers, substations, data sources) + one symmetric test map.
+- ✅ M1.2 Render + input: box select, right-click move, camera pan/zoom. The UI only issues commands through the command API.
+- ✅ M1.3 Economy (hybrid, per `docs/PILLARS.md`): workers claim Data Sources and build links; data streams home capped by link bandwidth; Power cap from substations; Compute from racks sets build speed; spend Data to spawn.
+- ✅ M1.4 Combat: worker + 3 combat units per faction with counters; Firewall structure; units die.
+- ✅ M1.4b Faction signatures v0: Pull the Plug (blackout zone) and Adaptation (capped, decaying resistance; see `docs/PILLARS.md`).
+- ✅ M1.5 Scripted AI opponent issuing commands through the same API, with APM cap + reaction delay.
+- ✅ M1.6 Headless runner: `npm run sim -- --matches 100` prints win rates; CI fails if a 20-min match exceeds the time budget.
+- ✅ M1.7 Balance harness (`npm run balance`, Tenet 4):
   - Equal-cost duel matrix for every unit pair.
   - Strategy bots: rush, boom, turtle; bot-vs-bot win-rate table.
   - Skill test: same build, better micro vs sloppy micro.
+- **Status (2026-10-21):** all milestones built. Balance tuning in progress: counters pass; strategy and skill gates fail. Owner playtest and 60 fps check pending.
 - **Gate 1 criteria:**
   - Owner plays 5+ matches and answers "do I want to play again?" yes.
   - 300 units at 60 fps on the dev machine.

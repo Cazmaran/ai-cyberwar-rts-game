@@ -1,7 +1,7 @@
 // Run a full match between two controllers, headless. Used by `npm run sim`, balance runs and tests.
 import type { Controller } from '../ai/controller.ts';
-import { advance, createGame, factionView, FAIRNESS, issue, TICK_RATE, type Faction, type Game } from '../sim/index.ts';
-import { available, createPacer, spend } from './pacer.ts';
+import { TICK_RATE, type Faction, type Game } from '../sim/index.ts';
+import { createSession, tickSession } from './session.ts';
 
 export interface MatchOptions {
   seed: number;
@@ -24,27 +24,9 @@ export interface MatchResult {
 }
 
 export function runMatch(opts: MatchOptions): MatchResult {
-  const game = createGame(opts.seed, opts.mapId ?? 'duel');
+  const session = createSession({ ...opts, controllers: { human: opts.human, ai: opts.ai } });
   const maxTicks = opts.maxTicks ?? 20 * 60 * TICK_RATE;
-  const interval = opts.decisionInterval ?? 10;
-  const delay = opts.reactionDelay ?? FAIRNESS.reactionDelay;
-  const players = [
-    { faction: 'human' as const, controller: opts.human, pacer: createPacer(opts.apm) },
-    { faction: 'ai' as const, controller: opts.ai, pacer: createPacer(opts.apm) },
-  ];
-  while (game.world.tick < maxTicks && game.world.winner === null) {
-    if (game.world.tick % interval === 0) {
-      for (const p of players) {
-        let budget = available(p.pacer, game.world.tick);
-        if (budget === 0) continue;
-        for (const cmd of p.controller.decide(factionView(game.world, p.faction))) {
-          if (budget-- === 0) break;
-          spend(p.pacer);
-          issue(game, p.faction, cmd, delay);
-        }
-      }
-    }
-    advance(game);
-  }
-  return { winner: game.world.winner, ticks: game.world.tick, game };
+  const { world } = session.game;
+  while (world.tick < maxTicks && world.winner === null) tickSession(session);
+  return { winner: world.winner, ticks: world.tick, game: session.game };
 }

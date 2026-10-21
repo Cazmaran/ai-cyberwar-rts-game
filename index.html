@@ -9,6 +9,8 @@
       html, body { margin: 0; height: 100%; background: #0b0e12; overflow: hidden; color: var(--text);
         font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
       canvas { display: block; }
+      /* Panels set their own display; make the hidden attribute always win. */
+      [hidden] { display: none !important; }
       #hud { position: fixed; inset: 0; pointer-events: none; }
       .hud-panel { position: absolute; background: var(--panel); border: 1px solid #2c333d; border-radius: 6px; padding: 6px 10px; pointer-events: auto; }
       #hud-top { top: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 18px; white-space: nowrap; }

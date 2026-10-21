@@ -1,0 +1,50 @@
+# AGENTS.md
+
+Instructions for any coding agent (Claude Code, Codex, Cursor, Copilot, Aider, …) and for humans. This file is the single source of truth; tool-specific files only point here.
+
+## Project
+
+Open-source 2D real-time strategy game. Humans fight an AI faction, commanded by an LLM "General", for compute, bandwidth, and data in a cyber world. Roadmap: `docs/ROADMAP.md`. Design pillars: `docs/PILLARS.md`. Past decisions: `docs/DECISIONS.md`.
+
+## Stack
+
+- TypeScript (strict), Node >= 22.18 (runs `.ts` directly), Vite, Vitest.
+- PixiJS v8 for rendering.
+
+## Layout
+
+| Path | What lives here | Rules |
+|---|---|---|
+| `src/sim/` | Deterministic game simulation | No DOM, no PixiJS, no `Math.random()`, no `Date`/wall-clock time. Randomness only via the world's seeded `Rng`. |
+| `src/render/` | Drawing and input | Reads sim state; never mutates it directly. Player actions become commands applied by the sim. |
+| `src/ai/` | AI opponent (scripted and LLM) | Talks to the sim through commands only. Must tolerate invalid or slow LLM output. |
+| `scripts/` | Node CLI tools (headless sim runner) | |
+| `tests/` | Vitest tests (`*.test.ts`) | |
+| `docs/` | Roadmap, pillars, decisions, journal | |
+
+## Commands
+
+```sh
+npm install
+npm run dev        # play in browser at the printed URL
+npm test           # unit + determinism tests
+npm run typecheck
+npm run sim -- --matches 10 --minutes 20 --seed 1   # headless matches, no screen
+npm run build
+```
+
+## Definition of done
+
+1. `npm run typecheck` and `npm test` pass.
+2. Gameplay changes: run `npm run sim` and confirm results still look sane; add or update a test for new sim behavior.
+3. Determinism kept: same seed + same inputs = same result.
+4. Small, focused PR that matches the issue's acceptance criteria.
+
+## Conventions
+
+- Imports use explicit `.ts` extensions (`import { step } from './world.ts'`).
+- Prefer plain data + functions over classes in `src/sim/`.
+- Keep files small and single-purpose so an agent can load them whole.
+- Design changes (resources, units, win conditions) need an entry in `docs/DECISIONS.md` and owner approval.
+- Never commit secrets. API keys go in a local `.env` (gitignored).
+- Notable wins, failures, or surprises while building: add a short entry to `docs/JOURNAL.md`.

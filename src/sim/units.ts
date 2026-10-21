@@ -4,12 +4,15 @@ import { dist2, pct, stepToward, within } from './fixed.ts';
 import { inBlackout } from './economy.ts';
 import { CORE_BUILDING, type Building, type Entity, type Unit, type World } from './world.ts';
 
-/** Idle and attack-moving units look for targets only every N ticks (staggered by id) to keep the sim fast. */
+/** Idle and attack-moving units look for targets only every N ticks to keep the sim fast. All units search on
+ * the same ticks so neither side spots the other first. */
 const ACQUIRE_EVERY = 5;
 
 export function updateUnits(world: World): void {
+  // Every unit alive at the start of the tick acts, even if hit earlier this tick: combat resolves
+  // simultaneously, so creation order (which faction spawned first) gives no first-strike advantage.
   for (const e of world.entities.values()) {
-    if (e.kind !== 'unit' || e.hp <= 0) continue;
+    if (e.kind !== 'unit') continue;
     // AI processes need power; people don't. A blackout freezes AI units only.
     if (e.faction === 'ai' && inBlackout(world, e.x, e.y)) continue;
     if (e.cooldown > 0) e.cooldown--;
@@ -54,6 +57,8 @@ function runOrder(world: World, u: Unit): void {
       const s = world.sites.get(o.site);
       if (!s || s.owner === u.faction || s.kind === 'core') { u.order = { type: 'idle' }; u.jobProgress = 0; return; }
       if (!within(u.x, u.y, s.x, s.y, ECONOMY.workRange)) { moveTo(world, u, s.x, s.y, ECONOMY.workRange); return; }
+      // Contested: while an enemy worker is also claiming this site in range, nobody makes progress.
+      if (contested(world, u, s.id, s.x, s.y)) return;
       const needed = ECONOMY.claimTicks * (s.owner === null ? 1 : ECONOMY.claimEnemyMultiplier);
       if (++u.jobProgress >= needed) { s.owner = u.faction; u.order = { type: 'idle' }; u.jobProgress = 0; }
       return;
@@ -71,6 +76,14 @@ function runOrder(world: World, u: Unit): void {
   }
 }
 
+function contested(world: World, u: Unit, site: string, x: number, y: number): boolean {
+  for (const e of world.entities.values()) {
+    if (e.kind === 'unit' && e.faction !== u.faction && e.hp > 0 && e.order.type === 'claim' && e.order.site === site
+      && within(e.x, e.y, x, y, ECONOMY.workRange)) return true;
+  }
+  return false;
+}
+
 /** Keep the current auto-target while it is alive and in sight; otherwise periodically look for a new one. */
 function currentTarget(world: World, u: Unit): Entity | null {
   if (UNITS[u.type].role === 'worker') return null;
@@ -79,7 +92,7 @@ function currentTarget(world: World, u: Unit): Entity | null {
     if (t && t.hp > 0 && within(u.x, u.y, t.x, t.y, UNITS[u.type].sight + reachOf(t))) return t;
     u.target = null;
   }
-  if ((world.tick + u.id) % ACQUIRE_EVERY !== 0) return null;
+  if (world.tick % ACQUIRE_EVERY !== 0) return null;
   const t = acquire(world, u);
   u.target = t ? t.id : null;
   return t;

@@ -86,3 +86,18 @@ describe('power and compute', () => {
     expect(workersOf(game, 'human')).toHaveLength(16);
   });
 });
+
+describe('contested claims', () => {
+  it('no one makes progress while both sides claim the same site', () => {
+    const game = newGame();
+    const h = spawnUnit(game.world, 'field_engineer', 'human', 24 * TILE, 15 * TILE);
+    const a = spawnUnit(game.world, 'crawler', 'ai', 24 * TILE, 17 * TILE);
+    command(game, 'human', { type: 'claim', units: [h.id], site: 'mid_router' });
+    command(game, 'ai', { type: 'claim', units: [a.id], site: 'mid_router' });
+    run(game, 300);
+    expect(game.world.sites.get('mid_router')!.owner).toBeNull();
+    command(game, 'ai', { type: 'stop', units: [a.id] });
+    run(game, 120);
+    expect(game.world.sites.get('mid_router')!.owner).toBe('human');
+  });
+});

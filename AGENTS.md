@@ -33,6 +33,7 @@ npm run typecheck
 npm run sim -- --matches 10 --human boom --ai rush   # headless bot matches, prints win rates
 npm run sim -- --matches 1 --verbose                 # also print each side's text view at the end
 npm run sim -- --matches 5 --max-ms 10000          # fail if any match exceeds the time budget (CI)
+npm run balance -- --seeds 20                       # duel matrix, strategy tournament, skill test (--gate exits 1 on failures)
 npm run build
 ```
 

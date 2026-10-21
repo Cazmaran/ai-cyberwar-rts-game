@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "sim": "node scripts/sim.ts"
+    "sim": "node scripts/sim.ts",
+    "balance": "node scripts/balance.ts"
   },
   "dependencies": {
     "pixi.js": "^8.22.0"

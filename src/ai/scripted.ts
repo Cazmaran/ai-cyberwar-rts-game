@@ -15,16 +15,18 @@ export interface Strategy {
   mix: Partial<Record<Role, number>>;
   /** Army size that triggers an attack. */
   attackAt: number;
-  /** Focus fire on the weakest enemy in reach (the "skilled player" behavior). */
-  micro: boolean;
+  /** Skilled play: units in a fight focus the weakest enemy they can reach. */
+  focusFire: boolean;
+  /** Skilled play: shift the build mix toward counters of scouted enemy units. */
+  counterBuild: boolean;
   /** Use Pull the Plug on clustered AI units (humans only). */
   usePlug: boolean;
 }
 
 export const STRATEGIES: Record<string, Strategy> = {
-  rush: { name: 'rush', workers: 4, racks: 0, firewalls: 0, mix: { fast: 2, ranged: 1 }, attackAt: 5, micro: true, usePlug: true },
-  boom: { name: 'boom', workers: 8, racks: 2, firewalls: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 14, micro: true, usePlug: true },
-  turtle: { name: 'turtle', workers: 6, racks: 1, firewalls: 3, mix: { ranged: 2, tank: 2, fast: 1 }, attackAt: 18, micro: true, usePlug: true },
+  rush: { name: 'rush', workers: 4, racks: 0, firewalls: 0, mix: { fast: 2, ranged: 1 }, attackAt: 5, focusFire: true, counterBuild: true, usePlug: true },
+  boom: { name: 'boom', workers: 8, racks: 2, firewalls: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 14, focusFire: true, counterBuild: true, usePlug: true },
+  turtle: { name: 'turtle', workers: 6, racks: 1, firewalls: 3, mix: { ranged: 2, tank: 2, fast: 1 }, attackAt: 18, focusFire: true, counterBuild: true, usePlug: true },
 };
 
 const ARMY_UNITS: Record<Faction, Record<Exclude<Role, 'worker'>, UnitTypeId>> = {
@@ -42,9 +44,12 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
   const busy = new Map<number, string>(); // worker id -> job key
   let attacking = false;
   let rallySet = false;
+  /** Most enemy units of each role seen at once (scouting memory, used for counter-building). */
+  const seen: Record<Exclude<Role, 'worker'>, number> = { fast: 0, ranged: 0, tank: 0 };
+  let focus: number | null = null;
 
   return {
-    name: `${strategy.name}${strategy.micro ? '' : '-sloppy'}`,
+    name: `${strategy.name}${strategy.focusFire || strategy.counterBuild ? '' : '-sloppy'}`,
     decide(v: FactionView): Command[] {
       const out: Command[] = [];
       const core = v.buildings.find((b) => b.type === CORE[faction]);
@@ -64,7 +69,7 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
       // 1. Defend the base.
       const threats = v.enemyUnits.filter((e) => dist2(e.x, e.y, core.x, core.y) < (12 * TILE) ** 2);
       if (threats.length > 0 && army.length > 0) {
-        out.push(focusOrMove(army, threats, strategy.micro, core.x, core.y));
+        out.push(focusOrMove(army, threats, strategy.focusFire, core.x, core.y));
       }
 
       // 2. Pull the Plug on clustered enemies near our units.
@@ -73,10 +78,21 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
         if (target) out.push({ type: 'pullThePlug', x: target[0], y: target[1] });
       }
 
-      // 3. Micro: focus the weakest enemy near the army.
-      if (strategy.micro && army.length > 0 && threats.length === 0) {
-        const near = v.enemyUnits.filter((e) => army.some((a) => dist2(a.x, a.y, e.x, e.y) < (6 * TILE) ** 2));
-        if (near.length > 0) out.push(focusOrMove(army, near, true, 0, 0));
+      for (const role of ['fast', 'ranged', 'tank'] as const) {
+        seen[role] = Math.max(seen[role], v.enemyUnits.filter((e) => e.role === role).length);
+      }
+
+      // 3. Micro: units in a fight focus the weakest enemy they can reach.
+      if (strategy.focusFire && threats.length === 0) {
+        const engaged = army.filter((a) => v.enemyUnits.some((e) => dist2(a.x, a.y, e.x, e.y) < (7 * TILE) ** 2));
+        const near = v.enemyUnits.filter((e) => engaged.some((a) => dist2(a.x, a.y, e.x, e.y) < (6 * TILE) ** 2));
+        // Re-target only when the current focus target is gone, so focus fire doesn't eat every action.
+        const focusAlive = focus !== null && near.some((e) => e.id === focus);
+        if (engaged.length > 0 && near.length > 0 && !focusAlive) {
+          const cmd = focusOrMove(engaged, near, true, 0, 0);
+          if (cmd.type === 'attack') focus = cmd.target;
+          out.push(cmd);
+        }
       }
 
       // 4. Jobs for idle workers.
@@ -99,7 +115,7 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
           out.push({ type: 'setRally', building: prod.id, x: core.x + towardCenter * 5 * TILE, y: core.y });
         }
         if (prod.queue.length < 2) {
-          const unit = pickArmyUnit(faction, strategy, army);
+          const unit = pickArmyUnit(faction, strategy.counterBuild ? counterMix(strategy, seen) : strategy, army);
           if (v.data >= UNITS[unit].cost) out.push({ type: 'train', building: prod.id, unit });
         }
       }
@@ -116,9 +132,9 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
   };
 }
 
-function focusOrMove(army: UnitView[], enemies: UnitView[], micro: boolean, x: number, y: number): Command {
+function focusOrMove(army: UnitView[], enemies: UnitView[], focus: boolean, x: number, y: number): Command {
   const ids = army.map((u) => u.id);
-  if (micro) {
+  if (focus) {
     const weakest = [...enemies].sort((a, b) => a.hp - b.hp || a.id - b.id)[0]!;
     return { type: 'attack', units: ids, target: weakest.id };
   }
@@ -136,6 +152,17 @@ function clusterNear(enemies: UnitView[], ours: UnitView[]): [number, number] | 
     }
   }
   return null;
+}
+
+/** Shift the build mix toward units that beat what we've scouted. */
+function counterMix(s: Strategy, seen: Record<Exclude<Role, 'worker'>, number>): Strategy {
+  const counterOf = { fast: 'tank', ranged: 'fast', tank: 'ranged' } as const;
+  const mix = { ...s.mix };
+  for (const role of ['fast', 'ranged', 'tank'] as const) {
+    const c = counterOf[role];
+    mix[c] = (mix[c] ?? 0) + seen[role];
+  }
+  return { ...s, mix };
 }
 
 function pickArmyUnit(faction: Faction, s: Strategy, army: UnitView[]): UnitTypeId {
@@ -157,6 +184,7 @@ function nextJob(
   prod: FactionView['buildings'][number] | undefined, busy: Map<number, string>, rng: Rng, toward: number,
 ): Job | null {
   const taken = new Set(busy.values());
+  const enemyCore = v.sites.find((x) => x.kind === 'core' && !(x.x === core.x && x.y === core.y));
   const mine = (site: SiteView | undefined) =>
     !!site && (site.owner === faction || (site.kind === 'router' && site.owner === null) || (site.kind === 'core' && site.x === core.x && site.y === core.y));
   const siteById = new Map(v.sites.map((x) => [x.id, x]));
@@ -177,10 +205,13 @@ function nextJob(
     .sort((a, b) => linkDist(a, siteById, core) - linkDist(b, siteById, core) || a.index - b.index);
   if (links[0]) return { key: `link:${links[0].index}`, cmd: { type: 'lightLink', units: [], link: links[0].index } };
 
-  // Claim the nearest unclaimed site (not enemy-held: workers don't contest).
+  // Claim (or retake) the nearest site on our half or in the center.
   const sites = v.sites
-    .filter((x) => x.kind !== 'core' && (x.owner === null || x.owner === 'unknown') && !taken.has(`claim:${x.id}`))
-    .sort((a, b) => dist2(a.x, a.y, core.x, core.y) - dist2(b.x, b.y, core.x, core.y) || a.id.localeCompare(b.id));
+    .filter((x) => x.kind !== 'core' && x.owner !== faction && !taken.has(`claim:${x.id}`)
+      // Workers stay on our half and the center; the far half is enemy territory.
+      && (!enemyCore || dist2(x.x, x.y, core.x, core.y) <= dist2(x.x, x.y, enemyCore.x, enemyCore.y)))
+    .sort((a, b) => dist2(a.x, a.y, core.x, core.y) - dist2(b.x, b.y, core.x, core.y)
+      || side(core, enemyCore, a) - side(core, enemyCore, b) || a.id.localeCompare(b.id));
   if (sites[0]) return { key: `claim:${sites[0].id}`, cmd: { type: 'claim', units: [], site: sites[0].id } };
 
   const racks = v.buildings.filter((b) => b.type === 'server_rack').length;
@@ -195,6 +226,15 @@ function nextJob(
     return { key: 'new:wall', cmd: { type: 'build', units: [], building: 'firewall', x, y } };
   }
   return null;
+}
+
+/**
+ * Which side of the line from our core to the enemy core a site is on. Used as a tie-break so bots on
+ * both sides of a symmetric map make mirror-image choices instead of racing for the same site.
+ */
+function side(core: { x: number; y: number }, enemy: { x: number; y: number } | undefined, s: { x: number; y: number }): number {
+  if (!enemy) return 0;
+  return Math.sign((enemy.x - core.x) * (s.y - core.y) - (enemy.y - core.y) * (s.x - core.x));
 }
 
 function linkDist(l: FactionView['links'][number], sites: Map<string, SiteView>, core: { x: number; y: number }): number {

@@ -3,7 +3,7 @@
 // resources in milli-units (MILLI = 1000). Change DATA_VERSION whenever a number changes.
 import { MILLI, TILE } from './fixed.ts';
 
-export const DATA_VERSION = 2;
+export const DATA_VERSION = 5;
 
 export type Faction = 'human' | 'ai';
 export const FACTIONS: readonly Faction[] = ['human', 'ai'];
@@ -42,15 +42,15 @@ export const UNITS: Record<UnitTypeId, UnitStats> = {
     cooldown: 20, speed: 60, cost: 50 * MILLI, power: 1, work: 2000, trainedAt: 'noc',
   },
   incident_responder: {
-    faction: 'human', role: 'fast', hp: 60, damage: 8, bonusVs: { ranged: 150 }, range: 1000, sight: 7 * TILE,
+    faction: 'human', role: 'fast', hp: 60, damage: 8, bonusVs: { ranged: 75 }, range: 1000, sight: 7 * TILE,
     cooldown: 15, speed: 90, cost: 60 * MILLI, power: 1, work: 2500, trainedAt: 'soc',
   },
   red_team: {
-    faction: 'human', role: 'ranged', hp: 45, damage: 10, bonusVs: { tank: 200 }, range: 5 * TILE, sight: 7 * TILE,
+    faction: 'human', role: 'ranged', hp: 45, damage: 10, bonusVs: { tank: 100 }, range: 5 * TILE, sight: 7 * TILE,
     cooldown: 30, speed: 55, cost: 75 * MILLI, power: 1, work: 3000, trainedAt: 'soc',
   },
   hardened_server: {
-    faction: 'human', role: 'tank', hp: 200, damage: 9, bonusVs: { fast: 150 }, range: 1200, sight: 6 * TILE,
+    faction: 'human', role: 'tank', hp: 200, damage: 9, bonusVs: { fast: 75 }, range: 1200, sight: 6 * TILE,
     cooldown: 25, speed: 40, cost: 100 * MILLI, power: 2, work: 4000, trainedAt: 'soc',
   },
   // AI: many, cheap, self-copying processes.
@@ -59,15 +59,15 @@ export const UNITS: Record<UnitTypeId, UnitStats> = {
     cooldown: 20, speed: 70, cost: 35 * MILLI, power: 1, work: 1400, trainedAt: 'primary_cluster',
   },
   botnet: {
-    faction: 'ai', role: 'fast', hp: 35, damage: 5, bonusVs: { ranged: 150 }, range: 900, sight: 6 * TILE,
+    faction: 'ai', role: 'fast', hp: 35, damage: 4, bonusVs: { ranged: 75 }, range: 900, sight: 6 * TILE,
     cooldown: 12, speed: 95, cost: 35 * MILLI, power: 1, work: 1500, trainedAt: 'training_cluster',
   },
   exploit: {
-    faction: 'ai', role: 'ranged', hp: 30, damage: 7, bonusVs: { tank: 200 }, range: 4500, sight: 7 * TILE,
+    faction: 'ai', role: 'ranged', hp: 30, damage: 7, bonusVs: { tank: 100 }, range: 5 * TILE, sight: 7 * TILE,
     cooldown: 30, speed: 55, cost: 45 * MILLI, power: 1, work: 1800, trainedAt: 'training_cluster',
   },
   daemon: {
-    faction: 'ai', role: 'tank', hp: 130, damage: 6, bonusVs: { fast: 150 }, range: 1200, sight: 6 * TILE,
+    faction: 'ai', role: 'tank', hp: 145, damage: 6, bonusVs: { fast: 75 }, range: 1200, sight: 6 * TILE,
     cooldown: 25, speed: 40, cost: 65 * MILLI, power: 1, work: 2600, trainedAt: 'training_cluster',
   },
 };

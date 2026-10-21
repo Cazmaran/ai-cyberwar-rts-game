@@ -119,3 +119,17 @@ describe('commands', () => {
     expect(units(game.world).some((u) => u.faction === 'ai' && u.order.type === 'claim')).toBe(true);
   });
 });
+
+describe('fairness of resolution order', () => {
+  it('identical units spawned in either order trade blows simultaneously', () => {
+    const game = newGame();
+    const a = spawnUnit(game.world, 'red_team', 'human', 20 * TILE, 5 * TILE);
+    const b = spawnUnit(game.world, 'red_team', 'ai', 23 * TILE, 5 * TILE);
+    a.hp = 10;
+    b.hp = 10;
+    run(game, 5);
+    // Both fired on the same tick: both dead, not just the later-spawned one.
+    expect(game.world.entities.has(a.id)).toBe(false);
+    expect(game.world.entities.has(b.id)).toBe(false);
+  });
+});

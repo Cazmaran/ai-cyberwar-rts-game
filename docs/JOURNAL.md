@@ -2,6 +2,18 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-21 — The balance harness finds bugs before balance
+
+- Built `npm run balance`: equal-cost duel matrix, strategy tournament, skill test.
+- Unit counters work (every counter wins 75–100% at equal cost).
+- Matches were lopsided, and most of the cause was not unit stats. The harness exposed fairness bugs in the engine and bots:
+  - Units acted in creation order. Humans spawn first, so human units always fired first, and AI units killed that tick never fired back. Now every unit alive at the start of a tick acts (simultaneous combat).
+  - Units searched for targets on ticks staggered by unit id, so one side spotted the other first. Now everyone searches on the same ticks.
+  - Two workers claiming the same site: whoever was processed first won. Now the site is contested and nobody progresses until one side leaves (or dies).
+  - Both bots raced for the same equidistant site because of alphabetical tie-breaks. Now ties break by which side of the line between the bases a site lies on, so bots make mirror-image choices.
+- Lesson: with a deterministic sim, "the human side wins 90%" is often an ordering bug, not a stats problem. Test fairness before tuning numbers.
+- Gate status: counters pass; strategy and skill gates still fail (the AI side now wins most matchups). Tuning continues.
+
 ## 2026-10-21 — Five tenets and a hard look at the plan
 
 - Owner set five tenets: AI-integrated development, human + LLM control in one package, test-driven, balance above all, many paths to victory.

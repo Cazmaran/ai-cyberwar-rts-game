@@ -12,6 +12,8 @@ export interface Hud {
   setCard(buttons: CardButton[], onPress: (b: CardButton) => void): void;
   tooltip(text: string | null, sx: number, sy: number): void;
   showStart(onStart: () => void): void;
+  alert(text: string): void;
+  setIntel(html: string): void;
 }
 
 export function createHud(root: HTMLElement, aiName: string): Hud {
@@ -19,6 +21,8 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
     <div id="hud-top" class="hud-panel"></div>
     <div id="hud-mode" class="hud-panel"></div>
     <div id="hud-messages"></div>
+    <div id="hud-alerts"></div>
+    <div id="hud-intel" class="hud-panel"></div>
     <div id="hud-selection" class="hud-panel"></div>
     <div id="hud-guide" class="hud-panel"></div>
     <div id="hud-card" class="hud-panel"></div>
@@ -34,6 +38,8 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
   let showText = false;
   let lastTextTick = -1;
   let cardKey = '';
+  let intelHtml = '';
+  const alerts: { text: string; at: number }[] = [];
   let guideKey = '';
 
   return {
@@ -66,6 +72,8 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
 
       const now = performance.now();
       while (messages.length && now - messages[0]!.at > 4000) messages.shift();
+      while (alerts.length && now - alerts[0]!.at > 6000) alerts.shift();
+      $('hud-alerts').innerHTML = alerts.map((m) => `<div>${m.text}</div>`).join('');
       $('hud-messages').innerHTML = messages.map((m) => `<div>${m.text}</div>`).join('');
 
       // Re-render the guide only when progress changes (keeps text selectable and cheap).
@@ -126,6 +134,15 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
         The checklist on the left walks you through it. Hover anything on the map to learn what it is.</p>
         <button type="button" id="start-btn">Start</button>`;
       el.querySelector('#start-btn')!.addEventListener('click', () => { el.hidden = true; onStart(); });
+    },
+    alert(text) {
+      alerts.push({ text, at: performance.now() });
+      if (alerts.length > 3) alerts.shift();
+    },
+    setIntel(html) {
+      if (html === intelHtml) return;
+      intelHtml = html;
+      $('hud-intel').innerHTML = html;
     },
     toggleTextView() {
       showText = !showText;

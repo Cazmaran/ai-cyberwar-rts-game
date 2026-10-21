@@ -5,7 +5,7 @@ import type { SiteKind } from './map.ts';
 import { sectorOf, type SectorId } from './sectors.ts';
 import { buildings, TICK_RATE, units, type Order, type World } from './world.ts';
 
-export interface UnitView { id: number; type: UnitTypeId; role: Role; x: number; y: number; hp: number; maxHp: number; sector: SectorId; order: Order['type'] }
+export interface UnitView { id: number; type: UnitTypeId; role: Role; x: number; y: number; hp: number; maxHp: number; sector: SectorId; order: Order['type']; target: number | null }
 export interface BuildingView { id: number; type: BuildingTypeId; x: number; y: number; hp: number; maxHp: number; built: boolean; queue: UnitTypeId[]; sector: SectorId }
 export interface SiteView { id: string; kind: SiteKind; x: number; y: number; sector: SectorId; visible: boolean; owner: Faction | null | 'unknown' }
 export interface LinkView { index: number; a: string; b: string; bandwidth: number; mine: boolean }
@@ -43,6 +43,7 @@ export function factionView(world: World, faction: Faction): FactionView {
   const unitView = (u: ReturnType<typeof units>[number]): UnitView => ({
     id: u.id, type: u.type, role: UNITS[u.type].role, x: u.x, y: u.y, hp: u.hp, maxHp: UNITS[u.type].hp,
     sector: sectorOf(world.map, u.x, u.y), order: u.order.type,
+    target: u.order.type === 'attack' ? u.order.target : u.target,
   });
   const buildingView = (b: ReturnType<typeof buildings>[number]): BuildingView => ({
     id: b.id, type: b.type, x: b.x, y: b.y, hp: b.hp, maxHp: BUILDINGS[b.type].hp, built: b.built,

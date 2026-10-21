@@ -2,6 +2,11 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-21 — Second playtest: more fun, still lost at 8:43
+
+- Owner reached step 3 (economy + a SOC) but had almost no army when the first attack came, and couldn't read the fights.
+- Added: alerts and map pings when AI forces are spotted on your half or near your buildings, and when a building takes damage; shot lines between fighting units; hit flashes; death markers; an intel panel listing visible enemy units with the counter to build; a shape legend.
+
 ## 2026-10-21 — First playtest: "I have no idea how to play"
 
 - Owner's first session: 120 fps with 300 units (performance gate passed), but the game was unplayable for a newcomer. Everything lived behind hotkeys listed in a collapsed panel.

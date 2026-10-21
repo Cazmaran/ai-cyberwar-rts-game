@@ -6,6 +6,7 @@ import { createSession, tickSession } from './harness/session.ts';
 import { drawWorld } from './render/draw.ts';
 import { createHud } from './render/hud.ts';
 import { buildCard } from './render/card.ts';
+import { createEffects, drawEffects, intel, updateEffects } from './render/effects.ts';
 import { boxSelect, describeAt, describeMode, key, modeClick, pickOwn, rightClick, type UiState } from './render/input.ts';
 import { applyCommand, factionView, issue, spawnUnit, TICK_RATE, TILE, type Command } from './sim/index.ts';
 
@@ -31,8 +32,10 @@ await app.init({ resizeTo: window, background: '#0b0e12', antialias: true });
 document.body.appendChild(app.canvas);
 const stage = new Container();
 const g = new Graphics();
+const fxLayer = new Graphics();
 const box = new Graphics();
-stage.addChild(g);
+stage.addChild(g, fxLayer);
+const fx = createEffects();
 app.stage.addChild(stage, box);
 
 const hudRoot = document.createElement('div');
@@ -168,6 +171,10 @@ app.ticker.add((ticker) => {
   stage.scale.set(cam.zoom);
   stage.position.set(-cam.x * cam.zoom, -cam.y * cam.zoom);
   drawWorld(g, world, view, ui.selected);
+  const now = performance.now();
+  for (const a of updateEffects(fx, view, now)) hud.alert(a);
+  drawEffects(fxLayer, view, fx, now);
+  hud.setIntel(intel(view));
   hud.update(world, view, ui.selected, describeMode(ui.mode), speed, paused, Math.round(app.ticker.FPS));
   hud.setCard(buildCard(view, ui, {
     setMode: (m) => { ui.mode = m; },

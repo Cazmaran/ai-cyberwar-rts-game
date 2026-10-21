@@ -1,7 +1,7 @@
 // HTML overlay: resources, selection, messages, hotkeys, and the text view. Plain DOM keeps it readable,
 // scalable and screen-reader friendly.
 import { BUILDINGS, describeView, MILLI, TICK_RATE, type FactionView, type World } from '../sim/index.ts';
-import type { CardButton } from './card.ts';
+import { pretty, type CardButton } from './card.ts';
 import { renderGuide } from './guide.ts';
 import { HOTKEYS } from './input.ts';
 
@@ -14,6 +14,7 @@ export interface Hud {
   showStart(onStart: () => void): void;
   alert(text: string): void;
   setIntel(html: string): void;
+  onNarrowSelection(fn: (ids: number[]) => void): void;
 }
 
 export function createHud(root: HTMLElement, aiName: string): Hud {
@@ -38,6 +39,43 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
   let showText = false;
   let lastTextTick = -1;
   let cardKey = '';
+  let selKey: string | null = null;
+  let onNarrow: (ids: number[]) => void = () => {};
+  const icon: Record<string, string> = { worker: '●', fast: '▲', ranged: '◆', tank: '■' };
+  const bar = (hp: number, max: number) => {
+    const f = Math.max(0, Math.min(1, hp / max));
+    const c = f > 0.6 ? '#55d27a' : f > 0.3 ? '#ffd866' : '#e5534b';
+    return `<span class="bar"><span style="width:${Math.round(f * 100)}%;background:${c}"></span></span>`;
+  };
+  /** Selection panel: total count, one clickable row per unit type with combined health. */
+  function renderSelection(v: FactionView, selected: Set<number>): void {
+    const units = v.units.filter((u) => selected.has(u.id));
+    const b = v.buildings.find((x) => selected.has(x.id));
+    const key = units.map((u) => `${u.id}:${u.hp}`).join(',') + (b ? `b${b.id}:${b.hp}:${b.queue.length}:${b.built}` : '');
+    if (key === selKey) return;
+    selKey = key;
+    const el = $('hud-selection');
+    if (units.length) {
+      const groups = new Map<string, typeof units>();
+      for (const u of units) groups.set(u.type, [...(groups.get(u.type) ?? []), u]);
+      el.innerHTML = `<div class="sel-head">Selected: <b>${units.length}</b> unit${units.length === 1 ? '' : 's'}</div>`
+        + [...groups].map(([t, list]) => {
+          const hp = list.reduce((s, u) => s + u.hp, 0);
+          const max = list.reduce((s, u) => s + u.maxHp, 0);
+          return `<button type="button" class="sel-row" data-type="${t}" title="Click to keep only these">`
+            + `<span class="ico">${icon[list[0]!.role]}</span> ${list.length} × ${pretty(t)} ${bar(hp, max)} <span class="dim">${hp}/${max}</span></button>`;
+        }).join('');
+      for (const row of el.querySelectorAll<HTMLButtonElement>('.sel-row')) {
+        row.addEventListener('click', () => onNarrow(units.filter((u) => u.type === row.dataset.type).map((u) => u.id)));
+      }
+    } else if (b) {
+      el.innerHTML = `<div class="sel-head">${pretty(b.type)}${b.built ? '' : ' (under construction)'}</div>`
+        + `${bar(b.hp, BUILDINGS[b.type].hp)} <span class="dim">${b.hp}/${BUILDINGS[b.type].hp} hp</span>`
+        + (b.queue.length ? `<div>Training: ${b.queue.map((q) => pretty(q)).join(', ')}</div>` : '');
+    } else {
+      el.innerHTML = '<span class="dim">Nothing selected. Drag a box or click a unit.</span>';
+    }
+  }
   let intelHtml = '';
   const alerts: { text: string; at: number }[] = [];
   let guideKey = '';
@@ -56,19 +94,7 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
       $('hud-mode').textContent = modeText;
       $('hud-mode').hidden = !modeText;
 
-      const units = v.units.filter((u) => selected.has(u.id));
-      const blds = v.buildings.filter((b) => selected.has(b.id));
-      let sel = '';
-      if (units.length) {
-        const counts = new Map<string, number>();
-        for (const u of units) counts.set(u.type, (counts.get(u.type) ?? 0) + 1);
-        sel = [...counts].map(([t, n]) => `${n} × ${t.replace('_', ' ')}`).join(', ');
-      } else if (blds[0]) {
-        const b = blds[0];
-        sel = `${b.type.replace('_', ' ')} ${b.hp}/${BUILDINGS[b.type].hp}hp${b.built ? '' : ' (under construction)'}`
-          + (b.queue.length ? ` · queue: ${b.queue.map((q) => q.replace('_', ' ')).join(', ')}` : '');
-      }
-      $('hud-selection').textContent = sel || 'Nothing selected';
+      renderSelection(v, selected);
 
       const now = performance.now();
       while (messages.length && now - messages[0]!.at > 4000) messages.shift();
@@ -139,6 +165,7 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
       alerts.push({ text, at: performance.now() });
       if (alerts.length > 3) alerts.shift();
     },
+    onNarrowSelection(fn) { onNarrow = fn; },
     setIntel(html) {
       if (html === intelHtml) return;
       intelHtml = html;

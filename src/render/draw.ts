@@ -12,6 +12,7 @@ export const COLORS = {
   unseen: 0x3a4250,
   darkFiber: 0x2c333d,
   selection: 0xffffff,
+  selected: 0x55ff99,
   hpGood: 0x55d27a,
   hpBad: 0xe5534b,
   blackout: 0x000000,
@@ -69,9 +70,11 @@ export function drawWorld(g: Graphics, world: World, view: FactionView, selected
   for (const u of [...view.units, ...view.enemyUnits]) {
     const mine = view.units.includes(u);
     const faction = mine ? view.faction : view.faction === 'human' ? 'ai' : 'human';
+    const sel = selected.has(u.id);
+    if (sel) g.circle(u.x, u.y, 700).stroke({ width: 110, color: COLORS.selected });
     unitShape(g, u.role, u.x, u.y, factionColor(faction));
-    if (selected.has(u.id)) g.circle(u.x, u.y, 650).stroke({ width: 60, color: COLORS.selection });
-    if (u.hp < u.maxHp) hpBar(g, u.x, u.y - 650, 900, u.hp, u.maxHp);
+    // Health: always on selected units, and on any damaged unit (either side).
+    if (sel || u.hp < u.maxHp) hpBar(g, u.x, u.y - 950, 1000, u.hp, u.maxHp);
   }
 
   // Blackouts (Pull the Plug).
@@ -93,7 +96,7 @@ function unitShape(g: Graphics, role: Role, x: number, y: number, c: number): vo
 
 function hpBar(g: Graphics, x: number, y: number, w: number, hp: number, max: number, color?: number): void {
   const f = Math.max(0, Math.min(1, hp / max));
-  g.rect(x - w / 2, y, w, 140).fill(0x0b0e12);
-  g.rect(x - w / 2, y, w * f, 140).fill(color ?? (f > 0.4 ? COLORS.hpGood : COLORS.hpBad));
+  g.rect(x - w / 2 - 30, y - 30, w + 60, 240).fill(0x0b0e12);
+  g.rect(x - w / 2, y, w * f, 180).fill(color ?? (f > 0.6 ? COLORS.hpGood : f > 0.3 ? 0xffd866 : COLORS.hpBad));
 }
 

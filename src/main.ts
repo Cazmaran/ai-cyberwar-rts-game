@@ -60,6 +60,7 @@ const toWorld = (sx: number, sy: number): [number, number] =>
   [Math.round(cam.x + sx / cam.zoom), Math.round(cam.y + sy / cam.zoom)];
 
 const ui: UiState = { selected: new Set(), mode: { type: 'none' } };
+hud.onNarrowSelection((ids) => { ui.selected = new Set(ids); });
 let cursor: [number, number] = [0, 0];
 let dragStart: [number, number] | null = null;
 let panStart: [number, number, number, number] | null = null;

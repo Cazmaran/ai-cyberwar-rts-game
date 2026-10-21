@@ -111,7 +111,7 @@ export function drawEffects(g: Graphics, v: FactionView, fx: Effects, now: numbe
   }
   for (const [id] of fx.flashes) {
     const e = byId.get(id);
-    if (e) g.circle(e.x, e.y, 560).fill({ color: 0xffffff, alpha: 0.55 });
+    if (e) g.circle(e.x, e.y, 480).fill({ color: 0xffffff, alpha: 0.5 });
   }
   for (const d of fx.deaths) {
     const a = Math.max(0, (d.until - now) / 1500);

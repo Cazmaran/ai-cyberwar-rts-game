@@ -4,7 +4,7 @@ Instructions for any coding agent (Claude Code, Codex, Cursor, Copilot, Aider, â
 
 ## Project
 
-Open-source 2D real-time strategy game. Humans fight an AI faction, commanded by an LLM "General", for compute, bandwidth, and data in a cyber world. Roadmap: `docs/ROADMAP.md`. Design pillars: `docs/PILLARS.md`. Past decisions: `docs/DECISIONS.md`.
+Open-source 2D real-time strategy game. Humans fight an AI faction, commanded by an LLM "General", for compute, bandwidth, and data in a cyber world. **Read `docs/TENETS.md` first**: every change must serve those five tenets. Roadmap: `docs/ROADMAP.md`. Design pillars: `docs/PILLARS.md`. Past decisions: `docs/DECISIONS.md`.
 
 ## Stack
 
@@ -35,15 +35,18 @@ npm run build
 
 ## Definition of done
 
-1. `npm run typecheck` and `npm test` pass.
-2. Gameplay changes: run `npm run sim` and confirm results still look sane; add or update a test for new sim behavior.
-3. Determinism kept: same seed + same inputs = same result.
-4. Small, focused PR that matches the issue's acceptance criteria.
+1. One logical unit of work per PR, matching the issue's acceptance criteria.
+2. Test first: new behavior ships with a test; a bug fix starts with a failing test.
+3. `npm run typecheck` and `npm test` pass (CI enforces this).
+4. Determinism kept: same seed + same commands = same result.
+5. Gameplay changes: run `npm run sim`. Stat changes: include before/after balance numbers in the PR.
+6. Every player action goes through the command API, so humans and LLMs use the same controls. No UI-only or AI-only shortcuts.
 
 ## Conventions
 
 - Imports use explicit `.ts` extensions (`import { step } from './world.ts'`).
 - Prefer plain data + functions over classes in `src/sim/`.
+- Unit and building numbers live in one data file, never hard-coded in logic.
 - Keep files small and single-purpose so an agent can load them whole.
 - Grounding rule: every in-game term must behave like its real-world counterpart (see `docs/PILLARS.md`). Flag anything that bends reality.
 - Design changes (resources, units, win conditions) need an entry in `docs/DECISIONS.md` and owner approval.

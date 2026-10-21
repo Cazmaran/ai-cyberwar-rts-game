@@ -3,6 +3,10 @@
 Source: `Architecting a Cyber-Themed LLM RTS.pdf` (Gemini conversation, 2026-10-21).
 Owner constraints: light coding (Claude writes most code), <10 hrs/week, solo, end goal undecided.
 
+## 0. Tenets
+
+`docs/TENETS.md` is the project charter: (1) AI integration by design, (2) human UI and LLM control surface in one package, (3) test-driven, (4) balance is critical, (5) many paths to victory and strategies that live on. Everything below serves those.
+
 ## 1. Strategy
 
 **Core bet:** the hook is the opponent, not the setting. An LLM "General" that plans, adapts, bluffs, and taunts you is what makes this different from a sci-fi StarCraft reskin. Everything else (cyber theme, epochs, sieges) supports that.
@@ -89,18 +93,23 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
 - **Gate 0 (owner sign-off):** pillars approved.
 
 ### Phase 1 — Greybox Core Loop (4–6 weeks)
-- M1.1 Deterministic sim: fixed tick (20 Hz), seeded RNG, map grid, units, resources.
-- M1.2 Render + input: box select, right-click move, camera pan/zoom.
+- M1.0 CI (GitHub Actions): typecheck, tests, determinism, short sim batch on every push/PR.
+- M1.1 Deterministic sim: fixed tick (20 Hz), seeded RNG, map grid, units, resources. All unit/building numbers in one data file.
+- M1.1b Command API + text view: every action is a command; the sim exposes a text summary of state. Replays = seed + command log. (Tenet 2, 3)
+- M1.2 Render + input: box select, right-click move, camera pan/zoom. The UI only issues commands through the command API.
 - M1.3 Economy (hybrid, per `docs/PILLARS.md`): workers claim Data Sources and build links; data streams home capped by link bandwidth; Power cap from substations; Compute from racks sets build speed; spend Data to spawn.
 - M1.4 Combat: 3 unit types with counters; units die.
-- M1.5 Scripted AI opponent (behavior tree / build order).
+- M1.5 Scripted AI opponent (behavior tree / build order), issuing commands through the same command API.
 - M1.6 Headless runner: `npm run sim -- --matches 100` prints win rates.
+- M1.7 Balance harness: equal-cost duel matrix for every unit pair (`npm run balance`). (Tenet 4)
 - **Gate 1 criteria:**
   - Owner plays 5+ matches and answers "do I want to play again?" yes.
   - 300 units at 60 fps on the dev machine.
   - Same seed + same inputs = identical result (determinism test passes).
   - Headless 20-min match runs in <10 s.
-- **Go-public step (after Gate 1 passes, owner approval):** CI on GitHub Actions, issue/PR templates, 5–10 `good first issue`s, secrets/history scan, flip repo to public, announce (owner's call on where).
+  - Duel matrix: each counter wins ≥70% of equal-cost fights against its target; no unit has a positive record against every other.
+  - A recorded match replays to an identical final state.
+- **Go-public step (after Gate 1 passes, owner approval):** issue templates, 5–10 `good first issue`s, secrets/history scan, flip repo to public, announce (owner's call on where).
 
 ### Phase 2 — The LLM General (4–6 weeks)
 - M2.1 State digest: sim → ~400-token JSON summary by named sector, with pre-computed threat levels.
@@ -121,9 +130,12 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
 - M3.3 Epochs I–II, then III–IV if distinct.
 - M3.4 Siege layer: nested subnets, bandwidth chokes, counter-attack vectors, defrag-cycle anti-stalemate.
 - M3.5 Comeback mechanic (AI fringe latency/power draw).
+- M3.7 Alternate victories (Containment / Exfiltration, once approved) + balance sims proving every path is viable. (Tenet 5)
+- M3.8 Strategy memory: the General's readable playbook persists across matches. Lore codex: named strategies + shareable replays. (Tenet 5)
 - M3.6 External playtests: 3–5 people via itch.io private link + short survey.
 - **Gate 3 criteria:**
   - Batch sims show no single build order winning >65%.
+  - Every victory path wins at least 15% of sim matches where a strategy pursues it.
   - Playtesters: ≥3 of 5 would play again; average session > 2 matches.
   - **Owner decision:** match-length target (short skirmish vs long siege mode).
 

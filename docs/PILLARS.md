@@ -14,7 +14,11 @@ Every term must behave like its real-world counterpart. Where fun requires bendi
 
 - **Mode:** 1 human player vs 1 AI faction.
 - **Length:** 15–25 minutes (long sieges come later).
-- **Win:** take down the enemy's **core data center** (human HQ: **Network Operations Center**; AI HQ: **Primary Cluster**).
+- **Win (conquest, both sides):** take down the enemy's **core data center** (human HQ: **Network Operations Center**; AI HQ: **Primary Cluster**).
+- **Alternate victories (PROPOSED, needs owner approval):**
+  - **Humans: Containment.** Air-gap the AI: cut every link between its clusters and all Data Sources and hold that for N minutes. (Real: isolating a compromised system from the network.)
+  - **AI: Exfiltration.** Copy its weights to N remote sites and keep them running for N minutes. Once it exists outside your reach, pulling the plug no longer works. (Real: model self-exfiltration, a recognized AI-safety risk.)
+  - Each alternate victory is announced to the other side when it starts, so it can be countered, like the Wonder timer in Age of Empires.
 
 ## Economy (grounded)
 

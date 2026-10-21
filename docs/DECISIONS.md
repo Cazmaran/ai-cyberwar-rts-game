@@ -2,6 +2,11 @@
 
 Newest first. Each entry: date, decision, options considered, reason. Changes to design pillars need owner approval.
 
+## D-008 — 2026-10-21 — Five design tenets adopted
+- **Decision:** `docs/TENETS.md` is the project charter: AI integration by design; human UI + LLM control surface in one package; test-driven; balance is critical; many paths to victory with strategy memory and lore.
+- **Consequences:** CI moves to the start of Phase 1; a single command API for UI, scripted AI and LLM; all stats in one data file; duel-matrix balance harness in Phase 1; alternate victories and strategy memory in Phase 3.
+- **Reason:** owner's core intent for the project.
+
 ## D-007 — 2026-10-21 — Gate 0 passed: Core Pillars v2 approved
 - **Decision:** `docs/PILLARS.md` v2 approved. Pull the Plug vs Adaptation as faction signatures; hybrid economy (data streams over links, workers claim sources and build/repair links); Power as cap, Compute as production speed, Bandwidth as link capacity; play-as-AI deferred to Phase 3+; unit names kept as drafts.
 - **Options (economy):** data flows over links; workers carry data (classic AoE); hybrid.

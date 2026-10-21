@@ -2,6 +2,13 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-21 — Gate 0: pillars locked
+
+- New rule: every term must act like the real thing. That reshaped the draft: Bandwidth stopped being a currency and became link capacity, routers became passive junctions you capture, Firewall became a wall instead of a tank, and Crawler became the AI's worker.
+- Hybrid economy: data streams home over links; workers build the network instead of hauling resources.
+- Pull the Plug vs Adaptation approved as the heart of the game.
+- Next: Phase 1, the playable greybox.
+
 ## 2026-10-21 — Day zero
 
 - Started from a brainstorm with Gemini about a cyber-themed RTS against an LLM opponent.

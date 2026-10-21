@@ -1,49 +1,69 @@
-# Core Pillars (DRAFT, awaiting owner approval at Gate 0)
+# Core Pillars (v2, approved at Gate 0 on 2026-10-21)
 
 One page. Everything in Phase 1 is built from this. Changing it later needs a `docs/DECISIONS.md` entry.
 
 ## Fantasy
 
-You are humanity's last ops team holding the network against an AI that learns from every fight. It talks to you. It lies to you. It gets better.
+You are humanity's ops team holding critical infrastructure against an AI that learns from every fight. It talks to you. It lies to you. It gets better. You hold the one thing it can't learn its way around: the off-switch.
+
+## Grounding rule
+
+Every term must behave like its real-world counterpart. Where fun requires bending reality, note it in the glossary as a **stretch**, and the owner approves it.
 
 ## Match
 
 - **Mode:** 1 human player vs 1 AI faction.
 - **Length:** 15–25 minutes (long sieges come later).
-- **Win:** destroy the enemy **Root Server**.
-- **Lose:** your Root Server is destroyed.
+- **Win:** take down the enemy's **core data center** (human HQ: **Network Operations Center**; AI HQ: **Primary Cluster**).
 
-## Resources (3)
+## Economy (grounded)
 
-| Resource | Source | Spent on | Pressure |
-|---|---|---|---|
-| **Compute** | Workers harvest **Compute Nodes** (the "gold mines") | Units, buildings | Nodes run out; fight over new ones |
-| **Bandwidth** | Passive income from controlled **Router** junctions | Upkeep: each unit uses some; supply cap | Map control, not hoarding |
-| **Data** | Destroying enemy units/buildings; scanning | Research, epoch upgrade | Rewards fighting over turtling |
+Real infrastructure runs on electricity and computing capacity, and moves data over network links. The economy mirrors that:
+
+| Resource | Real-world meaning | Game role |
+|---|---|---|
+| **Data** | Information collected from sources | Stockpiled currency. Produced at **Data Sources** (sensor arrays, archives, user populations) and streamed home automatically over network links. Workers claim sources and build/repair links; they never carry data. |
+| **Compute** | Processing capacity of servers | Production speed. Each **Server Rack** you build adds capacity; building units, research and AI retraining all draw on it. Not stockpiled. |
+| **Power** | Electricity | The cap. **Substations** on the map supply a fixed amount; every rack, building and unit draws some. Lose power and things shut down. |
+| **Bandwidth** | Capacity of a network link | Not owned or spent. Each **Link** carries a limited amount of data per second. Your income is limited by the slowest link between a source and your core. |
+
+## Map infrastructure
+
+| Thing | Real-world meaning | Mechanic |
+|---|---|---|
+| **Link** (fiber line) | Physical cable carrying traffic | Connects sites; has a bandwidth limit; can be cut. |
+| **Router** | Junction that forwards traffic, passive | Capturable junction. Whoever controls it decides whose traffic it forwards. It produces nothing itself. |
+| **Substation** | Power distribution point | Capturable; supplies Power. |
+| **Data Source** | Where data originates | Capturable; produces Data while connected to your network. |
+| **Cooling** | Removes server heat | Racks run hot; without cooling, compute throttles. |
 
 ## Factions
 
-**Humans ("Ops"):** few, expensive, high-control units. Signature: **Pull the Plug**, a cooldown ability that blacks out a zone and disables all AI units in it for a few seconds.
+**Humans ("Ops"):** few, expensive, skilled units; build and defend physical infrastructure.
+Signature **Pull the Plug**: cut power to a zone. AI units and racks there shut down for a few seconds. (Real: physically killing power.)
 
-**AI ("The Model"):** many, cheap units. Signature: **Adaptation**: when its units die, the next units it spawns gain resistance to the damage type that killed them. Its commander is the LLM General (scripted AI until Phase 2).
+**AI ("The Model"):** many cheap processes that copy themselves.
+Signature **Adaptation**: data from units it loses is used to retrain. After a retraining delay that costs Compute, new units resist what killed the old ones. (Real: retraining on failure data.) The delay is the human's window.
 
-## Units (3 combat + 1 worker per faction, rock-paper-scissors)
+## Units (worker + 3 combat per side, rock-paper-scissors)
 
-| Role | Beats | Human | AI |
-|---|---|---|---|
-| Worker | — | SysAdmin | Scraper |
-| Fast / swarm | Ranged | Tracer | Crawler |
-| Ranged | Tank | Red Teamer | Exploit |
-| Tank / wall | Fast | Firewall | Daemon |
+| Role | Human | Real-world basis | AI | Real-world basis |
+|---|---|---|---|---|
+| Worker | **Field Engineer**: builds racks, links, repairs | Datacenter/network technicians | **Crawler**: claims and pulls data from sources | Web crawlers collect data |
+| Fast / swarm-killer | **Incident Responder** | Security team that contains active intrusions | **Botnet**: cheap swarm | Many hijacked devices acting together |
+| Ranged / siege | **Red Team** | Professional attackers who break systems | **Exploit**: hits structures hard | Code that abuses a vulnerability |
+| Tank / holder | **Hardened Server** (slow, mobile bunker) — *stretch* | Locked-down, hard-to-breach machine | **Daemon**: persistent, hard to remove | Background process that keeps running |
+
+Structures, not units: **Firewall** (filters traffic at a boundary, a wall/gate that blocks AI units and lets yours through), **Honeypot** (decoy that lures and traps AI units).
 
 ## Epochs (2 for now)
 
-1. **Silicon & Script:** basic units and buildings.
-2. **Neural & Cloud:** unit upgrades, faction signature abilities at full strength.
+1. **Silicon & Script:** basic units, racks, links.
+2. **Neural & Cloud:** upgrades; signature abilities at full strength.
 
-## Open questions for the owner
+## Decisions
 
-1. Is Pull the Plug vs Adaptation the right "feel" for each side?
-2. Bandwidth as supply/upkeep (vs a third stockpiled currency): ok?
-3. Unit names: keep, or brainstorm more?
-4. Should the player ever be able to play as the AI faction?
+1. ~~Pull the Plug vs Adaptation~~ **Approved 2026-10-21.** Mirrors today's real debate about AI and society.
+2. **Hybrid economy, approved 2026-10-21:** links carry data automatically; workers claim sources and build/repair links.
+3. **Play as the AI faction: later, approved 2026-10-21.** Human-only through Gate 2; revisit in Phase 3+.
+4. **Unit names approved as draft, 2026-10-21.** Refine at the Phase 4 art pass.

@@ -45,6 +45,7 @@ npm run build
 - Imports use explicit `.ts` extensions (`import { step } from './world.ts'`).
 - Prefer plain data + functions over classes in `src/sim/`.
 - Keep files small and single-purpose so an agent can load them whole.
+- Grounding rule: every in-game term must behave like its real-world counterpart (see `docs/PILLARS.md`). Flag anything that bends reality.
 - Design changes (resources, units, win conditions) need an entry in `docs/DECISIONS.md` and owner approval.
 - Never commit secrets. API keys go in a local `.env` (gitignored).
 - Notable wins, failures, or surprises while building: add a short entry to `docs/JOURNAL.md`.

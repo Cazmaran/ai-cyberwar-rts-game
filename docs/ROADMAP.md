@@ -91,7 +91,7 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
 ### Phase 1 — Greybox Core Loop (4–6 weeks)
 - M1.1 Deterministic sim: fixed tick (20 Hz), seeded RNG, map grid, units, resources.
 - M1.2 Render + input: box select, right-click move, camera pan/zoom.
-- M1.3 Economy: workers gather, deposit, number goes up, spend to spawn.
+- M1.3 Economy (hybrid, per `docs/PILLARS.md`): workers claim Data Sources and build links; data streams home capped by link bandwidth; Power cap from substations; Compute from racks sets build speed; spend Data to spawn.
 - M1.4 Combat: 3 unit types with counters; units die.
 - M1.5 Scripted AI opponent (behavior tree / build order).
 - M1.6 Headless runner: `npm run sim -- --matches 100` prints win rates.

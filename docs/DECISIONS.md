@@ -2,6 +2,15 @@
 
 Newest first. Each entry: date, decision, options considered, reason. Changes to design pillars need owner approval.
 
+## D-007 — 2026-10-21 — Gate 0 passed: Core Pillars v2 approved
+- **Decision:** `docs/PILLARS.md` v2 approved. Pull the Plug vs Adaptation as faction signatures; hybrid economy (data streams over links, workers claim sources and build/repair links); Power as cap, Compute as production speed, Bandwidth as link capacity; play-as-AI deferred to Phase 3+; unit names kept as drafts.
+- **Options (economy):** data flows over links; workers carry data (classic AoE); hybrid.
+- **Reason:** hybrid stays grounded (data really moves over networks) while keeping plenty of worker activity. Signatures mirror the real debate on AI and society: the off-switch vs a system that learns faster than we respond.
+
+## D-006 — 2026-10-21 — Grounding rule for all terminology
+- **Decision:** every in-game term and mechanic must behave like its real-world counterpart. Deviations are marked "stretch" in `docs/PILLARS.md` and need owner approval.
+- **Reason:** owner wants the cyber world to feel real, not a sci-fi reskin. Example: a router forwards traffic and is passive, so it is a capturable junction, not a resource mine.
+
 ## D-005 — 2026-10-21 — Contributors use any coding agent; no pluggable AI opponents
 - **Decision:** "Any agent" means contributors build the game with whatever coding agent they prefer. AI opponents are not a community plug-in surface.
 - **Options:** pluggable "bring your own General" protocol and arena; agent-agnostic development only.

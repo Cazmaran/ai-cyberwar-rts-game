@@ -1,5 +1,6 @@
 // Turns mouse and keyboard input into commands. The UI has no powers of its own: everything it does
 // goes through the same command API the AI uses (Tenet 2).
+import { nextLink } from './card.ts';
 import {
   BUILDINGS, dist2, sectorOf, within, type BuildingTypeId, type Command, type FactionView, type GameMap,
   type UnitTypeId,
@@ -29,6 +30,7 @@ export const HOTKEYS: [string, string][] = [
   ['P then click', 'Pull the Plug'],
   ['G / D', 'army attack / defend the sector under the cursor'],
   ['X', 'expand: an idle engineer claims the nearest site'],
+  ['C', 'connect fiber: selected engineers light the next useful link'],
   ['S', 'stop'],
   ['Ctrl+A', 'select all combat units'],
   ['T', 'toggle the text view (what an LLM General would read)'],
@@ -122,6 +124,11 @@ export function key(view: FactionView, ui: UiState, map: GameMap, k: string, cur
   } else if (k === 'g') return [{ type: 'attackSector', sector: sectorOf(map, cursor[0], cursor[1]) }];
   else if (k === 'd') return [{ type: 'defendSector', sector: sectorOf(map, cursor[0], cursor[1]) }];
   else if (k === 'x') return [{ type: 'expand' }];
+  else if (k === 'c') {
+    const link = nextLink(view);
+    const workers = selectedUnits(view, ui).filter((id) => view.units.find((u) => u.id === id)?.role === 'worker');
+    return link !== null && workers.length ? [{ type: 'lightLink', units: workers, link }] : [];
+  }
   else if (k === 's') {
     const ids = selectedUnits(view, ui);
     return ids.length ? [{ type: 'stop', units: ids }] : [];
@@ -158,6 +165,41 @@ function segDist2(px: number, py: number, ax: number, ay: number, bx: number, by
   const cx = ax + t * dx;
   const cy = ay + t * dy;
   return (px - cx) ** 2 + (py - cy) ** 2;
+}
+
+/** Plain-language tooltip for whatever is under the cursor. */
+export function describeAt(view: FactionView, x: number, y: number): string | null {
+  const mine = (o: string | null) => (o === view.faction ? 'yours' : o === null ? 'neutral' : o === 'unknown' ? 'not visible' : 'held by the AI');
+  const u = [...view.units, ...view.enemyUnits].find((e) => within(x, y, e.x, e.y, 600));
+  if (u) {
+    const own = view.units.includes(u);
+    return `${own ? 'Your' : 'Enemy'} ${u.type.replace(/_/g, ' ')} (${u.hp}/${u.maxHp} hp)${own ? ' · click to select' : ' · right-click with units to attack'}`;
+  }
+  const b = [...view.buildings, ...view.enemyBuildings].find((e) => within(x, y, e.x, e.y, BUILDINGS[e.type].radius));
+  if (b) {
+    const names: Record<string, string> = {
+      noc: 'Your NOC (base). Trains engineers. Lose it and you lose.', primary_cluster: 'AI Primary Cluster. Destroy it to win.',
+      soc: 'SOC: trains combat units.', training_cluster: 'AI Training Cluster: trains AI units.',
+      server_rack: 'Server Rack: adds Compute.', firewall: 'Firewall: blocks enemy units.',
+    };
+    return `${names[b.type] ?? b.type}${b.built ? '' : ' (under construction)'} ${b.hp}/${b.maxHp} hp`;
+  }
+  const s = view.sites.find((e) => e.kind !== 'core' && within(x, y, e.x, e.y, 900));
+  if (s) {
+    const what: Record<string, string> = {
+      data_source: 'Data Source: produces Data once claimed and connected to your NOC by fiber.',
+      router: 'Router: forwards traffic. Neutral routers forward for everyone; claim one to block the AI\'s traffic.',
+      substation: 'Substation: claim it for +20 Power (lets you field more units).',
+    };
+    return `${what[s.kind]} Currently ${mine(s.owner)}.${s.owner !== view.faction ? ' Right-click with engineers to claim.' : ''}`;
+  }
+  const l = nearestLink(view, x, y);
+  if (l) {
+    return l.mine
+      ? `Your fiber link: carries up to ${(l.bandwidth * 20) / 1000} Data/s.`
+      : 'Dark fiber link. Right-click with engineers to connect it. Data flows only over your lit links.';
+  }
+  return null;
 }
 
 export function describeMode(m: Mode): string {

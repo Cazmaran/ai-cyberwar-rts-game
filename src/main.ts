@@ -1,15 +1,16 @@
 // Browser entry: human plays through the UI, the AI faction is a scripted bot (LLM General comes in Phase 2).
-// URL options: ?ai=rush|boom|turtle&seed=123&stress=300 (stress spawns N fighting units to check frame rate)
+// URL options: ?ai=training|rush|boom|turtle&seed=123&stress=300 (stress spawns N fighting units to check frame rate)
 import { Application, Container, Graphics } from 'pixi.js';
-import { createScriptedBot, STRATEGIES } from './ai/scripted.ts';
+import { createScriptedBot, STRATEGIES, TRAINING } from './ai/scripted.ts';
 import { createSession, tickSession } from './harness/session.ts';
 import { drawWorld } from './render/draw.ts';
 import { createHud } from './render/hud.ts';
-import { boxSelect, describeMode, key, modeClick, pickOwn, rightClick, type UiState } from './render/input.ts';
+import { buildCard } from './render/card.ts';
+import { boxSelect, describeAt, describeMode, key, modeClick, pickOwn, rightClick, type UiState } from './render/input.ts';
 import { applyCommand, factionView, issue, spawnUnit, TICK_RATE, TILE, type Command } from './sim/index.ts';
 
 const params = new URLSearchParams(location.search);
-const strategy = STRATEGIES[params.get('ai') ?? 'boom'] ?? STRATEGIES.boom!;
+const strategy = STRATEGIES[params.get('ai') ?? 'training'] ?? TRAINING;
 const seed = Number(params.get('seed') ?? Date.now() % 100000);
 const session = createSession({ seed, controllers: { ai: createScriptedBot('ai', strategy, seed) } });
 const { game } = session;
@@ -41,10 +42,15 @@ const hud = createHud(hudRoot, `AI (${strategy.name})`);
 
 // Camera: world units -> screen pixels.
 const cam = { x: 0, y: 0, zoom: 1 };
+/** Fit the map into the screen area right of the guide panel and above the command card. */
 function fit(): void {
-  cam.zoom = Math.min(app.screen.width / (world.map.width * TILE), app.screen.height / (world.map.height * TILE)) * 0.95;
-  cam.x = (world.map.width * TILE) / 2 - app.screen.width / 2 / cam.zoom;
-  cam.y = (world.map.height * TILE) / 2 - app.screen.height / 2 / cam.zoom;
+  const left = 320;
+  const bottom = 110;
+  const w = app.screen.width - left;
+  const h = app.screen.height - bottom;
+  cam.zoom = Math.min(w / (world.map.width * TILE), h / (world.map.height * TILE)) * 0.95;
+  cam.x = (world.map.width * TILE) / 2 - (left + w / 2) / cam.zoom;
+  cam.y = (world.map.height * TILE) / 2 - h / 2 / cam.zoom;
 }
 fit();
 const toWorld = (sx: number, sy: number): [number, number] =>
@@ -54,7 +60,8 @@ const ui: UiState = { selected: new Set(), mode: { type: 'none' } };
 let cursor: [number, number] = [0, 0];
 let dragStart: [number, number] | null = null;
 let panStart: [number, number, number, number] | null = null;
-let paused = false;
+let paused = stress === 0;
+if (paused) hud.showStart(() => { paused = false; });
 let speed = 1;
 
 /** Human commands apply on the next tick; rejections show up as HUD messages. */
@@ -77,6 +84,7 @@ canvas.addEventListener('pointerdown', (e) => {
 });
 canvas.addEventListener('pointermove', (e) => {
   cursor = toWorld(e.offsetX, e.offsetY);
+  hud.tooltip(dragStart || panStart ? null : describeAt(factionView(world, 'human'), cursor[0], cursor[1]), e.clientX, e.clientY);
   if (panStart) {
     cam.x = panStart[2] - (e.offsetX - panStart[0]) / cam.zoom;
     cam.y = panStart[3] - (e.offsetY - panStart[1]) / cam.zoom;
@@ -161,4 +169,8 @@ app.ticker.add((ticker) => {
   stage.position.set(-cam.x * cam.zoom, -cam.y * cam.zoom);
   drawWorld(g, world, view, ui.selected);
   hud.update(world, view, ui.selected, describeMode(ui.mode), speed, paused, Math.round(app.ticker.FPS));
+  hud.setCard(buildCard(view, ui, {
+    setMode: (m) => { ui.mode = m; },
+    select: (ids) => { ui.selected = new Set(ids); },
+  }), (b) => send(b.run()));
 });

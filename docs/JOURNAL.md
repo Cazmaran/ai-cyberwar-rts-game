@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-21 — First playtest: "I have no idea how to play"
+
+- Owner's first session: 120 fps with 300 units (performance gate passed), but the game was unplayable for a newcomer. Everything lived behind hotkeys listed in a collapsed panel.
+- Fixes: a clickable command card for the current selection (with costs, and tooltips explaining what each unit counters), a getting-started checklist that ticks itself off, hover tooltips for every map object, a "Connect fiber" button, a start screen with the goal, and a gentle `training` opponent (no attacks before minute 8) as the default.
+- Lesson: an agent can verify rules with tests, but only a human can tell you the game is confusing. Playtest early.
+
 ## 2026-10-21 — Playable greybox
 
 - The browser build works: `npm run dev`. Select, move, claim sites, light links, build, train, Pull the Plug, and fight a scripted AI.

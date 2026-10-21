@@ -1,5 +1,6 @@
 // A running match: the world plus its tick-stamped command queue and log. Replay = seed + map + command log.
 import { applyCommand, type Command } from './commands.ts';
+import { updateEconomy } from './economy.ts';
 import type { Faction } from './data.ts';
 import { MAPS } from './map.ts';
 import { step } from './step.ts';
@@ -33,7 +34,10 @@ export interface Replay {
 export function createGame(seed: number, mapId = 'duel'): Game {
   const map = MAPS[mapId];
   if (!map) throw new Error(`unknown map ${mapId}`);
-  return { world: createWorld(seed, map), pending: [], log: [], rejected: [] };
+  const world = createWorld(seed, map);
+  // Derive power, compute and income up front so tick 0 reports real values.
+  updateEconomy(world);
+  return { world, pending: [], log: [], rejected: [] };
 }
 
 /** Queue a command to apply `delay` ticks from now (0 = before the next step). */

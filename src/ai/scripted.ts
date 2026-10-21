@@ -21,12 +21,20 @@ export interface Strategy {
   counterBuild: boolean;
   /** Use Pull the Plug on clustered AI units (humans only). */
   usePlug: boolean;
+  /** Earliest tick for the first attack (gives new players time to learn). */
+  attackNotBefore?: number;
 }
 
 export const STRATEGIES: Record<string, Strategy> = {
   rush: { name: 'rush', workers: 4, racks: 0, firewalls: 0, mix: { fast: 2, ranged: 1 }, attackAt: 5, focusFire: true, counterBuild: true, usePlug: true },
   boom: { name: 'boom', workers: 8, racks: 2, firewalls: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 14, focusFire: true, counterBuild: true, usePlug: true },
   turtle: { name: 'turtle', workers: 6, racks: 1, firewalls: 3, mix: { ranged: 2, tank: 2, fast: 1 }, attackAt: 18, focusFire: true, counterBuild: true, usePlug: true },
+};
+
+/** Gentle opponent for learning the game: slow economy, no micro, attacks late. Not part of balance runs. */
+export const TRAINING: Strategy = {
+  name: 'training', workers: 4, racks: 0, firewalls: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 10,
+  focusFire: false, counterBuild: false, usePlug: false, attackNotBefore: 8 * 60 * 20,
 };
 
 const ARMY_UNITS: Record<Faction, Record<Exclude<Role, 'worker'>, UnitTypeId>> = {
@@ -122,7 +130,8 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
 
       // 6. Attack once the army is big enough; keep feeding reinforcements.
       const idleArmy = army.filter((u) => u.order === 'idle');
-      if (enemyCore && (attacking ? idleArmy.length >= 3 : army.length >= attackAt)) {
+      const mayAttack = v.tick >= (strategy.attackNotBefore ?? 0);
+      if (enemyCore && mayAttack && (attacking ? idleArmy.length >= 3 : army.length >= attackAt)) {
         const group = attacking ? idleArmy : army;
         attacking = true;
         if (group.length > 0) out.push({ type: 'attackMove', units: group.map((u) => u.id), x: enemyCore.x, y: enemyCore.y });

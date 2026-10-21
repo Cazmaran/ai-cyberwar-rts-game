@@ -155,6 +155,7 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
 ### Phase 3 — Depth & Identity (6–10 weeks)
 - M3.1 Adaptation, full version: retraining queue, Compute cost, tuned cap/decay from Phase 1 data.
 - M3.2 Map mechanics (grounded): server-rack heat and cooling (throttling), router traffic interception (whoever controls a router can read or drop traffic passing through it), link cuts and repairs.
+- M3.2b Network layer (`docs/NARRATIVE.md` §6): AI remote takeover over its own fiber, Exploit, Daemon, Firewall as a network filter, human fiber cutting.
 - M3.3 Epochs I–II, then III–IV if distinct.
 - M3.4 Siege layer: nested subnets (network segmentation), bandwidth chokes, counter-attack vectors. Anti-stalemate: grid instability, i.e. rolling blackouts after a set match time that shrink the powered map.
 - M3.5 Comeback mechanic (AI fringe latency/power draw).

@@ -20,15 +20,15 @@ const cost = (n: number) => Math.trunc(n / MILLI);
 
 const UNIT_TIPS: Partial<Record<UnitTypeId, string>> = {
   field_engineer: 'Worker. Claims sites, connects fiber links, and builds. More engineers = faster expansion.',
-  incident_responder: 'Fast responder. Strong against Exploits and Red Teams (ranged). Weak against tanks.',
-  red_team: 'Ranged attacker. Strong against Daemons and Hardened Servers (tanks). Weak against fast units.',
-  hardened_server: 'Tank. Strong against Botnets and Responders (fast units). Weak against ranged attackers.',
+  counter_drone_team: 'Fast team with jammers and drone interceptors. Strong against Hunter Drones and Red Teams (ranged). Weak against tanks.',
+  red_team: 'Operators who hack and disable machines over radio, from range. Strong against Industrial Robots and Armored Vehicles (tanks). Weak against fast units.',
+  armored_vehicle: 'Armored Response Vehicle: tough, shields crews. Strong against Botnet Swarms and Counter-Drone Teams (fast). Weak against ranged attackers.',
 };
 
 const BUILD_TIPS: Partial<Record<BuildingTypeId, string>> = {
   soc: 'Security Operations Center: trains your combat units. Build one first.',
   server_rack: 'Adds Compute (faster training). Uses Power.',
-  firewall: 'A wall that blocks AI units until they break through it. Your units pass freely.',
+  barricade: 'A physical wall that blocks AI machines until they break through it. Your units pass freely.',
 };
 
 export function buildCard(view: FactionView, ui: UiState, actions: {
@@ -60,7 +60,7 @@ export function buildCard(view: FactionView, ui: UiState, actions: {
   }
   if (building?.type === 'soc') {
     if (!building.built) out.push({ id: 'wait', label: 'Under construction', tip: 'Engineers are building this. Select engineers and right-click it to help.', disabled: 'Not finished', run: () => [] });
-    else for (const [t, k] of [['incident_responder', '1'], ['red_team', '2'], ['hardened_server', '3']] as const) out.push(train(building, t, k));
+    else for (const [t, k] of [['counter_drone_team', '1'], ['red_team', '2'], ['armored_vehicle', '3']] as const) out.push(train(building, t, k));
   }
   if (units.length === 0 && !building) {
     out.push({
@@ -73,7 +73,7 @@ export function buildCard(view: FactionView, ui: UiState, actions: {
       disabled: view.units.some((u) => u.role !== 'worker') ? undefined : 'No combat units yet',
       run: () => { actions.select(view.units.filter((u) => u.role !== 'worker').map((u) => u.id)); return []; },
     });
-    if (soc) for (const [t, k] of [['incident_responder', '1'], ['red_team', '2'], ['hardened_server', '3']] as const) out.push(train(soc, t, k));
+    if (soc) for (const [t, k] of [['counter_drone_team', '1'], ['red_team', '2'], ['armored_vehicle', '3']] as const) out.push(train(soc, t, k));
   }
   if (workers.length > 0) {
     out.push({
@@ -88,7 +88,7 @@ export function buildCard(view: FactionView, ui: UiState, actions: {
       disabled: link === null ? 'Nothing to connect: claim a site first' : undefined,
       run: () => (link === null ? [] : [{ type: 'lightLink', units: workers.map((u) => u.id), link }]),
     });
-    out.push(build('soc', 'Q'), build('server_rack', 'R'), build('firewall', 'F'));
+    out.push(build('soc', 'Q'), build('server_rack', 'R'), build('barricade', 'F'));
   }
   if (army.length > 0) {
     out.push({ id: 'amove', label: 'Attack-move', key: 'A', tip: 'Click a destination: units fight anything they meet on the way.', run: () => { actions.setMode({ type: 'attackMove' }); return []; } });
@@ -101,7 +101,7 @@ export function buildCard(view: FactionView, ui: UiState, actions: {
   if (units.length > 0) out.push({ id: 'stop', label: 'Stop', key: 'S', tip: 'Cancel current orders.', run: () => [{ type: 'stop', units: units.map((u) => u.id) }] });
   out.push({
     id: 'plug', label: 'Pull the Plug', key: 'P',
-    tip: 'Cut power to a zone for 5 seconds: AI units there freeze and buildings there go dark (yours too). 60s cooldown.',
+    tip: 'Cut power to a zone for 5 seconds: AI machines there lose their link to the Model and freeze, and buildings there go dark (yours too). 60s cooldown.',
     disabled: view.plugReadyIn === 0 ? undefined : `Ready in ${Math.ceil((view.plugReadyIn ?? 0) / 20)}s`,
     run: () => { actions.setMode({ type: 'pullThePlug' }); return []; },
   });

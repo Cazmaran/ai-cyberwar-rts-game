@@ -126,7 +126,7 @@ export function drawEffects(g: Graphics, v: FactionView, fx: Effects, now: numbe
 }
 
 const COUNTER: Record<Exclude<Role, 'worker'>, string> = {
-  fast: 'Hardened Server', ranged: 'Incident Responder', tank: 'Red Team',
+  fast: 'Armored Vehicle', ranged: 'Counter-Drone Team', tank: 'Red Team',
 };
 const ROLE_NAME: Record<Exclude<Role, 'worker'>, string> = { fast: 'fast', ranged: 'ranged', tank: 'tank' };
 

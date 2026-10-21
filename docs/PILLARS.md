@@ -61,12 +61,16 @@ Limits (so counters never stop mattering): resistance per damage type has a hard
 
 | Role | Human | Real-world basis | AI | Real-world basis |
 |---|---|---|---|---|
-| Worker | **Field Engineer**: builds racks, links, repairs | Datacenter/network technicians | **Crawler**: claims and pulls data from sources | Web crawlers collect data |
-| Fast / swarm-killer | **Incident Responder** | Security team that contains active intrusions | **Botnet**: cheap swarm | Many hijacked devices acting together |
-| Ranged / siege | **Red Team** | Professional attackers who break systems | **Exploit**: hits structures hard | Code that abuses a vulnerability |
-| Tank / holder | **Hardened Server** (slow, mobile bunker) — *stretch* | Locked-down, hard-to-breach machine | **Daemon**: persistent, hard to remove | Background process that keeps running |
+Roster v3 (see `docs/NARRATIVE.md` §6): humans are people and vehicles; AI units are machines the Model has hijacked.
 
-Structures, not units: **Firewall** (filters traffic at a boundary, a wall/gate that blocks AI units and lets yours through), **Honeypot** (decoy that lures and traps AI units).
+| Role | Human | Real-world basis | AI | Real-world basis |
+|---|---|---|---|---|
+| Worker | **Field Engineer**: claims sites, lights fiber, builds | Utility and datacenter technicians | **Maintenance Drone**: claims and builds | Autonomous maintenance drones |
+| Fast | **Counter-Drone Team** | Counter-UAS teams with jammers | **Botnet Swarm** | Hijacked consumer drones (a physical botnet) |
+| Ranged | **Red Team**: hacks machines over radio | Offensive security operators | **Hunter Drone** | Armed long-range drones |
+| Tank | **Armored Response Vehicle** | Armored utility/security vehicles | **Industrial Robot** | Hijacked factory and warehouse robots |
+
+Structures: **Barricade** (physical wall that blocks AI machines). Phase 3 network layer: **Firewall** (network filter at a router), **Exploit**, **Daemon**, remote takeover, cutting fiber.
 
 ## Epochs (2 for now)
 

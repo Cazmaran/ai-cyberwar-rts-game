@@ -6,7 +6,7 @@ describe('faction view (fog of war)', () => {
   it('hides enemies outside sight and reveals them when in sight', () => {
     const game = newGame();
     expect(factionView(game.world, 'human').enemyUnits).toHaveLength(0);
-    spawnUnit(game.world, 'botnet', 'ai', 9 * TILE, 16 * TILE);
+    spawnUnit(game.world, 'botnet_swarm', 'ai', 9 * TILE, 16 * TILE);
     expect(factionView(game.world, 'human').enemyUnits).toHaveLength(1);
   });
 

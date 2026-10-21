@@ -6,18 +6,18 @@ import { command, newGame, run } from './helpers.ts';
 describe('combat', () => {
   it('units fight and the loser is removed', () => {
     const game = newGame();
-    const a = spawnUnit(game.world, 'incident_responder', 'human', 20 * TILE, 5 * TILE);
-    const b = spawnUnit(game.world, 'crawler', 'ai', 21 * TILE, 5 * TILE);
+    const a = spawnUnit(game.world, 'counter_drone_team', 'human', 20 * TILE, 5 * TILE);
+    const b = spawnUnit(game.world, 'maintenance_drone', 'ai', 21 * TILE, 5 * TILE);
     run(game, 200);
     expect(game.world.entities.has(b.id)).toBe(false);
     expect(game.world.entities.has(a.id)).toBe(true);
   });
 
-  it('an enemy Firewall blocks AI movement until breached', () => {
+  it('an enemy Barricade blocks AI movement until breached', () => {
     const game = newGame();
-    const wall = spawnBuilding(game.world, 'firewall', 'human', 20 * TILE, 5 * TILE);
+    const wall = spawnBuilding(game.world, 'barricade', 'human', 20 * TILE, 5 * TILE);
     wall.built = true;
-    const bot = spawnUnit(game.world, 'botnet', 'ai', 22 * TILE, 5 * TILE);
+    const bot = spawnUnit(game.world, 'botnet_swarm', 'ai', 22 * TILE, 5 * TILE);
     command(game, 'ai', { type: 'move', units: [bot.id], x: 15 * TILE, y: 5 * TILE });
     run(game, 100);
     expect(bot.x).toBeGreaterThan(20 * TILE);
@@ -38,7 +38,7 @@ describe('combat', () => {
 describe('Pull the Plug', () => {
   it('freezes AI units in the zone; human units keep working; then goes on cooldown', () => {
     const game = newGame();
-    const bot = spawnUnit(game.world, 'botnet', 'ai', 30 * TILE, 10 * TILE);
+    const bot = spawnUnit(game.world, 'botnet_swarm', 'ai', 30 * TILE, 10 * TILE);
     const eng = spawnUnit(game.world, 'field_engineer', 'human', 30 * TILE, 12 * TILE);
     command(game, 'ai', { type: 'move', units: [bot.id], x: 40 * TILE, y: 10 * TILE });
     command(game, 'human', { type: 'move', units: [eng.id], x: 40 * TILE, y: 12 * TILE });
@@ -59,9 +59,9 @@ describe('Pull the Plug', () => {
 });
 
 describe('Adaptation', () => {
-  function killAiUnits(game: ReturnType<typeof newGame>, n: number, by: 'red_team' | 'incident_responder') {
+  function killAiUnits(game: ReturnType<typeof newGame>, n: number, by: 'red_team' | 'counter_drone_team') {
     for (let i = 0; i < n; i++) {
-      const u = spawnUnit(game.world, 'botnet', 'ai', 40 * TILE, 5 * TILE);
+      const u = spawnUnit(game.world, 'botnet_swarm', 'ai', 40 * TILE, 5 * TILE);
       u.lastHitBy = by;
       u.hp = 0;
     }
@@ -69,11 +69,11 @@ describe('Adaptation', () => {
 
   it('after retraining, new AI units resist what killed their predecessors, up to the cap', () => {
     const game = newGame();
-    const old = spawnUnit(game.world, 'botnet', 'ai', 40 * TILE, 6 * TILE);
+    const old = spawnUnit(game.world, 'botnet_swarm', 'ai', 40 * TILE, 6 * TILE);
     killAiUnits(game, 10, 'red_team');
     run(game, ADAPTATION.retrainDuration + 2);
     expect(game.world.factions.ai.resist.red_team).toBe(ADAPTATION.cap);
-    const fresh = spawnUnit(game.world, 'botnet', 'ai', 40 * TILE, 6 * TILE);
+    const fresh = spawnUnit(game.world, 'botnet_swarm', 'ai', 40 * TILE, 6 * TILE);
     expect(fresh.resist.red_team).toBe(ADAPTATION.cap);
     expect(old.resist.red_team ?? 0).toBe(0);
   });
@@ -84,10 +84,10 @@ describe('Adaptation', () => {
     run(game, ADAPTATION.retrainDuration + 2);
     const first = game.world.factions.ai.resist.red_team!;
     expect(first).toBe(2 * ADAPTATION.perDeath);
-    killAiUnits(game, 1, 'incident_responder');
+    killAiUnits(game, 1, 'counter_drone_team');
     run(game, ADAPTATION.retrainTicks + ADAPTATION.retrainDuration + 2);
     expect(game.world.factions.ai.resist.red_team).toBe(first - ADAPTATION.decay);
-    expect(game.world.factions.ai.resist.incident_responder).toBe(ADAPTATION.perDeath);
+    expect(game.world.factions.ai.resist.counter_drone_team).toBe(ADAPTATION.perDeath);
   });
 
   it('retraining costs compute while it runs', () => {
@@ -112,7 +112,7 @@ describe('commands', () => {
 
   it('high-level orders expand into unit orders for every controller', () => {
     const game = newGame();
-    const a = spawnUnit(game.world, 'incident_responder', 'human', 6 * TILE, 20 * TILE);
+    const a = spawnUnit(game.world, 'counter_drone_team', 'human', 6 * TILE, 20 * TILE);
     expect(command(game, 'human', { type: 'attackSector', sector: 'E' })).toBeNull();
     expect(a.order.type).toBe('attackMove');
     expect(command(game, 'ai', { type: 'expand' })).toBeNull();

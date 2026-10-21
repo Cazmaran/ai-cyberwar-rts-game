@@ -19,7 +19,7 @@ export function command(game: Game, faction: Faction, cmd: Command): string | nu
 export function workersOf(game: Game, faction: Faction): number[] {
   const out: number[] = [];
   for (const e of game.world.entities.values()) {
-    if (e.kind === 'unit' && e.faction === faction && (e.type === 'field_engineer' || e.type === 'crawler')) out.push(e.id);
+    if (e.kind === 'unit' && e.faction === faction && (e.type === 'field_engineer' || e.type === 'maintenance_drone')) out.push(e.id);
   }
   return out;
 }

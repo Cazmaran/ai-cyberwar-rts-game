@@ -59,7 +59,7 @@ export function drawWorld(g: Graphics, world: World, view: FactionView, selected
     const r = BUILDINGS[b.type].radius;
     const c = factionColor(faction);
     const alpha = b.built ? 1 : 0.35;
-    if (b.type === 'firewall') g.rect(b.x - r / 3, b.y - r, (2 * r) / 3, 2 * r).fill({ color: c, alpha });
+    if (b.type === 'barricade') g.rect(b.x - r / 3, b.y - r, (2 * r) / 3, 2 * r).fill({ color: c, alpha });
     else g.rect(b.x - r, b.y - r, 2 * r, 2 * r).fill({ color: c, alpha: alpha * 0.5 }).stroke({ width: 100, color: c, alpha });
     if (selected.has(b.id)) g.rect(b.x - r - 200, b.y - r - 200, 2 * r + 400, 2 * r + 400).stroke({ width: 70, color: COLORS.selection });
     hpBar(g, b.x, b.y - r - 350, 2 * r, b.hp, b.maxHp);

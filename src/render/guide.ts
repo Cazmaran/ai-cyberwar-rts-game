@@ -32,7 +32,7 @@ export const GUIDE: GuideStep[] = [
   },
   {
     title: 'Train an army',
-    how: 'Click the SOC and train units. Mix them: Responders beat ranged, Red Teams beat tanks, Hardened Servers beat fast units. Grab a Substation (lightning icon) for more Power.',
+    how: 'Click the SOC and train units. Mix them: Counter-Drone Teams beat ranged, Red Teams beat tanks, Armored Vehicles beat fast units. Grab a Substation (lightning icon) for more Power.',
     done: (v) => v.units.filter((u) => u.role !== 'worker').length >= 6,
   },
   {

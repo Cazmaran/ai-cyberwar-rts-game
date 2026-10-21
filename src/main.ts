@@ -20,7 +20,7 @@ const { world } = game;
 const stress = Number(params.get('stress') ?? 0);
 if (stress > 0) {
   // Gate 1 performance check: N units fighting in the middle of the map.
-  for (const [faction, type, x] of [['human', 'red_team', 18], ['ai', 'botnet', 30]] as const) {
+  for (const [faction, type, x] of [['human', 'red_team', 18], ['ai', 'botnet_swarm', 30]] as const) {
     const ids: number[] = [];
     for (let i = 0; i < stress / 2; i++) ids.push(spawnUnit(world, type, faction, (x + (i % 6)) * TILE, (4 + Math.trunc(i / 6) % 24) * TILE).id);
     applyCommand(world, faction, { type: 'attackMove', units: ids, x: (48 - x) * TILE, y: 16 * TILE });

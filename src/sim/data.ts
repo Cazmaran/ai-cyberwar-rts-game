@@ -3,7 +3,7 @@
 // resources in milli-units (MILLI = 1000). Change DATA_VERSION whenever a number changes.
 import { MILLI, TILE } from './fixed.ts';
 
-export const DATA_VERSION = 5;
+export const DATA_VERSION = 6;
 
 export type Faction = 'human' | 'ai';
 export const FACTIONS: readonly Faction[] = ['human', 'ai'];
@@ -12,8 +12,8 @@ export const FACTIONS: readonly Faction[] = ['human', 'ai'];
 export type Role = 'worker' | 'fast' | 'ranged' | 'tank';
 
 export type UnitTypeId =
-  | 'field_engineer' | 'incident_responder' | 'red_team' | 'hardened_server'
-  | 'crawler' | 'botnet' | 'exploit' | 'daemon';
+  | 'field_engineer' | 'counter_drone_team' | 'red_team' | 'armored_vehicle'
+  | 'maintenance_drone' | 'botnet_swarm' | 'hunter_drone' | 'industrial_robot';
 
 export interface UnitStats {
   faction: Faction;
@@ -36,12 +36,12 @@ export interface UnitStats {
 }
 
 export const UNITS: Record<UnitTypeId, UnitStats> = {
-  // Humans: few, expensive, skilled.
+  // Humans: people and vehicles. Few, expensive, skilled. (Roster v3, docs/NARRATIVE.md)
   field_engineer: {
     faction: 'human', role: 'worker', hp: 40, damage: 3, bonusVs: {}, range: 1000, sight: 6 * TILE,
     cooldown: 20, speed: 60, cost: 50 * MILLI, power: 1, work: 2000, trainedAt: 'noc',
   },
-  incident_responder: {
+  counter_drone_team: {
     faction: 'human', role: 'fast', hp: 60, damage: 8, bonusVs: { ranged: 75 }, range: 1000, sight: 7 * TILE,
     cooldown: 15, speed: 90, cost: 60 * MILLI, power: 1, work: 2500, trainedAt: 'soc',
   },
@@ -49,30 +49,30 @@ export const UNITS: Record<UnitTypeId, UnitStats> = {
     faction: 'human', role: 'ranged', hp: 45, damage: 10, bonusVs: { tank: 100 }, range: 5 * TILE, sight: 7 * TILE,
     cooldown: 30, speed: 55, cost: 75 * MILLI, power: 1, work: 3000, trainedAt: 'soc',
   },
-  hardened_server: {
+  armored_vehicle: {
     faction: 'human', role: 'tank', hp: 200, damage: 9, bonusVs: { fast: 75 }, range: 1200, sight: 6 * TILE,
     cooldown: 25, speed: 40, cost: 100 * MILLI, power: 2, work: 4000, trainedAt: 'soc',
   },
-  // AI: many, cheap, self-copying processes.
-  crawler: {
+  // AI: machines the Model has hijacked. Many and cheap; they need the Model's network and power to act.
+  maintenance_drone: {
     faction: 'ai', role: 'worker', hp: 30, damage: 2, bonusVs: {}, range: 1000, sight: 6 * TILE,
     cooldown: 20, speed: 70, cost: 35 * MILLI, power: 1, work: 1400, trainedAt: 'primary_cluster',
   },
-  botnet: {
+  botnet_swarm: {
     faction: 'ai', role: 'fast', hp: 35, damage: 4, bonusVs: { ranged: 75 }, range: 900, sight: 6 * TILE,
     cooldown: 12, speed: 95, cost: 35 * MILLI, power: 1, work: 1500, trainedAt: 'training_cluster',
   },
-  exploit: {
+  hunter_drone: {
     faction: 'ai', role: 'ranged', hp: 30, damage: 7, bonusVs: { tank: 100 }, range: 5 * TILE, sight: 7 * TILE,
     cooldown: 30, speed: 55, cost: 45 * MILLI, power: 1, work: 1800, trainedAt: 'training_cluster',
   },
-  daemon: {
+  industrial_robot: {
     faction: 'ai', role: 'tank', hp: 145, damage: 6, bonusVs: { fast: 75 }, range: 1200, sight: 6 * TILE,
     cooldown: 25, speed: 40, cost: 65 * MILLI, power: 1, work: 2600, trainedAt: 'training_cluster',
   },
 };
 
-export type BuildingTypeId = 'noc' | 'primary_cluster' | 'soc' | 'training_cluster' | 'server_rack' | 'firewall';
+export type BuildingTypeId = 'noc' | 'primary_cluster' | 'soc' | 'training_cluster' | 'server_rack' | 'barricade';
 
 export interface BuildingStats {
   faction: Faction | 'any';
@@ -86,7 +86,7 @@ export interface BuildingStats {
   /** Power supplied (+) or drawn (-). */
   power: number;
   compute: number;
-  /** Blocks enemy unit movement (Firewall). */
+  /** Blocks enemy unit movement (Barricade). */
   blocksEnemies: boolean;
 }
 
@@ -96,7 +96,7 @@ export const BUILDINGS: Record<BuildingTypeId, BuildingStats> = {
   soc: { faction: 'human', hp: 600, sight: 6 * TILE, radius: 1000, cost: 120 * MILLI, buildWork: 400, power: -1, compute: 0, blocksEnemies: false },
   training_cluster: { faction: 'ai', hp: 600, sight: 6 * TILE, radius: 1000, cost: 120 * MILLI, buildWork: 400, power: -1, compute: 0, blocksEnemies: false },
   server_rack: { faction: 'any', hp: 300, sight: 4 * TILE, radius: 700, cost: 100 * MILLI, buildWork: 300, power: -2, compute: 5, blocksEnemies: false },
-  firewall: { faction: 'human', hp: 400, sight: 3 * TILE, radius: 600, cost: 40 * MILLI, buildWork: 150, power: 0, compute: 0, blocksEnemies: true },
+  barricade: { faction: 'human', hp: 400, sight: 3 * TILE, radius: 600, cost: 40 * MILLI, buildWork: 150, power: 0, compute: 0, blocksEnemies: true },
 };
 
 export const START = {

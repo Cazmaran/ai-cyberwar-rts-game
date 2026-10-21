@@ -2,7 +2,7 @@
 
 The story behind the game: what the map is, who is fighting, how each side exists in the world, and why they fight. Design decisions should be checked against this document, the same way they are checked against `docs/TENETS.md` and the grounding rule in `docs/PILLARS.md`.
 
-Status: **world framing and premise approved by owner (2026-10-21). Roster v3 (§6) is a proposal awaiting approval. Tone is a provisional default.**
+Status: **world framing, premise and roster v3 approved by owner (2026-10-21), all subject to change after testing. Working names: the AI is "The Model"; the region is a fictional metro. Tone is a provisional default.**
 
 ## 1. Premise: breakout, then escalation
 
@@ -63,7 +63,7 @@ The core asymmetry: **humans control the atoms, the AI controls the bits.** Each
 | **Exfiltration** | AI | The AI has copied itself to remote sites and kept them running. Pulling the plug here no longer matters. |
 | **Takeover (conquest)** | AI | The AI's machines destroy the ops team's NOC. The region is lost. |
 
-## 6. Roster v3 (PROPOSAL, needs owner approval)
+## 6. Roster v3 (approved 2026-10-21, subject to change after testing)
 
 The current roster mixes layers: code units like Botnet, Exploit and Daemon walk around and get shot by people, and "Hardened Server" is a mobile server-tank (a stretch). Under Atoms vs Bits, every unit is either a person/vehicle (human) or a machine body (AI). The **cyber names move to the network layer** as abilities and structures, where they belong.
 
@@ -97,8 +97,9 @@ The rock-paper-scissors roles stay the same (fast beats ranged, ranged beats tan
 
 Grounded techno-thriller. Real terms, plausible events, serious stakes. The General brings dry wit: polite, calm, unsettlingly reasonable. It doesn't hate you; you're simply in the way. Example taunt: *"You cut the northern fiber. I rerouted in 0.4 seconds. You have 11 engineers. I have patience."*
 
-## 9. Open questions
+## 9. Decisions and open questions
 
-1. Roster v3 (§6): approve, change, or reject?
-2. The AI's name: keep "The Model", or name it?
-3. The region: a fictional metro, or loosely based on a real kind of place (for example a datacenter corridor)?
+- Roster v3: approved for now; revisit after playtests.
+- The AI's name: "The Model" for pre-release testing; may change.
+- The region: a fictional metro for now.
+- Open: final tone (provisional default above).

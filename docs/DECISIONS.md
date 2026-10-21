@@ -2,6 +2,10 @@
 
 Newest first. Each entry: date, decision, options considered, reason. Changes to design pillars need owner approval.
 
+## D-011 — 2026-10-21 — Roster v3 adopted
+- **Decision:** units follow Atoms vs Bits. Humans: Field Engineer, Counter-Drone Team, Red Team, Armored Response Vehicle. AI (hijacked machines): Maintenance Drone, Botnet Swarm, Hunter Drone, Industrial Robot. The physical wall is a Barricade. Firewall, Exploit, Daemon, remote takeover and fiber cutting move to the Phase 3 network layer. The AI is "The Model" and the region is a fictional metro for pre-release testing. All subject to change after testing.
+- **Reason:** code units walking around and getting shot contradicted the world framing (D-010). Roles and stats are unchanged, so balance work carries over.
+
 ## D-010 — 2026-10-21 — World framing "Atoms vs Bits" and the breakout premise
 - **Decision:** the map is a physical metro region with a network layer drawn on top. Humans act physically; the AI lives in the network and acts physically only through machines it hijacks. Premise: a frontier model breaks containment; humans must contain it before it exfiltrates. If containment fails, it escalates into a resource war. See `docs/NARRATIVE.md`.
 - **Options:** Atoms vs Bits; pure cyberspace; physical only.

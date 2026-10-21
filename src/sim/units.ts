@@ -141,19 +141,19 @@ function fire(world: World, u: Unit, t: Entity): void {
 
 /**
  * Step toward (x, y) until within `stopAt`. Returns true when arrived.
- * An enemy Firewall in the way stops movement; the unit attacks it instead (it must be breached).
+ * An enemy Barricade in the way stops movement; the unit attacks it instead (it must be breached).
  */
 function moveTo(world: World, u: Unit, x: number, y: number, stopAt = 0): boolean {
   if (stopAt > 0 ? within(u.x, u.y, x, y, stopAt) : u.x === x && u.y === y) return true;
   const [nx, ny] = stepToward(u.x, u.y, x, y, UNITS[u.type].speed);
-  const wall = blockingFirewall(world, u.faction, nx, ny);
+  const wall = blockingBarricade(world, u.faction, nx, ny);
   if (wall) { engage(world, u, wall); return false; }
   u.x = nx;
   u.y = ny;
   return stopAt > 0 ? within(u.x, u.y, x, y, stopAt) : u.x === x && u.y === y;
 }
 
-function blockingFirewall(world: World, faction: Faction, x: number, y: number): Building | null {
+function blockingBarricade(world: World, faction: Faction, x: number, y: number): Building | null {
   for (const e of world.entities.values()) {
     if (e.kind !== 'building' || e.faction === faction || !e.built || e.hp <= 0) continue;
     const stats = BUILDINGS[e.type];

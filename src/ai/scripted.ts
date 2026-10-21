@@ -10,8 +10,8 @@ export interface Strategy {
   name: string;
   workers: number;
   racks: number;
-  /** Humans only. */
-  firewalls: number;
+  /** Physical barricades to build (humans only). */
+  barricades: number;
   mix: Partial<Record<Role, number>>;
   /** Army size that triggers an attack. */
   attackAt: number;
@@ -26,24 +26,24 @@ export interface Strategy {
 }
 
 export const STRATEGIES: Record<string, Strategy> = {
-  rush: { name: 'rush', workers: 4, racks: 0, firewalls: 0, mix: { fast: 2, ranged: 1 }, attackAt: 5, focusFire: true, counterBuild: true, usePlug: true },
-  boom: { name: 'boom', workers: 8, racks: 2, firewalls: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 14, focusFire: true, counterBuild: true, usePlug: true },
-  turtle: { name: 'turtle', workers: 6, racks: 1, firewalls: 3, mix: { ranged: 2, tank: 2, fast: 1 }, attackAt: 18, focusFire: true, counterBuild: true, usePlug: true },
+  rush: { name: 'rush', workers: 4, racks: 0, barricades: 0, mix: { fast: 2, ranged: 1 }, attackAt: 5, focusFire: true, counterBuild: true, usePlug: true },
+  boom: { name: 'boom', workers: 8, racks: 2, barricades: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 14, focusFire: true, counterBuild: true, usePlug: true },
+  turtle: { name: 'turtle', workers: 6, racks: 1, barricades: 3, mix: { ranged: 2, tank: 2, fast: 1 }, attackAt: 18, focusFire: true, counterBuild: true, usePlug: true },
 };
 
 /** Gentle opponent for learning the game: slow economy, no micro, attacks late. Not part of balance runs. */
 export const TRAINING: Strategy = {
-  name: 'training', workers: 4, racks: 0, firewalls: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 10,
+  name: 'training', workers: 4, racks: 0, barricades: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 10,
   focusFire: false, counterBuild: false, usePlug: false, attackNotBefore: 8 * 60 * 20,
 };
 
 const ARMY_UNITS: Record<Faction, Record<Exclude<Role, 'worker'>, UnitTypeId>> = {
-  human: { fast: 'incident_responder', ranged: 'red_team', tank: 'hardened_server' },
-  ai: { fast: 'botnet', ranged: 'exploit', tank: 'daemon' },
+  human: { fast: 'counter_drone_team', ranged: 'red_team', tank: 'armored_vehicle' },
+  ai: { fast: 'botnet_swarm', ranged: 'hunter_drone', tank: 'industrial_robot' },
 };
 const PRODUCTION: Record<Faction, BuildingTypeId> = { human: 'soc', ai: 'training_cluster' };
 const CORE: Record<Faction, BuildingTypeId> = { human: 'noc', ai: 'primary_cluster' };
-const WORKER: Record<Faction, UnitTypeId> = { human: 'field_engineer', ai: 'crawler' };
+const WORKER: Record<Faction, UnitTypeId> = { human: 'field_engineer', ai: 'maintenance_drone' };
 
 export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1): Controller {
   const rng = createRng(seed);
@@ -228,11 +228,11 @@ function nextJob(
     const [x, y] = spot(v, core, toward, rng);
     return { key: 'new:rack', cmd: { type: 'build', units: [], building: 'server_rack', x, y } };
   }
-  const walls = v.buildings.filter((b) => b.type === 'firewall').length;
-  if (faction === 'human' && walls < s.firewalls && v.data >= BUILDINGS.firewall.cost && !taken.has('new:wall')) {
+  const walls = v.buildings.filter((b) => b.type === 'barricade').length;
+  if (faction === 'human' && walls < s.barricades && v.data >= BUILDINGS.barricade.cost && !taken.has('new:wall')) {
     const x = core.x + toward * 9 * TILE;
     const y = core.y + (walls - 1) * 2 * TILE;
-    return { key: 'new:wall', cmd: { type: 'build', units: [], building: 'firewall', x, y } };
+    return { key: 'new:wall', cmd: { type: 'build', units: [], building: 'barricade', x, y } };
   }
   return null;
 }

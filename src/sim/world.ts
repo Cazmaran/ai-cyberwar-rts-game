@@ -119,7 +119,7 @@ function newFactionState(): FactionState {
 }
 
 export const CORE_BUILDING: Record<Faction, BuildingTypeId> = { human: 'noc', ai: 'primary_cluster' };
-export const WORKER: Record<Faction, UnitTypeId> = { human: 'field_engineer', ai: 'crawler' };
+export const WORKER: Record<Faction, UnitTypeId> = { human: 'field_engineer', ai: 'maintenance_drone' };
 
 export function createWorld(seed: number, map: GameMap): World {
   const world: World = {

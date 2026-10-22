@@ -17,7 +17,7 @@ export interface Strategy {
   mix: Partial<Record<Role, number>>;
   /** Army size that triggers an attack. */
   attackAt: number;
-  /** Skilled play: units in a fight focus the weakest enemy they can reach. */
+  /** Skilled play: in a fight, each role focuses the weakest enemy it counters (else the weakest in reach). */
   focusFire: boolean;
   /** Skilled play: shift the build mix toward counters of scouted enemy units. */
   counterBuild: boolean;
@@ -43,6 +43,7 @@ const ARMY_UNITS: Record<Faction, Record<Exclude<Role, 'worker'>, UnitTypeId>> =
   human: { fast: 'counter_drone_team', ranged: 'red_team', tank: 'armored_vehicle' },
   ai: { fast: 'botnet_swarm', ranged: 'hunter_drone', tank: 'industrial_robot' },
 };
+const BEATS = { fast: 'ranged', ranged: 'tank', tank: 'fast' } as const;
 const PRODUCTION: Record<Faction, BuildingTypeId> = { human: 'soc', ai: 'training_cluster' };
 const CORE: Record<Faction, BuildingTypeId> = { human: 'noc', ai: 'primary_cluster' };
 const WORKER: Record<Faction, UnitTypeId> = { human: 'field_engineer', ai: 'maintenance_drone' };
@@ -57,7 +58,8 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
   let rallySet = false;
   /** Most enemy units of each role seen at once (scouting memory, used for counter-building). */
   const seen: Record<Exclude<Role, 'worker'>, number> = { fast: 0, ranged: 0, tank: 0 };
-  let focus: number | null = null;
+  /** Current focus target per role, so focus fire doesn't spend an action every decision. */
+  const focus: Record<Exclude<Role, 'worker'>, number | null> = { fast: null, ranged: null, tank: null };
   // The bot sees the world a reaction delay late. Remember orders and spending not visible yet, so it
   // neither repeats an order nor spends the same Data twice.
   const pendingUntil = new Map<number, number>(); // unit or building id -> last tick its order may be unseen
@@ -98,7 +100,15 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
       // every decision would starve production and worker jobs.
       const defenders = army.filter((u) => !pending(u.id) && !threats.some((t) => t.id === u.target));
       if (threats.length > 0 && defenders.length > 0) {
-        order(focusOrMove(defenders, threats, strategy.focusFire, core.x, core.y), defenders.map((u) => u.id));
+        if (strategy.focusFire) {
+          for (const role of ['fast', 'ranged', 'tank'] as const) {
+            const group = defenders.filter((u) => u.role === role).map((u) => u.id);
+            if (group.length > 0) order({ type: 'attack', units: group, target: pickTarget(role, threats).id }, group);
+          }
+        } else {
+          const ids = defenders.map((u) => u.id);
+          order({ type: 'attackMove', units: ids, x: core.x, y: core.y }, ids);
+        }
       }
 
       // 2. Pull the Plug on clustered enemies near our units.
@@ -111,16 +121,17 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
         seen[role] = Math.max(seen[role], v.enemyUnits.filter((e) => e.role === role).length);
       }
 
-      // 3. Micro: units in a fight focus the weakest enemy they can reach.
+      // 3. Micro: each role in a fight focuses the enemy it counters.
       if (strategy.focusFire && threats.length === 0) {
-        const engaged = army.filter((a) => !pending(a.id) && v.enemyUnits.some((e) => dist2(a.x, a.y, e.x, e.y) < (7 * TILE) ** 2));
-        const near = v.enemyUnits.filter((e) => engaged.some((a) => dist2(a.x, a.y, e.x, e.y) < (6 * TILE) ** 2));
-        // Re-target only when the current focus target is gone, so focus fire doesn't eat every action.
-        const focusAlive = focus !== null && near.some((e) => e.id === focus);
-        if (engaged.length > 0 && near.length > 0 && !focusAlive) {
-          const cmd = focusOrMove(engaged, near, true, 0, 0);
-          if (cmd.type === 'attack') focus = cmd.target;
-          order(cmd, engaged.map((u) => u.id));
+        for (const role of ['fast', 'ranged', 'tank'] as const) {
+          const group = army.filter((a) => a.role === role && !pending(a.id)
+            && v.enemyUnits.some((e) => dist2(a.x, a.y, e.x, e.y) < (7 * TILE) ** 2));
+          const near = v.enemyUnits.filter((e) => group.some((a) => dist2(a.x, a.y, e.x, e.y) < (6 * TILE) ** 2));
+          // Re-target only when the current focus target is gone.
+          if (near.length === 0 || near.some((e) => e.id === focus[role])) continue;
+          const target = pickTarget(role, near);
+          focus[role] = target.id;
+          order({ type: 'attack', units: group.map((u) => u.id), target: target.id }, group.map((u) => u.id));
         }
       }
 
@@ -168,14 +179,10 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
   };
 }
 
-function focusOrMove(army: UnitView[], enemies: UnitView[], focus: boolean, x: number, y: number): Command {
-  const ids = army.map((u) => u.id);
-  if (focus) {
-    const weakest = [...enemies].sort((a, b) => a.hp - b.hp || a.id - b.id)[0]!;
-    return { type: 'attack', units: ids, target: weakest.id };
-  }
-  const t = enemies[0]!;
-  return { type: 'attackMove', units: ids, x: x || t.x, y: y || t.y };
+/** The weakest enemy this role counters, else the weakest enemy. */
+function pickTarget(role: Exclude<Role, 'worker'>, enemies: UnitView[]): UnitView {
+  const prey = enemies.filter((e) => e.role === BEATS[role]);
+  return [...(prey.length > 0 ? prey : enemies)].sort((a, b) => a.hp - b.hp || a.id - b.id)[0]!;
 }
 
 function clusterNear(enemies: UnitView[], ours: UnitView[]): [number, number] | null {

@@ -6,6 +6,7 @@ export * from './game.ts';
 export * from './map.ts';
 export * from './rng.ts';
 export * from './sectors.ts';
+export * from './signal.ts';
 export * from './step.ts';
 export * from './view.ts';
 export * from './world.ts';

@@ -1,7 +1,7 @@
 // Scripted strategy bots. They play either faction through the same commands and view a human or LLM gets.
 // Strategies are data, so new ones (and balance experiments) need no new logic.
 import {
-  BUILDINGS, createRng, FAIRNESS, UNITS, TILE, dist2, type BuildingTypeId, type Command, type Faction, type FactionView,
+  BUILDINGS, createRng, FAIRNESS, isqrt, SIGNAL, UNITS, TILE, dist2, type BuildingTypeId, type Command, type Faction, type FactionView,
   type Rng, type Role, type SiteView, type UnitTypeId, type UnitView,
 } from '../sim/index.ts';
 import type { Controller } from './controller.ts';
@@ -159,7 +159,8 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
       // 5. Jobs for idle workers.
       for (const w of workers) {
         if (w.order !== 'idle' || busy.has(w.id)) continue;
-        const job = nextJob(v, faction, strategy, core, prod, busy, rng, towardCenter);
+        const wantRelay = SIGNAL.enabled && faction === 'ai' && army.length >= attackAt;
+        const job = nextJob(v, faction, strategy, core, prod, busy, rng, towardCenter, wantRelay);
         if (!job) break;
         busy.set(w.id, job.key);
         if ('units' in job.cmd) job.cmd.units = [w.id];
@@ -225,6 +226,7 @@ type Job = { key: string; cmd: Command & { units?: number[] } };
 function nextJob(
   v: FactionView, faction: Faction, s: Strategy, core: FactionView['buildings'][number],
   prod: FactionView['buildings'][number] | undefined, busy: Map<number, string>, rng: Rng, toward: number,
+  wantRelay = false,
 ): Job | null {
   const taken = new Set(busy.values());
   const enemyCore = v.sites.find((x) => x.kind === 'core' && !(x.x === core.x && x.y === core.y));
@@ -247,6 +249,12 @@ function nextJob(
     .filter((l) => !l.mine && !taken.has(`link:${l.index}`) && mine(siteById.get(l.a)) && mine(siteById.get(l.b)))
     .sort((a, b) => linkDist(a, siteById, core) - linkDist(b, siteById, core) || a.index - b.index);
   if (links[0]) return { key: `link:${links[0].index}`, cmd: { type: 'lightLink', units: [], link: links[0].index } };
+
+  // Signal range (proposal 0001): before an attack, extend the Model's signal toward the enemy core.
+  if (wantRelay && enemyCore && v.data >= BUILDINGS.signal_relay.cost && !taken.has('new:relay')) {
+    const at = relaySpot(v, core, enemyCore);
+    if (at) return { key: 'new:relay', cmd: { type: 'build', units: [], building: 'signal_relay', x: at[0], y: at[1] } };
+  }
 
   // One worker builds static defenses while the others expand.
   const defense = DEFENSE[faction];
@@ -311,6 +319,46 @@ function defenseSpot(v: FactionView, faction: Faction, core: { x: number; y: num
       const y = ay + dy! * TILE;
       if (clearOf(v, x, y, 2)) return [x, y];
     }
+  }
+  return null;
+}
+
+/** Whether our own view says a point has the Model's signal (sites, built buildings, lit fiber). */
+function covered(v: FactionView, x: number, y: number): boolean {
+  const r2 = SIGNAL.range * SIGNAL.range;
+  const sites = new Map(v.sites.map((s) => [s.id, s]));
+  if (v.sites.some((s) => s.owner === v.faction && dist2(s.x, s.y, x, y) <= r2)) return true;
+  if (v.buildings.some((b) => b.built && dist2(b.x, b.y, x, y) <= r2)) return true;
+  return v.links.some((l) => {
+    if (!l.mine) return false;
+    const a = sites.get(l.a)!;
+    const b = sites.get(l.b)!;
+    // Sample the fiber every tile; close enough for planning.
+    const n = Math.max(1, Math.trunc(isqrt(dist2(a.x, a.y, b.x, b.y)) / TILE));
+    for (let i = 0; i <= n; i++) {
+      if (dist2(a.x + Math.trunc(((b.x - a.x) * i) / n), a.y + Math.trunc(((b.y - a.y) * i) / n), x, y) <= r2) return true;
+    }
+    return false;
+  });
+}
+
+/**
+ * Next relay spot: walk from the enemy core toward ours to the first covered point, then place the relay
+ * almost a full signal range further toward the enemy. Null once the enemy core is within reach.
+ */
+function relaySpot(v: FactionView, core: { x: number; y: number }, enemy: { x: number; y: number }): [number, number] | null {
+  const len = isqrt(dist2(core.x, core.y, enemy.x, enemy.y));
+  const at = (d: number): [number, number] =>
+    [enemy.x + Math.trunc(((core.x - enemy.x) * d) / len), enemy.y + Math.trunc(((core.y - enemy.y) * d) / len)];
+  const reach = 3 * TILE;
+  if (covered(v, ...at(reach))) return null;
+  for (let d = reach; d < len; d += TILE) {
+    if (!covered(v, ...at(d))) continue;
+    for (let back = 0; back < 4 * TILE; back += TILE) {
+      const spot = at(Math.max(reach, d - SIGNAL.range + TILE + back));
+      if (clearOf(v, spot[0], spot[1], 2)) return spot;
+    }
+    return null;
   }
   return null;
 }

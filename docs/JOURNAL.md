@@ -2,6 +2,11 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-22 — Third playtest: "botnets destroyed all my engineers"
+
+- As soon as attacks started, Botnet Swarms flew straight to the human engineers. The owner asked whether botnets can travel off the network. They can, and that bends reality: hijacked drones need a control link.
+- Prototyped a signal-range rule behind a flag (`docs/proposals/0001-signal-range.md`). It works as intended, but it crushes the AI's rush (2–16% overall). The next idea to try is mesh swarms: drones relay signal for each other.
+
 ## 2026-10-22 — Defenses, expansions, and one number that mattered most
 
 - Owner approved two design changes: static defenses (Security Post / Sentry Gun) and expansion sites. Rushing had no answer, and booming had no payoff.

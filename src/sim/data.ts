@@ -3,7 +3,7 @@
 // resources in milli-units (MILLI = 1000). Change DATA_VERSION whenever a number changes.
 import { MILLI, TILE } from './fixed.ts';
 
-export const DATA_VERSION = 8;
+export const DATA_VERSION = 9;
 
 export type Faction = 'human' | 'ai';
 export const FACTIONS: readonly Faction[] = ['human', 'ai'];
@@ -73,7 +73,7 @@ export const UNITS: Record<UnitTypeId, UnitStats> = {
 };
 
 export type BuildingTypeId =
-  | 'noc' | 'primary_cluster' | 'soc' | 'training_cluster' | 'server_rack' | 'barricade' | 'security_post' | 'sentry_gun';
+  | 'noc' | 'primary_cluster' | 'soc' | 'training_cluster' | 'server_rack' | 'barricade' | 'security_post' | 'sentry_gun' | 'signal_relay';
 
 /** Static defenses fire at the nearest enemy unit in range. */
 export interface Weapon {
@@ -117,6 +117,8 @@ export const BUILDINGS: Record<BuildingTypeId, BuildingStats> = {
     faction: 'ai', hp: 300, sight: 7 * TILE, radius: 600, cost: 60 * MILLI, buildWork: 180, power: -1, compute: 0, blocksEnemies: false,
     weapon: { damage: 7, range: 5 * TILE, cooldown: 20, needsPower: true },
   },
+  // Proposal 0001: a hijacked cell tower or mesh repeater that extends the Model's signal.
+  signal_relay: { faction: 'ai', hp: 150, sight: 5 * TILE, radius: 500, cost: 30 * MILLI, buildWork: 120, power: -1, compute: 0, blocksEnemies: false },
 };
 
 export const START = {
@@ -157,6 +159,15 @@ export const ADAPTATION = {
   cap: 25,
   /** Resistance lost per retraining run for unit types absent from the window (percent). */
   decay: 5,
+};
+
+/**
+ * Proposal 0001 (not approved yet, off by default): AI combat machines act only within `range` of the
+ * Model's signal (AI sites, AI buildings, AI-lit fiber). Maintenance Drones run autonomous routines.
+ */
+export const SIGNAL = {
+  enabled: false,
+  range: 8 * TILE,
 };
 
 export const FAIRNESS = {

@@ -1,7 +1,8 @@
 // Unit behavior: carry out orders, move, fight, and resolve deaths.
-import { ADAPTATION, BUILDINGS, ECONOMY, UNITS, type Faction } from './data.ts';
+import { ADAPTATION, BUILDINGS, ECONOMY, SIGNAL, UNITS, type Faction } from './data.ts';
 import { dist2, pct, stepToward, within } from './fixed.ts';
 import { inBlackout } from './economy.ts';
+import { inSignal, nearestSignal } from './signal.ts';
 import { CORE_BUILDING, type Building, type Entity, type Unit, type World } from './world.ts';
 
 /** Idle and attack-moving units look for targets only every N ticks to keep the sim fast. All units search on
@@ -16,6 +17,7 @@ export function updateUnits(world: World): void {
     // AI processes need power; people don't. A blackout freezes AI units only.
     if (e.faction === 'ai' && inBlackout(world, e.x, e.y)) continue;
     if (e.cooldown > 0) e.cooldown--;
+    if (leashed(e) && !inSignal(world, e.x, e.y)) { returnToSignal(world, e); continue; }
     runOrder(world, e);
   }
   resolveDeaths(world);
@@ -146,11 +148,25 @@ function fire(world: World, u: Unit, t: Entity): void {
 function moveTo(world: World, u: Unit, x: number, y: number, stopAt = 0): boolean {
   if (stopAt > 0 ? within(u.x, u.y, x, y, stopAt) : u.x === x && u.y === y) return true;
   const [nx, ny] = stepToward(u.x, u.y, x, y, UNITS[u.type].speed);
+  // A machine on the Model's link won't fly out of signal range.
+  if (leashed(u) && !inSignal(world, nx, ny) && inSignal(world, u.x, u.y)) return false;
   const wall = blockingBarricade(world, u.faction, nx, ny);
   if (wall) { engage(world, u, wall); return false; }
   u.x = nx;
   u.y = ny;
   return stopAt > 0 ? within(u.x, u.y, x, y, stopAt) : u.x === x && u.y === y;
+}
+
+/** AI combat machines need the Model's signal (proposal 0001). */
+function leashed(u: Unit): boolean {
+  return SIGNAL.enabled && u.faction === 'ai' && UNITS[u.type].role !== 'worker';
+}
+
+/** Lost-link failsafe: fly straight back toward the nearest signal, ignoring orders. */
+function returnToSignal(world: World, u: Unit): void {
+  const p = nearestSignal(world, u.x, u.y);
+  if (!p) return;
+  [u.x, u.y] = stepToward(u.x, u.y, p[0], p[1], UNITS[u.type].speed);
 }
 
 function blockingBarricade(world: World, faction: Faction, x: number, y: number): Building | null {

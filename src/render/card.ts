@@ -29,6 +29,7 @@ const BUILD_TIPS: Partial<Record<BuildingTypeId, string>> = {
   soc: 'Security Operations Center: trains your combat units. Build one first.',
   server_rack: 'Adds Compute (faster training). Uses Power.',
   barricade: 'A physical wall that blocks AI machines until they break through it. Your units pass freely.',
+  security_post: 'Armed guard post: shoots AI machines within 5 tiles. Guards need no grid power, so it keeps firing in a blackout.',
 };
 
 export function buildCard(view: FactionView, ui: UiState, actions: {
@@ -88,7 +89,7 @@ export function buildCard(view: FactionView, ui: UiState, actions: {
       disabled: link === null ? 'Nothing to connect: claim a site first' : undefined,
       run: () => (link === null ? [] : [{ type: 'lightLink', units: workers.map((u) => u.id), link }]),
     });
-    out.push(build('soc', 'Q'), build('server_rack', 'R'), build('barricade', 'F'));
+    out.push(build('soc', 'Q'), build('server_rack', 'R'), build('barricade', 'F'), build('security_post', 'V'));
   }
   if (army.length > 0) {
     out.push({ id: 'amove', label: 'Attack-move', key: 'A', tip: 'Click a destination: units fight anything they meet on the way.', run: () => { actions.setMode({ type: 'attackMove' }); return []; } });

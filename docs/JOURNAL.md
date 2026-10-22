@@ -2,6 +2,14 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-22 — Defenses, expansions, and one number that mattered most
+
+- Owner approved two design changes: static defenses (Security Post / Sentry Gun) and expansion sites. Rushing had no answer, and booming had no payoff.
+- They flipped the meta more than once. Rush dominated, then boom did, then rush again. With 20 seeds, results swung ±20 points from small changes, so tuning now uses 40.
+- The biggest lever was the AI worker's price. At 35 Data the AI out-expanded humans in every mirror match; at 50 humans did. 42 lands both sides close to even (mirror matches 53/53/59%).
+- A trap: a mirror match one faction always wins makes the skill test read exactly 50%, whatever the skill. Faction parity has to come before skill tuning.
+- Bot lesson: guarding the core was useless. Rushes kill workers out at the Data sources, so bots now put defenses next to their most exposed source.
+
 ## 2026-10-22 — Balance: the bots were fighting their own lag
 
 - The AI side won most strategy matchups. Most of it turned out to be bot bugs, not unit stats:

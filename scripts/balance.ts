@@ -31,7 +31,7 @@ for (const c of counterChecks(budget, seeds)) {
 }
 
 console.log('\n== Strategy tournament: human win % (rows human strategy, cols AI strategy) ==');
-const cells = tournament(Math.max(2, Math.trunc(seeds / 2)));
+const cells = tournament(seeds);
 const names = Object.keys(STRATEGIES);
 console.log(' '.repeat(8) + names.map((n) => n.padStart(14)).join(''));
 for (const h of names) {
@@ -51,7 +51,7 @@ for (const n of names) {
 
 console.log('\n== Skill test: focus-fire micro vs attack-move only, same strategy (must win >= 70%) ==');
 for (const s of Object.values(STRATEGIES)) {
-  const p = skillTest(s, Math.max(2, Math.trunc(seeds / 2)));
+  const p = skillTest(s, seeds);
   console.log(`${p >= 70 ? 'ok  ' : 'FAIL'} ${s.name}: skilled side wins ${p}%`);
   if (p < 70) failures.push(`skill test ${s.name}: ${p}%`);
 }

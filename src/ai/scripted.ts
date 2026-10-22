@@ -12,6 +12,8 @@ export interface Strategy {
   racks: number;
   /** Physical barricades to build (humans only). */
   barricades: number;
+  /** Static defenses (Security Post / Sentry Gun) to build in front of the core. */
+  defenses: number;
   mix: Partial<Record<Role, number>>;
   /** Army size that triggers an attack. */
   attackAt: number;
@@ -26,14 +28,14 @@ export interface Strategy {
 }
 
 export const STRATEGIES: Record<string, Strategy> = {
-  rush: { name: 'rush', workers: 4, racks: 0, barricades: 0, mix: { fast: 2, ranged: 1 }, attackAt: 5, focusFire: true, counterBuild: true, usePlug: true },
-  boom: { name: 'boom', workers: 8, racks: 2, barricades: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 14, focusFire: true, counterBuild: true, usePlug: true },
-  turtle: { name: 'turtle', workers: 6, racks: 1, barricades: 3, mix: { ranged: 2, tank: 2, fast: 1 }, attackAt: 18, focusFire: true, counterBuild: true, usePlug: true },
+  rush: { name: 'rush', workers: 4, racks: 0, barricades: 0, defenses: 0, mix: { fast: 2, ranged: 1 }, attackAt: 5, focusFire: true, counterBuild: true, usePlug: true },
+  boom: { name: 'boom', workers: 8, racks: 2, barricades: 0, defenses: 1, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 14, focusFire: true, counterBuild: true, usePlug: true },
+  turtle: { name: 'turtle', workers: 6, racks: 1, barricades: 3, defenses: 3, mix: { ranged: 2, tank: 2, fast: 1 }, attackAt: 18, focusFire: true, counterBuild: true, usePlug: true },
 };
 
 /** Gentle opponent for learning the game: slow economy, no micro, attacks late. Not part of balance runs. */
 export const TRAINING: Strategy = {
-  name: 'training', workers: 4, racks: 0, barricades: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 10,
+  name: 'training', workers: 4, racks: 0, barricades: 0, defenses: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 10,
   focusFire: false, counterBuild: false, usePlug: false, attackNotBefore: 8 * 60 * 20,
 };
 
@@ -44,6 +46,7 @@ const ARMY_UNITS: Record<Faction, Record<Exclude<Role, 'worker'>, UnitTypeId>> =
 const PRODUCTION: Record<Faction, BuildingTypeId> = { human: 'soc', ai: 'training_cluster' };
 const CORE: Record<Faction, BuildingTypeId> = { human: 'noc', ai: 'primary_cluster' };
 const WORKER: Record<Faction, UnitTypeId> = { human: 'field_engineer', ai: 'maintenance_drone' };
+const DEFENSE: Record<Faction, BuildingTypeId> = { human: 'security_post', ai: 'sentry_gun' };
 
 export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1): Controller {
   const rng = createRng(seed);
@@ -238,6 +241,14 @@ function nextJob(
     .sort((a, b) => linkDist(a, siteById, core) - linkDist(b, siteById, core) || a.index - b.index);
   if (links[0]) return { key: `link:${links[0].index}`, cmd: { type: 'lightLink', units: [], link: links[0].index } };
 
+  // One worker builds static defenses while the others expand.
+  const defense = DEFENSE[faction];
+  const defenses = v.buildings.filter((b) => b.type === defense).length;
+  if (defenses < s.defenses && v.data >= BUILDINGS[defense].cost && !taken.has('new:defense')) {
+    const at = defenseSpot(v, faction, core, toward);
+    if (at) return { key: 'new:defense', cmd: { type: 'build', units: [], building: defense, x: at[0], y: at[1] } };
+  }
+
   // Claim (or retake) the nearest site on our half or in the center.
   const sites = v.sites
     .filter((x) => x.kind !== 'core' && x.owner !== faction && !taken.has(`claim:${x.id}`)
@@ -276,14 +287,38 @@ function linkDist(l: FactionView['links'][number], sites: Map<string, SiteView>,
   return Math.min(dist2(a.x, a.y, core.x, core.y), dist2(b.x, b.y, core.x, core.y));
 }
 
+/**
+ * A spot guarding our most exposed Data source (the one nearest the enemy core), clear of sites and
+ * other buildings. Falls back to the front of our core.
+ */
+function defenseSpot(v: FactionView, faction: Faction, core: { x: number; y: number }, toward: number): [number, number] | null {
+  const enemyCore = v.sites.find((x) => x.kind === 'core' && !(x.x === core.x && x.y === core.y));
+  const guarded = (x: number, y: number) => v.buildings.some((b) => b.type === DEFENSE[faction] && dist2(b.x, b.y, x, y) < (5 * TILE) ** 2);
+  const exposed = v.sites
+    .filter((x) => x.kind === 'data_source' && x.owner === faction && !guarded(x.x, x.y))
+    .sort((a, b) => (enemyCore ? dist2(a.x, a.y, enemyCore.x, enemyCore.y) - dist2(b.x, b.y, enemyCore.x, enemyCore.y) : 0) || a.id.localeCompare(b.id));
+  const anchors = [...exposed.map((x) => [x.x, x.y] as const), [core.x + toward * 4 * TILE, core.y] as const];
+  for (const [ax, ay] of anchors) {
+    for (const [dx, dy] of [[toward * 2, 0], [0, 2], [0, -2], [-toward * 2, 0]]) {
+      const x = ax + dx! * TILE;
+      const y = ay + dy! * TILE;
+      if (clearOf(v, x, y, 2)) return [x, y];
+    }
+  }
+  return null;
+}
+
+function clearOf(v: FactionView, x: number, y: number, tiles = 3): boolean {
+  return v.buildings.every((b) => dist2(b.x, b.y, x, y) > (tiles * TILE) ** 2)
+    && v.sites.every((s) => dist2(s.x, s.y, x, y) > (tiles * TILE) ** 2);
+}
+
 /** A building spot behind the core, away from sites and other buildings. */
 function spot(v: FactionView, core: { x: number; y: number }, toward: number, rng: Rng): [number, number] {
   for (let i = 0; i < 20; i++) {
     const x = core.x + (rng.int(-4, 1) * toward) * TILE;
     const y = core.y + rng.int(-6, 6) * TILE;
-    const clear = v.buildings.every((b) => dist2(b.x, b.y, x, y) > (3 * TILE) ** 2)
-      && v.sites.every((s) => dist2(s.x, s.y, x, y) > (3 * TILE) ** 2);
-    if (clear && x > TILE && y > TILE && x < (v.mapWidth - 1) * TILE && y < (v.mapHeight - 1) * TILE) return [x, y];
+    if (clearOf(v, x, y) && x > TILE && y > TILE && x < (v.mapWidth - 1) * TILE && y < (v.mapHeight - 1) * TILE) return [x, y];
   }
   return [core.x - toward * 3 * TILE, core.y + 4 * TILE];
 }

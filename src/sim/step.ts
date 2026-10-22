@@ -1,4 +1,5 @@
 import { updateAdaptation } from './abilities.ts';
+import { updateDefenses } from './defenses.ts';
 import { updateEconomy } from './economy.ts';
 import { updateProduction } from './production.ts';
 import { updateUnits } from './units.ts';
@@ -10,6 +11,8 @@ export function step(world: World): void {
   updateAdaptation(world);
   updateEconomy(world);
   updateProduction(world);
+  // Defenses fire before units act; deaths resolve together at the end of updateUnits.
+  updateDefenses(world);
   updateUnits(world);
   world.tick++;
 }

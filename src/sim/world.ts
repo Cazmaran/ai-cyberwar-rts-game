@@ -53,6 +53,9 @@ export interface Building {
   /** Rally point for trained units. */
   rallyX: number;
   rallyY: number;
+  /** Static defenses: ticks until the next shot, and the unit being shot at. */
+  cooldown: number;
+  target: number | null;
 }
 
 export type Entity = Unit | Building;
@@ -158,7 +161,7 @@ export function spawnUnit(world: World, type: UnitTypeId, faction: Faction, x: n
 export function spawnBuilding(world: World, type: BuildingTypeId, faction: Faction, x: number, y: number): Building {
   const b: Building = {
     id: world.nextId++, kind: 'building', type, faction, x, y, hp: BUILDINGS[type].hp,
-    built: false, buildProgress: 0, queue: [], progress: 0, rallyX: x, rallyY: y + 2 * TILE,
+    built: false, buildProgress: 0, queue: [], progress: 0, rallyX: x, rallyY: y + 2 * TILE, cooldown: 0, target: null,
   };
   world.entities.set(b.id, b);
   return b;

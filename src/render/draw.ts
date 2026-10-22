@@ -59,7 +59,14 @@ export function drawWorld(g: Graphics, world: World, view: FactionView, selected
     const r = BUILDINGS[b.type].radius;
     const c = factionColor(faction);
     const alpha = b.built ? 1 : 0.35;
+    const weapon = BUILDINGS[b.type].weapon;
     if (b.type === 'barricade') g.rect(b.x - r / 3, b.y - r, (2 * r) / 3, 2 * r).fill({ color: c, alpha });
+    else if (weapon) {
+      g.circle(b.x, b.y, r).fill({ color: c, alpha: alpha * 0.5 }).stroke({ width: 100, color: c, alpha });
+      g.circle(b.x, b.y, r / 3).fill({ color: c, alpha });
+      // Show the firing range so players can see where it is safe.
+      if (b.built) g.circle(b.x, b.y, weapon.range).stroke({ width: 40, color: c, alpha: 0.25 });
+    }
     else g.rect(b.x - r, b.y - r, 2 * r, 2 * r).fill({ color: c, alpha: alpha * 0.5 }).stroke({ width: 100, color: c, alpha });
     if (selected.has(b.id)) g.rect(b.x - r - 200, b.y - r - 200, 2 * r + 400, 2 * r + 400).stroke({ width: 70, color: COLORS.selection });
     hpBar(g, b.x, b.y - r - 350, 2 * r, b.hp, b.maxHp);

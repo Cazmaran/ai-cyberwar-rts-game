@@ -3,7 +3,7 @@
 // resources in milli-units (MILLI = 1000). Change DATA_VERSION whenever a number changes.
 import { MILLI, TILE } from './fixed.ts';
 
-export const DATA_VERSION = 7;
+export const DATA_VERSION = 8;
 
 export type Faction = 'human' | 'ai';
 export const FACTIONS: readonly Faction[] = ['human', 'ai'];
@@ -56,7 +56,7 @@ export const UNITS: Record<UnitTypeId, UnitStats> = {
   // AI: machines the Model has hijacked. Many and cheap; they need the Model's network and power to act.
   maintenance_drone: {
     faction: 'ai', role: 'worker', hp: 30, damage: 2, bonusVs: {}, range: 1000, sight: 6 * TILE,
-    cooldown: 20, speed: 70, cost: 35 * MILLI, power: 1, work: 1400, trainedAt: 'primary_cluster',
+    cooldown: 20, speed: 70, cost: 42 * MILLI, power: 1, work: 1680, trainedAt: 'primary_cluster',
   },
   botnet_swarm: {
     faction: 'ai', role: 'fast', hp: 35, damage: 4, bonusVs: { ranged: 75 }, range: 900, sight: 6 * TILE,
@@ -72,7 +72,17 @@ export const UNITS: Record<UnitTypeId, UnitStats> = {
   },
 };
 
-export type BuildingTypeId = 'noc' | 'primary_cluster' | 'soc' | 'training_cluster' | 'server_rack' | 'barricade';
+export type BuildingTypeId =
+  | 'noc' | 'primary_cluster' | 'soc' | 'training_cluster' | 'server_rack' | 'barricade' | 'security_post' | 'sentry_gun';
+
+/** Static defenses fire at the nearest enemy unit in range. */
+export interface Weapon {
+  damage: number;
+  range: number;
+  cooldown: number;
+  /** Stops firing in a blackout. Machines need grid power; guards don't. */
+  needsPower: boolean;
+}
 
 export interface BuildingStats {
   faction: Faction | 'any';
@@ -88,6 +98,7 @@ export interface BuildingStats {
   compute: number;
   /** Blocks enemy unit movement (Barricade). */
   blocksEnemies: boolean;
+  weapon?: Weapon;
 }
 
 export const BUILDINGS: Record<BuildingTypeId, BuildingStats> = {
@@ -97,6 +108,15 @@ export const BUILDINGS: Record<BuildingTypeId, BuildingStats> = {
   training_cluster: { faction: 'ai', hp: 600, sight: 6 * TILE, radius: 1000, cost: 120 * MILLI, buildWork: 400, power: -1, compute: 0, blocksEnemies: false },
   server_rack: { faction: 'any', hp: 300, sight: 4 * TILE, radius: 700, cost: 100 * MILLI, buildWork: 300, power: -2, compute: 5, blocksEnemies: false },
   barricade: { faction: 'human', hp: 400, sight: 3 * TILE, radius: 600, cost: 40 * MILLI, buildWork: 150, power: 0, compute: 0, blocksEnemies: true },
+  // Static defenses (D-012). Security Post: an armed guard post. Sentry Gun: an automated turret the Model has hijacked.
+  security_post: {
+    faction: 'human', hp: 350, sight: 7 * TILE, radius: 600, cost: 70 * MILLI, buildWork: 200, power: 0, compute: 0, blocksEnemies: false,
+    weapon: { damage: 8, range: 5 * TILE, cooldown: 25, needsPower: false },
+  },
+  sentry_gun: {
+    faction: 'ai', hp: 300, sight: 7 * TILE, radius: 600, cost: 60 * MILLI, buildWork: 180, power: -1, compute: 0, blocksEnemies: false,
+    weapon: { damage: 7, range: 5 * TILE, cooldown: 20, needsPower: true },
+  },
 };
 
 export const START = {

@@ -2,6 +2,16 @@
 
 Newest first. Each entry: date, decision, options considered, reason. Changes to design pillars need owner approval.
 
+## D-013 — 2026-10-22 — Expansion sites
+- **Decision:** each side gets two extra Data sources far from its core (`h_exp_n`, `h_exp_s` and their mirrors), linked into its network.
+- **Options:** more, farther sites; workers stationed at a site raise its output; booming means racks only.
+- **Reason:** extra workers added no income, because 4 workers could claim every source, so booming never paid off. Expansions make "boom" mean "expand": more income, but more ground to defend. Approved by owner.
+
+## D-012 — 2026-10-22 — Static defenses
+- **Decision:** a cheap armed structure for each side. Humans: **Security Post** (armed guards; keeps firing in a blackout). AI: **Sentry Gun** (an automated turret it has hijacked; needs grid power, so Pull the Plug silences it).
+- **Options:** static defenses; cores that shoot; repair and healing only.
+- **Reason:** with no home advantage, rushing beat every other strategy for both sides. Approved by owner.
+
 ## D-011 — 2026-10-21 — Roster v3 adopted
 - **Decision:** units follow Atoms vs Bits. Humans: Field Engineer, Counter-Drone Team, Red Team, Armored Response Vehicle. AI (hijacked machines): Maintenance Drone, Botnet Swarm, Hunter Drone, Industrial Robot. The physical wall is a Barricade. Firewall, Exploit, Daemon, remote takeover and fiber cutting move to the Phase 3 network layer. The AI is "The Model" and the region is a fictional metro for pre-release testing. All subject to change after testing.
 - **Reason:** code units walking around and getting shot contradicted the world framing (D-010). Roles and stats are unchanged, so balance work carries over.

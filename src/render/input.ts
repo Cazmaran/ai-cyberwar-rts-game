@@ -18,7 +18,7 @@ export interface UiState {
 }
 
 const SOC_UNITS: Record<string, UnitTypeId> = { '1': 'counter_drone_team', '2': 'red_team', '3': 'armored_vehicle' };
-const BUILD_KEYS: Record<string, BuildingTypeId> = { q: 'soc', r: 'server_rack', f: 'barricade' };
+const BUILD_KEYS: Record<string, BuildingTypeId> = { q: 'soc', r: 'server_rack', f: 'barricade', v: 'security_post' };
 
 export const HOTKEYS: [string, string][] = [
   ['Left click / drag', 'select units'],
@@ -26,7 +26,7 @@ export const HOTKEYS: [string, string][] = [
   ['A then click', 'attack-move'],
   ['E', 'train Field Engineer (NOC)'],
   ['1 / 2 / 3', 'train Counter-Drone / Red Team / Armored Vehicle (SOC)'],
-  ['Q / R / F then click', 'build SOC / Server Rack / Barricade (workers)'],
+  ['Q / R / F / V then click', 'build SOC / Server Rack / Barricade / Security Post (workers)'],
   ['P then click', 'Pull the Plug'],
   ['G / D', 'army attack / defend the sector under the cursor'],
   ['X', 'expand: an idle engineer claims the nearest site'],
@@ -181,6 +181,7 @@ export function describeAt(view: FactionView, x: number, y: number): string | nu
       noc: 'Your NOC (base). Trains engineers. Lose it and you lose.', primary_cluster: 'AI Primary Cluster. Destroy it to win.',
       soc: 'SOC: trains combat units.', training_cluster: 'AI Training Cluster: trains AI units.',
       server_rack: 'Server Rack: adds Compute.', barricade: 'Barricade: a physical wall that blocks enemy machines.',
+      security_post: 'Security Post: armed guards shoot AI machines in range.', sentry_gun: 'AI Sentry Gun: a hijacked automated turret. Pull the Plug silences it.',
     };
     return `${names[b.type] ?? b.type}${b.built ? '' : ' (under construction)'} ${b.hp}/${b.maxHp} hp`;
   }

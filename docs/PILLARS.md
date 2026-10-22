@@ -59,8 +59,6 @@ Limits (so counters never stop mattering): resistance per damage type has a hard
 
 ## Units (worker + 3 combat per side, rock-paper-scissors)
 
-| Role | Human | Real-world basis | AI | Real-world basis |
-|---|---|---|---|---|
 Roster v3 (see `docs/NARRATIVE.md` §6): humans are people and vehicles; AI units are machines the Model has hijacked.
 
 | Role | Human | Real-world basis | AI | Real-world basis |
@@ -70,7 +68,7 @@ Roster v3 (see `docs/NARRATIVE.md` §6): humans are people and vehicles; AI unit
 | Ranged | **Red Team**: hacks machines over radio | Offensive security operators | **Hunter Drone** | Armed long-range drones |
 | Tank | **Armored Response Vehicle** | Armored utility/security vehicles | **Industrial Robot** | Hijacked factory and warehouse robots |
 
-Structures: **Barricade** (physical wall that blocks AI machines). Phase 3 network layer: **Firewall** (network filter at a router), **Exploit**, **Daemon**, remote takeover, cutting fiber.
+Structures: **Barricade** (physical wall that blocks AI machines). Static defenses give a defender a home advantage (D-012): humans build a **Security Post** (armed guards; no grid power needed), the AI builds a **Sentry Gun** (a hijacked automated turret; Pull the Plug silences it). Phase 3 network layer: **Firewall** (network filter at a router), **Exploit**, **Daemon**, remote takeover, cutting fiber.
 
 ## Epochs (2 for now)
 

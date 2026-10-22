@@ -38,6 +38,21 @@ describe('duel map', () => {
     }
   });
 
+  // Booming must pay: income beyond the home sources comes from expansions away from the core (D-013).
+  it('each side has expansion Data sources farther from its core than its home sources, linked to its network', () => {
+    const core = DUEL_MAP.sites.find((s) => s.id === 'h_core')!;
+    const d = (s: { x: number; y: number }) => (s.x - core.x) ** 2 + (s.y - core.y) ** 2;
+    const home = DUEL_MAP.sites.filter((s) => s.id.startsWith('h_src'));
+    const expansions = DUEL_MAP.sites.filter((s) => s.id.startsWith('h_exp'));
+    expect(expansions.length).toBeGreaterThanOrEqual(2);
+    for (const e of expansions) {
+      expect(e.kind).toBe('data_source');
+      expect(d(e)).toBeGreaterThan(Math.max(...home.map(d)));
+      expect(e.x).toBeLessThan(DUEL_MAP.width / 2);
+      expect(DUEL_MAP.links.some((l) => l.a === e.id || l.b === e.id)).toBe(true);
+    }
+  });
+
   it('sectors name the 3x3 grid', () => {
     expect(sectorOf(DUEL_MAP, 0, 0)).toBe('NW');
     expect(sectorOf(DUEL_MAP, 24 * TILE, 16 * TILE)).toBe('C');

@@ -18,7 +18,7 @@ describe('faction view (fog of war)', () => {
 
   it('text view summarizes by sector', () => {
     const text = describeView(factionView(newGame().world, 'human'));
-    expect(text).toMatch(/^\[human\] t=0:00 data=200/);
+    expect(text).toMatch(/^\[human\] t=0:00 data=260/);
     expect(text).toContain('pull_the_plug: READY');
     expect(text).toMatch(/W: .*ours: 3 field_engineer/);
     const ai = describeView(factionView(newGame().world, 'ai'));

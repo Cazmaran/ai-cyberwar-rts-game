@@ -1,7 +1,7 @@
 // Scripted strategy bots. They play either faction through the same commands and view a human or LLM gets.
 // Strategies are data, so new ones (and balance experiments) need no new logic.
 import {
-  BUILDINGS, createRng, UNITS, TILE, dist2, type BuildingTypeId, type Command, type Faction, type FactionView,
+  BUILDINGS, createRng, FAIRNESS, UNITS, TILE, dist2, type BuildingTypeId, type Command, type Faction, type FactionView,
   type Rng, type Role, type SiteView, type UnitTypeId, type UnitView,
 } from '../sim/index.ts';
 import type { Controller } from './controller.ts';
@@ -55,11 +55,26 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
   /** Most enemy units of each role seen at once (scouting memory, used for counter-building). */
   const seen: Record<Exclude<Role, 'worker'>, number> = { fast: 0, ranged: 0, tank: 0 };
   let focus: number | null = null;
+  // The bot sees the world a reaction delay late. Remember orders and spending not visible yet, so it
+  // neither repeats an order nor spends the same Data twice.
+  const pendingUntil = new Map<number, number>(); // unit or building id -> last tick its order may be unseen
+  let reserved: { until: number; cost: number }[] = [];
 
   return {
     name: `${strategy.name}${strategy.focusFire || strategy.counterBuild ? '' : '-sloppy'}`,
-    decide(v: FactionView): Command[] {
+    decide(raw: FactionView): Command[] {
       const out: Command[] = [];
+      reserved = reserved.filter((r) => r.until >= raw.tick);
+      const v = { ...raw, data: raw.data - reserved.reduce((sum, r) => sum + r.cost, 0) };
+      const pending = (id: number) => (pendingUntil.get(id) ?? -1) >= v.tick;
+      const order = (cmd: Command, ids: number[], cost = 0) => {
+        out.push(cmd);
+        for (const id of ids) pendingUntil.set(id, v.tick + FAIRNESS.reactionDelay);
+        if (cost > 0) {
+          v.data -= cost;
+          reserved.push({ until: v.tick + FAIRNESS.reactionDelay, cost });
+        }
+      };
       const core = v.buildings.find((b) => b.type === CORE[faction]);
       if (!core) return out;
       const enemyCore = v.sites.find((s) => s.kind === 'core' && !(s.x === core.x && s.y === core.y));
@@ -71,19 +86,22 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
       // Forget jobs of workers that went idle or died.
       for (const [id] of busy) {
         const w = workers.find((u) => u.id === id);
-        if (!w || w.order === 'idle') busy.delete(id);
+        if (!w || (w.order === 'idle' && !pending(id))) busy.delete(id);
       }
 
       // 1. Defend the base.
       const threats = v.enemyUnits.filter((e) => dist2(e.x, e.y, core.x, core.y) < (12 * TILE) ** 2);
-      if (threats.length > 0 && army.length > 0) {
-        out.push(focusOrMove(army, threats, strategy.focusFire, core.x, core.y));
+      // Only units not already fighting a threat get orders: at the APM cap, re-issuing the same order
+      // every decision would starve production and worker jobs.
+      const defenders = army.filter((u) => !pending(u.id) && !threats.some((t) => t.id === u.target));
+      if (threats.length > 0 && defenders.length > 0) {
+        order(focusOrMove(defenders, threats, strategy.focusFire, core.x, core.y), defenders.map((u) => u.id));
       }
 
       // 2. Pull the Plug on clustered enemies near our units.
       if (strategy.usePlug && v.plugReadyIn === 0) {
         const target = clusterNear(v.enemyUnits, [...army, ...workers]);
-        if (target) out.push({ type: 'pullThePlug', x: target[0], y: target[1] });
+        if (target) order({ type: 'pullThePlug', x: target[0], y: target[1] }, []);
       }
 
       for (const role of ['fast', 'ranged', 'tank'] as const) {
@@ -92,49 +110,55 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
 
       // 3. Micro: units in a fight focus the weakest enemy they can reach.
       if (strategy.focusFire && threats.length === 0) {
-        const engaged = army.filter((a) => v.enemyUnits.some((e) => dist2(a.x, a.y, e.x, e.y) < (7 * TILE) ** 2));
+        const engaged = army.filter((a) => !pending(a.id) && v.enemyUnits.some((e) => dist2(a.x, a.y, e.x, e.y) < (7 * TILE) ** 2));
         const near = v.enemyUnits.filter((e) => engaged.some((a) => dist2(a.x, a.y, e.x, e.y) < (6 * TILE) ** 2));
         // Re-target only when the current focus target is gone, so focus fire doesn't eat every action.
         const focusAlive = focus !== null && near.some((e) => e.id === focus);
         if (engaged.length > 0 && near.length > 0 && !focusAlive) {
           const cmd = focusOrMove(engaged, near, true, 0, 0);
           if (cmd.type === 'attack') focus = cmd.target;
-          out.push(cmd);
+          order(cmd, engaged.map((u) => u.id));
         }
       }
 
-      // 4. Jobs for idle workers.
+      // 4. Production comes before worker jobs: the APM cap allows about one action per decision.
+      // When a larger enemy army is on our half, stop growing the economy and train army only.
+      const invaders = v.enemyUnits.filter((e) => e.role !== 'worker'
+        && (!enemyCore || dist2(e.x, e.y, core.x, core.y) < dist2(e.x, e.y, enemyCore.x, enemyCore.y)));
+      const underPressure = invaders.length > army.length;
+      if (prod?.built) {
+        if (!rallySet) {
+          rallySet = true;
+          order({ type: 'setRally', building: prod.id, x: core.x + towardCenter * 5 * TILE, y: core.y }, []);
+        }
+        if (prod.queue.length < 2 && !pending(prod.id)) {
+          const unit = pickArmyUnit(faction, strategy.counterBuild ? counterMix(strategy, seen) : strategy, army);
+          if (v.data >= UNITS[unit].cost) order({ type: 'train', building: prod.id, unit }, [prod.id], UNITS[unit].cost);
+        }
+      }
+
+      if (!underPressure && workers.length < strategy.workers && core.queue.length === 0 && !pending(core.id)
+        && v.data >= UNITS[WORKER[faction]].cost) {
+        order({ type: 'train', building: core.id, unit: WORKER[faction] }, [core.id], UNITS[WORKER[faction]].cost);
+      }
+
+      // 5. Jobs for idle workers.
       for (const w of workers) {
         if (w.order !== 'idle' || busy.has(w.id)) continue;
         const job = nextJob(v, faction, strategy, core, prod, busy, rng, towardCenter);
         if (!job) break;
         busy.set(w.id, job.key);
         if ('units' in job.cmd) job.cmd.units = [w.id];
-        out.push(job.cmd);
-      }
-
-      // 5. Production.
-      if (workers.length < strategy.workers && core.queue.length === 0 && v.data >= UNITS[WORKER[faction]].cost) {
-        out.push({ type: 'train', building: core.id, unit: WORKER[faction] });
-      }
-      if (prod?.built) {
-        if (!rallySet) {
-          rallySet = true;
-          out.push({ type: 'setRally', building: prod.id, x: core.x + towardCenter * 5 * TILE, y: core.y });
-        }
-        if (prod.queue.length < 2) {
-          const unit = pickArmyUnit(faction, strategy.counterBuild ? counterMix(strategy, seen) : strategy, army);
-          if (v.data >= UNITS[unit].cost) out.push({ type: 'train', building: prod.id, unit });
-        }
+        order(job.cmd, [w.id], job.cmd.type === 'build' ? BUILDINGS[job.cmd.building].cost : 0);
       }
 
       // 6. Attack once the army is big enough; keep feeding reinforcements.
-      const idleArmy = army.filter((u) => u.order === 'idle');
+      const idleArmy = army.filter((u) => u.order === 'idle' && !pending(u.id));
       const mayAttack = v.tick >= (strategy.attackNotBefore ?? 0);
       if (enemyCore && mayAttack && (attacking ? idleArmy.length >= 3 : army.length >= attackAt)) {
         const group = attacking ? idleArmy : army;
         attacking = true;
-        if (group.length > 0) out.push({ type: 'attackMove', units: group.map((u) => u.id), x: enemyCore.x, y: enemyCore.y });
+        if (group.length > 0) order({ type: 'attackMove', units: group.map((u) => u.id), x: enemyCore.x, y: enemyCore.y }, group.map((u) => u.id));
       }
       return out;
     },

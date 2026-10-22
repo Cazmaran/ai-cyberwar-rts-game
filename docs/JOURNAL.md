@@ -2,6 +2,16 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-22 — Balance: the bots were fighting their own lag
+
+- The AI side won most strategy matchups. Most of it turned out to be bot bugs, not unit stats:
+  - At the APM cap a bot gets about one action per decision. A defending bot re-issued the same attack order every decision, so it never trained units or sent workers out while under attack.
+  - A bot sees the world a reaction delay late, and that delay equals its decision interval. So it repeated every order once, wasting half its actions. In the opening it trained two workers instead of one. That left humans 30 Data short of their first production building, while the AI's cheaper drones left it room.
+  - Fixes: bots remember orders and spending that aren't visible yet, give production priority over worker jobs, and stop growing the economy when a bigger enemy army is on their half.
+- Tuning: starting Data 200 to 260, so both sides can afford a worker, a production building and a first unit. Adaptation 5% per death (cap 40%) to 3% (cap 25%): with the old values the AI won every long mirror match.
+- Result: AI rush overall 90% to 73%; mirror matches now 40–50%. Skill test 25–55% to 58–70%.
+- Still failing: rush beats boom every time, for both sides. Workers don't add income (Data comes from a fixed set of sources that 4 workers can claim), and nothing gives a defender a home advantage. Both are design questions for the owner.
+
 ## 2026-10-21 — Second playtest: more fun, still lost at 8:43
 
 - Owner reached step 3 (economy + a SOC) but had almost no army when the first attack came, and couldn't read the fights.

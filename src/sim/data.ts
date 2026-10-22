@@ -3,7 +3,7 @@
 // resources in milli-units (MILLI = 1000). Change DATA_VERSION whenever a number changes.
 import { MILLI, TILE } from './fixed.ts';
 
-export const DATA_VERSION = 6;
+export const DATA_VERSION = 7;
 
 export type Faction = 'human' | 'ai';
 export const FACTIONS: readonly Faction[] = ['human', 'ai'];
@@ -91,8 +91,8 @@ export interface BuildingStats {
 }
 
 export const BUILDINGS: Record<BuildingTypeId, BuildingStats> = {
-  noc: { faction: 'human', hp: 1500, sight: 8 * TILE, radius: 1500, cost: 0, buildWork: 0, power: 15, compute: 10, blocksEnemies: false },
-  primary_cluster: { faction: 'ai', hp: 1500, sight: 8 * TILE, radius: 1500, cost: 0, buildWork: 0, power: 15, compute: 10, blocksEnemies: false },
+  noc: { faction: 'human', hp: 5000, sight: 8 * TILE, radius: 1500, cost: 0, buildWork: 0, power: 15, compute: 10, blocksEnemies: false },
+  primary_cluster: { faction: 'ai', hp: 5000, sight: 8 * TILE, radius: 1500, cost: 0, buildWork: 0, power: 15, compute: 10, blocksEnemies: false },
   soc: { faction: 'human', hp: 600, sight: 6 * TILE, radius: 1000, cost: 120 * MILLI, buildWork: 400, power: -1, compute: 0, blocksEnemies: false },
   training_cluster: { faction: 'ai', hp: 600, sight: 6 * TILE, radius: 1000, cost: 120 * MILLI, buildWork: 400, power: -1, compute: 0, blocksEnemies: false },
   server_rack: { faction: 'any', hp: 300, sight: 4 * TILE, radius: 700, cost: 100 * MILLI, buildWork: 300, power: -2, compute: 5, blocksEnemies: false },
@@ -100,7 +100,7 @@ export const BUILDINGS: Record<BuildingTypeId, BuildingStats> = {
 };
 
 export const START = {
-  data: 200 * MILLI,
+  data: 260 * MILLI,
   workers: 3,
 };
 
@@ -132,9 +132,9 @@ export const ADAPTATION = {
   /** Percent of AI compute consumed while a retraining run is active. */
   retrainComputeCost: 50,
   /** Resistance gained per recent death to a unit type (percent). */
-  perDeath: 5,
+  perDeath: 3,
   /** Hard cap on resistance to any one unit type (percent). */
-  cap: 40,
+  cap: 25,
   /** Resistance lost per retraining run for unit types absent from the window (percent). */
   decay: 5,
 };

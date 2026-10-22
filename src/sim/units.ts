@@ -17,7 +17,7 @@ export function updateUnits(world: World): void {
     // AI processes need power; people don't. A blackout freezes AI units only.
     if (e.faction === 'ai' && inBlackout(world, e.x, e.y)) continue;
     if (e.cooldown > 0) e.cooldown--;
-    if (leashed(e) && !inSignal(world, e.x, e.y)) { returnToSignal(world, e); continue; }
+    if (leashed(e) && !inSignal(world, e.x, e.y, e.id)) { returnToSignal(world, e); continue; }
     runOrder(world, e);
   }
   resolveDeaths(world);
@@ -149,7 +149,7 @@ function moveTo(world: World, u: Unit, x: number, y: number, stopAt = 0): boolea
   if (stopAt > 0 ? within(u.x, u.y, x, y, stopAt) : u.x === x && u.y === y) return true;
   const [nx, ny] = stepToward(u.x, u.y, x, y, UNITS[u.type].speed);
   // A machine on the Model's link won't fly out of signal range.
-  if (leashed(u) && !inSignal(world, nx, ny) && inSignal(world, u.x, u.y)) return false;
+  if (leashed(u) && !inSignal(world, nx, ny, u.id) && inSignal(world, u.x, u.y, u.id)) return false;
   const wall = blockingBarricade(world, u.faction, nx, ny);
   if (wall) { engage(world, u, wall); return false; }
   u.x = nx;
@@ -159,7 +159,7 @@ function moveTo(world: World, u: Unit, x: number, y: number, stopAt = 0): boolea
 
 /** AI combat machines need the Model's signal (proposal 0001). */
 function leashed(u: Unit): boolean {
-  return SIGNAL.enabled && u.faction === 'ai' && UNITS[u.type].role !== 'worker';
+  return SIGNAL.enabled && u.faction === 'ai' && SIGNAL.roles.includes(UNITS[u.type].role);
 }
 
 /** Lost-link failsafe: fly straight back toward the nearest signal, ignoring orders. */

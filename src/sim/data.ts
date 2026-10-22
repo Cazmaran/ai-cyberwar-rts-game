@@ -168,6 +168,16 @@ export const ADAPTATION = {
 export const SIGNAL = {
   enabled: false,
   range: 8 * TILE,
+  /** Which combat roles need signal. */
+  roles: ['fast', 'ranged', 'tank'] as Role[],
+  /**
+   * How machines extend signal for each other. 'none': they don't. 'chain': each machine relays for
+   * others within `meshRange`, as long as the chain reaches real signal. 'swarm': a machine with at
+   * least `swarmSize - 1` others within `meshRange` coordinates locally, without the Model.
+   */
+  mesh: 'none' as 'none' | 'chain' | 'swarm',
+  meshRange: 3 * TILE,
+  swarmSize: 4,
 };
 
 export const FAIRNESS = {

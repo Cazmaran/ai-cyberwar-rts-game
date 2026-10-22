@@ -57,6 +57,34 @@ describe('signal range (proposal, behind SIGNAL.enabled)', () => {
     expect(inSignal(game.world, d.x, d.y)).toBe(false);
   });
 
+  it("chain mesh: a machine relays for others within mesh range, if it is linked to real signal itself", () => {
+    SIGNAL.mesh = 'chain';
+    try {
+      const game = newGame();
+      const core = game.world.sites.get('a_core')!;
+      const edge = spawnUnit(game.world, 'botnet_swarm', 'ai', core.x - SIGNAL.range, core.y);
+      const beyond = spawnUnit(game.world, 'botnet_swarm', 'ai', edge.x - 2 * TILE, core.y);
+      const lone = spawnUnit(game.world, 'botnet_swarm', 'ai', 20 * TILE, 4 * TILE);
+      expect(inSignal(game.world, beyond.x, beyond.y, beyond.id)).toBe(true);
+      expect(inSignal(game.world, beyond.x - 2 * TILE, beyond.y, edge.id)).toBe(true); // the chain continues
+      expect(inSignal(game.world, lone.x, lone.y, lone.id)).toBe(false);
+    } finally { SIGNAL.mesh = 'none'; }
+  });
+
+  it('swarm mesh: a big enough group keeps acting out of signal; a lone raider returns', () => {
+    SIGNAL.mesh = 'swarm';
+    try {
+      const game = newGame();
+      const group = [0, 1, 2, 3].map((i) => spawnUnit(game.world, 'botnet_swarm', 'ai', (20 + (i % 2)) * TILE, (15 + Math.trunc(i / 2)) * TILE));
+      for (const u of group) u.order = { type: 'move', x: u.x - 4 * TILE, y: u.y };
+      const lone = spawnUnit(game.world, 'botnet_swarm', 'ai', 20 * TILE, 4 * TILE);
+      lone.order = { type: 'move', x: 16 * TILE, y: 4 * TILE };
+      run(game, 100);
+      for (const u of group) expect(u.x).toBeLessThanOrEqual(17 * TILE);
+      expect(lone.x).toBeGreaterThan(20 * TILE);
+    } finally { SIGNAL.mesh = 'none'; }
+  });
+
   it('has no effect while disabled', () => {
     SIGNAL.enabled = false;
     const game = newGame();

@@ -1,6 +1,6 @@
 # Proposal 0001: Signal range for AI machines
 
-Status: **proposed, not approved.** Prototype in code behind `SIGNAL.enabled` (default `false`), so the live game is unchanged.
+Status: **proposed, not approved; round 2 tested.** Prototype in code behind `SIGNAL.enabled` (default `false`), so the live game is unchanged.
 
 ## Problem
 
@@ -52,11 +52,37 @@ Gate: no strategy above 65% overall; skill at least 70%.
 
 **Reading:** as prototyped, the rule cripples the AI's rush (2–16% overall), and humans become too strong. Rushing is exactly what the rule is meant to slow, but it slows it too much: the army arrives, stops at the edge, and waits for a worker to walk a relay out. Skill improves for boom and turtle.
 
+## Round 2: mesh swarms and partial leashes
+
+Prototype knobs: `SIGNAL.mesh` (`'none'`, `'chain'`, `'swarm'`), `meshRange` (3 tiles), `swarmSize` (4), `roles`.
+
+- **Chain mesh:** a machine relays signal for others within 3 tiles, if it is itself linked back to real signal.
+- **Swarm mesh:** a machine with at least 3 others within 3 tiles coordinates locally, without the Model.
+
+| Setting (range 8 unless noted) | Human overall rush/boom/turtle | AI overall rush/boom/turtle | Skill |
+|---|---|---|---|
+| Chain mesh | 78/72/55 | 7/61/27 | 53/81/69 |
+| Chain mesh, mesh range 4 | 76/71/54 | 8/62/29 | 50/75/66 |
+| Swarm mesh (4) | 76/64/48 | 9/63/40 | 55/73/71 |
+| Swarm mesh (3) | 72/66/45 | 15/60/42 | 56/69/76 |
+| Leash Botnet Swarms only | 79/62/46 | 6/64/43 | 50/71/69 |
+| Leash Botnet Swarms only, swarm mesh | 75/64/45 | 12/63/41 | 54/71/71 |
+| Leash Botnet Swarms only, range 10 | 76/71/50 | 11/57/35 | 50/68/65 |
+| Bots start relays at half army | 82/98/95 | 5/15/6 | 51/55/54 |
+
+**Reading:** no variant saves the AI's rush, and human rush then dominates (72–82% overall, gate max 65%).
+- A rush works by arriving before the defender is ready. Any hard leash delays the first hit, because the army waits for a relay, and that is enough to lose.
+- Mesh doesn't help because armies bunch together: the swarm can leave signal, but it isn't faster.
+- Building relays earlier pulls workers off the economy and is far worse.
+
+Skill improves in most variants. Boom and turtle skill reaches 70% or more, because fights happen on predictable ground.
+
 ## Options to make it fair (need a decision)
 
-1. **Mesh swarms:** AI combat machines also relay signal for each other over a short range (real drone swarms form mesh networks). A big group can push forward together; isolated raiders and stragglers get stranded. This is the most grounded fix and keeps the rule meaningful.
-2. **Compensate with numbers:** wider range, cheaper relays, or cheaper AI units. Simple, but the tests above show range and price alone don't rescue rush.
-3. **Leash only part of the roster:** for example, Hunter Drones (military drones with long-range links) are exempt.
-4. **Don't adopt:** keep free movement and solve the playtest problem with UI and teaching (warnings, defenses near engineers).
+1. **Mesh swarms:** tested in round 2; not enough on its own.
+2. **Soft leash (degraded autopilot):** out of signal, machines keep acting but on a dumb onboard autopilot: slower, weaker, no new targets beyond what they can see. This is grounded (real drones fall back to limited autonomous modes). Lone raids hurt less, but a rush still lands on time.
+3. **Compensate with numbers:** wider range, cheaper relays, or cheaper AI units. Simple, but the tests above show range and price alone don't rescue rush.
+4. **Leash only part of the roster:** for example, Hunter Drones (military drones with long-range links) are exempt.
+5. **Don't adopt:** keep free movement and solve the playtest problem with UI and teaching (warnings, defenses near engineers).
 
-Recommendation: try option 1 next, then re-run this table.
+Recommendation (after round 2): prototype option 2. If it can't keep the AI's rush viable, take option 5 for now and revisit signal range with fiber cutting in Phase 3.

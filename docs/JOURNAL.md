@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-22 — Fourth playtest: first win, 23:56
+
+- The owner beat the default AI in 23:56, a length that felt about right.
+- What won it: defenses held, the right counters, and out-expanding the AI. Three different systems mattered, and two of them are new this session (defenses and expansions).
+- "Play again?": maybe. Gate 1 needs a clear yes; finding out what's holding it back is next.
+
 ## 2026-10-22 — The skill gate and the limits of scripted bots
 
 - Bots attacked once their army reached N units. Human units cost about 1.6× more, so in boom matches the human army never reached the threshold and never attacked. The AI won by attrition. Bots now attack by army value in Data. Sloppy mirror matches went from 68/13/73% to 58/34/60% human wins.

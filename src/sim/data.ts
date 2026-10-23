@@ -171,6 +171,17 @@ export const SIGNAL = {
   /** Which combat roles need signal. */
   roles: ['fast', 'ranged', 'tank'] as Role[],
   /**
+   * 'hard': machines stop at the edge of signal and fly back when they lose it. 'soft': out of signal
+   * they run on onboard autopilot. They keep their last order, can't take new ones, and move and hit
+   * at reduced strength.
+   */
+  leash: 'hard' as 'hard' | 'soft',
+  /** Soft leash: percent of normal speed and damage on autopilot. */
+  autopilotSpeed: 60,
+  autopilotDamage: 50,
+  /** Soft leash: whether machines on autopilot ignore new orders. */
+  autopilotDeaf: true,
+  /**
    * How machines extend signal for each other. 'none': they don't. 'chain': each machine relays for
    * others within `meshRange`, as long as the chain reaches real signal. 'swarm': a machine with at
    * least `swarmSize - 1` others within `meshRange` coordinates locally, without the Model.

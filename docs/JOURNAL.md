@@ -6,6 +6,7 @@ The story of building this game, newest first. Wins, failures, surprises, and wh
 
 - As soon as attacks started, Botnet Swarms flew straight to the human engineers. The owner asked whether botnets can travel off the network. They can, and that bends reality: hijacked drones need a control link.
 - Prototyped a signal-range rule behind a flag (`docs/proposals/0001-signal-range.md`). It works as intended, but it crushes the AI's rush (2–16% overall). The next idea to try is mesh swarms: drones relay signal for each other.
+- Three rounds later (hard leash, mesh swarms, soft autopilot), every version crushes the AI's attacks, because the AI always fights in the human base, out of its own signal. Lesson: a rule that limits where one side can fight is a rebalance of that side, not a tweak. Shelved behind its flag until Phase 3.
 
 ## 2026-10-22 — Defenses, expansions, and one number that mattered most
 

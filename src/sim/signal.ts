@@ -4,7 +4,7 @@
 import { SIGNAL, UNITS } from './data.ts';
 import { dist2, idiv } from './fixed.ts';
 import { inBlackout } from './economy.ts';
-import type { World } from './world.ts';
+import type { Unit, World } from './world.ts';
 
 interface Coverage {
   tick: number;
@@ -97,4 +97,14 @@ export function inSignal(world: World, x: number, y: number, self?: number): boo
   if (SIGNAL.mesh === 'chain') return near > 0;
   if (SIGNAL.mesh === 'swarm') return near >= SIGNAL.swarmSize - 1;
   return false;
+}
+
+/** AI combat machines that need the Model's signal (proposal 0001). */
+export function leashed(u: Unit): boolean {
+  return SIGNAL.enabled && u.faction === 'ai' && SIGNAL.roles.includes(UNITS[u.type].role);
+}
+
+/** Soft leash: a machine out of signal runs on its onboard autopilot. */
+export function onAutopilot(world: World, u: Unit): boolean {
+  return SIGNAL.leash === 'soft' && leashed(u) && !inSignal(world, u.x, u.y, u.id);
 }

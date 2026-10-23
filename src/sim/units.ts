@@ -2,7 +2,7 @@
 import { ADAPTATION, BUILDINGS, ECONOMY, SIGNAL, UNITS, type Faction } from './data.ts';
 import { dist2, pct, stepToward, within } from './fixed.ts';
 import { inBlackout } from './economy.ts';
-import { inSignal, nearestSignal } from './signal.ts';
+import { inSignal, leashed, nearestSignal, onAutopilot } from './signal.ts';
 import { CORE_BUILDING, type Building, type Entity, type Unit, type World } from './world.ts';
 
 /** Idle and attack-moving units look for targets only every N ticks to keep the sim fast. All units search on
@@ -17,7 +17,7 @@ export function updateUnits(world: World): void {
     // AI processes need power; people don't. A blackout freezes AI units only.
     if (e.faction === 'ai' && inBlackout(world, e.x, e.y)) continue;
     if (e.cooldown > 0) e.cooldown--;
-    if (leashed(e) && !inSignal(world, e.x, e.y, e.id)) { returnToSignal(world, e); continue; }
+    if (SIGNAL.leash === 'hard' && leashed(e) && !inSignal(world, e.x, e.y, e.id)) { returnToSignal(world, e); continue; }
     runOrder(world, e);
   }
   resolveDeaths(world);
@@ -132,6 +132,7 @@ function fire(world: World, u: Unit, t: Entity): void {
   if (u.cooldown > 0) return;
   const stats = UNITS[u.type];
   let dmg = stats.damage;
+  if (onAutopilot(world, u)) dmg = pct(dmg, SIGNAL.autopilotDamage);
   if (t.kind === 'unit') {
     dmg += pct(dmg, stats.bonusVs[UNITS[t.type].role] ?? 0);
     dmg -= pct(dmg, t.resist[u.type] ?? 0);
@@ -147,19 +148,15 @@ function fire(world: World, u: Unit, t: Entity): void {
  */
 function moveTo(world: World, u: Unit, x: number, y: number, stopAt = 0): boolean {
   if (stopAt > 0 ? within(u.x, u.y, x, y, stopAt) : u.x === x && u.y === y) return true;
-  const [nx, ny] = stepToward(u.x, u.y, x, y, UNITS[u.type].speed);
-  // A machine on the Model's link won't fly out of signal range.
-  if (leashed(u) && !inSignal(world, nx, ny, u.id) && inSignal(world, u.x, u.y, u.id)) return false;
+  const speed = onAutopilot(world, u) ? pct(UNITS[u.type].speed, SIGNAL.autopilotSpeed) : UNITS[u.type].speed;
+  const [nx, ny] = stepToward(u.x, u.y, x, y, speed);
+  // Hard leash: a machine on the Model's link won't fly out of signal range.
+  if (SIGNAL.leash === 'hard' && leashed(u) && !inSignal(world, nx, ny, u.id) && inSignal(world, u.x, u.y, u.id)) return false;
   const wall = blockingBarricade(world, u.faction, nx, ny);
   if (wall) { engage(world, u, wall); return false; }
   u.x = nx;
   u.y = ny;
   return stopAt > 0 ? within(u.x, u.y, x, y, stopAt) : u.x === x && u.y === y;
-}
-
-/** AI combat machines need the Model's signal (proposal 0001). */
-function leashed(u: Unit): boolean {
-  return SIGNAL.enabled && u.faction === 'ai' && SIGNAL.roles.includes(UNITS[u.type].role);
 }
 
 /** Lost-link failsafe: fly straight back toward the nearest signal, ignoring orders. */

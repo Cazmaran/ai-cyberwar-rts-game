@@ -1,9 +1,10 @@
 // The layered command API (Tenet 2). Every controller (human UI, scripted AI, LLM) acts only through these.
 // Unit orders act on specific units; high-level orders are expanded by the sim into unit orders.
-import { BUILDINGS, UNITS, type BuildingTypeId, type Faction, type UnitTypeId } from './data.ts';
+import { BUILDINGS, SIGNAL, UNITS, type BuildingTypeId, type Faction, type UnitTypeId } from './data.ts';
 import { dist2, TILE, within } from './fixed.ts';
 import { pullThePlug } from './abilities.ts';
 import { sectorCenter, sectorOf, SECTORS, type SectorId } from './sectors.ts';
+import { onAutopilot } from './signal.ts';
 import { buildings, spawnBuilding, units, WORKER, type Order, type Unit, type World } from './world.ts';
 
 export type UnitOrder =
@@ -160,7 +161,10 @@ function ownUnits(world: World, faction: Faction, ids: number[]): Unit[] {
 function orderUnits(world: World, faction: Faction, ids: number[], order: () => Order): string | null {
   const list = ownUnits(world, faction, ids);
   if (list.length === 0) return 'no valid units';
-  for (const u of list) setOrder(u, order());
+  // Soft leash (proposal 0001): machines on autopilot are out of the Model's reach and keep their last order.
+  const reachable = SIGNAL.autopilotDeaf ? list.filter((u) => !onAutopilot(world, u)) : list;
+  if (reachable.length === 0) return 'out of signal';
+  for (const u of reachable) setOrder(u, order());
   return null;
 }
 

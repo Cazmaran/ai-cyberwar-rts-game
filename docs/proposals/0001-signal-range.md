@@ -1,6 +1,6 @@
 # Proposal 0001: Signal range for AI machines
 
-Status: **proposed, not approved; round 2 tested.** Prototype in code behind `SIGNAL.enabled` (default `false`), so the live game is unchanged.
+Status: **proposed, not approved; three rounds tested; recommendation: shelve until Phase 3.** Prototype in code behind `SIGNAL.enabled` (default `false`), so the live game is unchanged.
 
 ## Problem
 
@@ -77,12 +77,32 @@ Prototype knobs: `SIGNAL.mesh` (`'none'`, `'chain'`, `'swarm'`), `meshRange` (3 
 
 Skill improves in most variants. Boom and turtle skill reaches 70% or more, because fights happen on predictable ground.
 
+## Round 3: soft leash (degraded autopilot)
+
+Knobs: `SIGNAL.leash = 'soft'`, `autopilotSpeed`, `autopilotDamage` (percent of normal), `autopilotDeaf` (machines on autopilot ignore new orders). Out of signal, a machine keeps acting at reduced strength instead of stopping.
+
+| Setting (range 8) | Human overall rush/boom/turtle | AI overall rush/boom/turtle | Skill |
+|---|---|---|---|
+| Soft 60% speed / 50% damage, ignores orders | 77/83/71 | 5/45/18 | 50/51/53 |
+| Soft 80/75, ignores orders | 77/80/61 | 8/51/23 | 53/61/53 |
+| Soft 80/75, takes orders | 76/72/52 | 11/56/33 | 50/66/57 |
+| Soft 100/100 (no penalty), bots build relays | 66/55/45 | 23/66/45 | 73/62/70 |
+| Soft 100/100, no relays (sanity: equals rule off) | 61/50/33 | 50/65/41 | 68/64/63 |
+| Soft 80/60, takes orders, no relays | 77/78/62 | 5/54/25 | 54/65/53 |
+| Soft 60/50, takes orders, no relays | 78/82/74 | 5/42/19 | 49/57/47 |
+
+**Reading:** the soft leash fails for the same reason as the hard one.
+- The AI wins by fighting in the human base, which is always out of its signal. So any penalty weakens exactly the attacks the AI depends on. Even 80% speed and 60% damage drops AI rush to 5%.
+- Relay building costs the bot too: with no penalty at all, building relays alone drops AI rush from 50% to 23%.
+
+**Conclusion after three rounds:** signal range is a large AI nerf in every form tested. It could only work as part of a wider rebalance that gives the AI something back. Examples: signal from human sites the AI captures, or cheaper and stronger machines inside its own network. That is a redesign of the AI's identity, not a tweak.
+
 ## Options to make it fair (need a decision)
 
 1. **Mesh swarms:** tested in round 2; not enough on its own.
-2. **Soft leash (degraded autopilot):** out of signal, machines keep acting but on a dumb onboard autopilot: slower, weaker, no new targets beyond what they can see. This is grounded (real drones fall back to limited autonomous modes). Lone raids hurt less, but a rush still lands on time.
+2. **Soft leash (degraded autopilot):** tested in round 3; the AI's attacks still collapse.
 3. **Compensate with numbers:** wider range, cheaper relays, or cheaper AI units. Simple, but the tests above show range and price alone don't rescue rush.
 4. **Leash only part of the roster:** for example, Hunter Drones (military drones with long-range links) are exempt.
 5. **Don't adopt:** keep free movement and solve the playtest problem with UI and teaching (warnings, defenses near engineers).
 
-Recommendation (after round 2): prototype option 2. If it can't keep the AI's rush viable, take option 5 for now and revisit signal range with fiber cutting in Phase 3.
+Recommendation (after round 3): take option 5 for now. Keep the prototype behind its flag, and revisit signal range in Phase 3 together with fiber cutting and an AI rebalance.

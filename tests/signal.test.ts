@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { inSignal, SIGNAL, spawnBuilding, spawnUnit, TILE } from '../src/sim/index.ts';
+import { applyCommand, inSignal, pct, SIGNAL, spawnBuilding, spawnUnit, TILE, UNITS } from '../src/sim/index.ts';
 import { newGame, run } from './helpers.ts';
 
 // Proposal 0001 (signal range): hijacked machines need a control link to the Model. Off by default.
@@ -83,6 +83,28 @@ describe('signal range (proposal, behind SIGNAL.enabled)', () => {
       for (const u of group) expect(u.x).toBeLessThanOrEqual(17 * TILE);
       expect(lone.x).toBeGreaterThan(20 * TILE);
     } finally { SIGNAL.mesh = 'none'; }
+  });
+
+  it('soft leash: out of signal a machine keeps its last order on a slower, weaker autopilot', () => {
+    SIGNAL.leash = 'soft';
+    try {
+      const game = newGame();
+      const u = spawnUnit(game.world, 'botnet_swarm', 'ai', 20 * TILE, 16 * TILE);
+      u.order = { type: 'move', x: 10 * TILE, y: 16 * TILE };
+      run(game, 1);
+      expect(u.x).toBe(20 * TILE - pct(UNITS.botnet_swarm.speed, SIGNAL.autopilotSpeed));
+      // New orders can't reach it.
+      expect(applyCommand(game.world, 'ai', { type: 'stop', units: [u.id] })).toBe('out of signal');
+      expect(u.order.type).toBe('move');
+      // It hits at reduced strength.
+      const target = spawnUnit(game.world, 'red_team', 'human', u.x - 500, u.y);
+      const hp = target.hp;
+      u.order = { type: 'attack', target: target.id };
+      run(game, 1);
+      const full = UNITS.botnet_swarm.damage + pct(UNITS.botnet_swarm.damage, UNITS.botnet_swarm.bonusVs.ranged!);
+      expect(hp - target.hp).toBeLessThan(full);
+      expect(hp - target.hp).toBeGreaterThan(0);
+    } finally { SIGNAL.leash = 'hard'; }
   });
 
   it('has no effect while disabled', () => {

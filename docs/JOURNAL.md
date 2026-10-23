@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-23 — Sixteenth playtest: the recipe holds (6:12)
+
+- Another rush win against boom with the same recipe: center by 0:40, the router won by 2:40, AI drones dead, Router Choke (`a_router_fwd` at 3:40, `a_router` at 4:40, AI income 0).
+- The AI didn't rebuild drones even with the new minimum-workforce rule: it spent everything on army and sat at 30–45 Data, just under a drone's 45-Data price.
+- Remaining habit: Data banking (1,772 unspent at the end; Server Racks only after 4:40).
+
 ## 2026-10-23 — Fifteenth playtest: rush beats boom in 5:04
 
 - Fastest win yet. The owner took both center sources and the center router by 0:40, retook the router at 1:20 and held it, killed all 7 AI drones by 2:40, and took `a_router_fwd` at 3:00 (Router Choke again). Income was 14.8 to 5.8 Data/s from 2:40. They built 4 Server Racks and 4 Security Posts this time, applying the earlier replay's lessons.

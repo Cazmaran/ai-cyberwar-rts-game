@@ -1,0 +1,26 @@
+# DCO check: every commit in a pull request must carry a "Signed-off-by:" line (git commit -s).
+# See CONTRIBUTING.md. Runs without third-party apps.
+name: DCO
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  dco:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check sign-offs
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          missing=0
+          for c in $(git rev-list --no-merges "$BASE..$HEAD"); do
+            if ! git log -1 --format=%B "$c" | grep -q '^Signed-off-by: '; then
+              echo "::error::Commit $(git log -1 --format='%h %s' "$c") has no Signed-off-by line. Use git commit -s (see CONTRIBUTING.md)."
+              missing=1
+            fi
+          done
+          exit $missing

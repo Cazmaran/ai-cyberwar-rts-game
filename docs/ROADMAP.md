@@ -129,13 +129,13 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
   - Adaptation cap holds: resistance never exceeds the cap in any sim.
   - APM cap and reaction delay enforced for non-human controllers (tested).
 - **Go-public checklist (after Gate 1 passes, owner approval):**
-  - [x] Issue templates (bug, design proposal, balance report). [ ] 5–10 `good first issue`s.
+  - [x] Issue templates (bug, design proposal, balance report) and 6 `good first issue`s (#1–#6).
   - [x] Secrets/history scan (2026-10-23: no secrets, no personal paths or emails; all 51 commits use the noreply address; the PDF and `.env` were never committed).
-  - [ ] Decide whether the Gemini PDF goes in the repo.
-  - [ ] `CODE_OF_CONDUCT.md` contact address.
-  - [ ] Name + trademark check ("AI Cyberwar RTS" is a working title).
-  - [ ] Branch protection: PR-only `main`, required CI.
-  - [ ] DCO check enabled on PRs.
+  - [x] Gemini PDF: stays private (gitignored), owner decision 2026-10-23.
+  - [ ] `CODE_OF_CONDUCT.md` contact address: owner is creating a dedicated project email.
+  - [x] Name: keep the working title "AI Cyberwar RTS" for now (owner decision 2026-10-23); a GitHub rename keeps redirects.
+  - [ ] Branch protection: PR-only `main`, required CI. Set right after going public (free plans don't offer it on private repos).
+  - [x] DCO check on PRs (`.github/workflows/dco.yml`, no third-party app).
   - [ ] Flip to public; owner decides where to announce.
 
 ### Phase 2 — The LLM General (4–6 weeks)

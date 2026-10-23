@@ -78,13 +78,23 @@ export function factionView(world: World, faction: Faction): FactionView {
   };
 }
 
+/**
+ * Power left once every queued unit comes online. A finished unit waits in its building until there is
+ * Power for it, so training past zero only ties up Data.
+ */
+export function powerHeadroom(v: FactionView): number {
+  let queued = 0;
+  for (const b of v.buildings) for (const t of b.queue) queued += UNITS[t].power;
+  return Math.max(0, v.powerCap - v.powerUsed - queued);
+}
+
 /** Compact text summary by sector: what an LLM General reads, and what a human can inspect when debugging. */
 export function describeView(v: FactionView): string {
   const secs = Math.trunc(v.tick / TICK_RATE);
   const lines: string[] = [];
   lines.push(`[${v.faction}] t=${Math.trunc(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
     + ` data=${Math.trunc(v.data / MILLI)} (+${((v.income * TICK_RATE) / MILLI).toFixed(1)}/s)`
-    + ` power=${v.powerUsed}/${v.powerCap} compute=${v.compute}`);
+    + ` power=${v.powerUsed}/${v.powerCap}${powerHeadroom(v) === 0 ? ' FULL' : ''} compute=${v.compute}`);
   if (v.plugReadyIn !== null) lines.push(`pull_the_plug: ${v.plugReadyIn === 0 ? 'READY' : `ready in ${Math.ceil(v.plugReadyIn / TICK_RATE)}s`}`);
   if (v.resist) {
     const r = Object.entries(v.resist).filter(([, p]) => (p ?? 0) > 0).map(([t, p]) => `${t} ${p}%`);

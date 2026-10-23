@@ -1,7 +1,7 @@
 // The command card: clickable buttons for everything the current selection can do. Hotkeys are only
 // shortcuts for these buttons; nothing in the game requires knowing them.
 import {
-  BUILDINGS, MILLI, UNITS, type BuildingTypeId, type Command, type FactionView, type UnitTypeId,
+  BUILDINGS, MILLI, powerHeadroom, UNITS, type BuildingTypeId, type Command, type FactionView, type UnitTypeId,
 } from '../sim/index.ts';
 import type { UiState } from './input.ts';
 
@@ -43,11 +43,14 @@ export function buildCard(view: FactionView, ui: UiState, actions: {
   const core = view.buildings.find((b) => b.type === 'noc');
   const soc = view.buildings.find((b) => b.type === 'soc' && b.built);
   const afford = (c: number) => (view.data >= c ? undefined : `Need ${cost(c)} Data`);
+  const allSubstations = view.sites.filter((s) => s.kind === 'substation').every((s) => s.owner === view.faction);
+  const power = (t: UnitTypeId) => (UNITS[t].power <= powerHeadroom(view) ? undefined
+    : `Power full (${view.powerUsed}/${view.powerCap}). ${allSubstations ? 'You hold every substation: this is your unit limit.' : 'Claim another substation for more Power.'}`);
   const out: CardButton[] = [];
 
   const train = (b: { id: number; queue: unknown[] } | undefined, t: UnitTypeId, key?: string): CardButton => ({
     id: `train:${t}`, label: `Train ${pretty(t)}`, key, cost: UNITS[t].cost, tip: UNIT_TIPS[t] ?? '',
-    disabled: !b ? 'Build a SOC first' : b.queue.length >= 5 ? 'Queue full' : afford(UNITS[t].cost),
+    disabled: !b ? 'Build a SOC first' : b.queue.length >= 5 ? 'Queue full' : power(t) ?? afford(UNITS[t].cost),
     run: () => (b ? [{ type: 'train', building: b.id, unit: t }] : []),
   });
   const build = (t: BuildingTypeId, key: string): CardButton => ({

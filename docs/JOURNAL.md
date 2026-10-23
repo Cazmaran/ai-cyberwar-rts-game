@@ -7,6 +7,7 @@ The story of building this game, newest first. Wins, failures, surprises, and wh
 - The owner beat the default AI in 23:56, a length that felt about right.
 - What won it: defenses held, the right counters, and out-expanding the AI. Three different systems mattered, and two of them are new this session (defenses and expansions).
 - "Play again?": maybe. Gate 1 needs a clear yes; finding out what's holding it back is next.
+- What held it back: "I couldn't build any more armor or fast units, but I had plenty of Data." They had hit the Power cap, and nothing said so. Finished units waited silently and the Train buttons kept taking Data. Now the Power counter shows FULL, an alert fires, the Train buttons explain why they're disabled, and the text view marks `FULL` for LLMs.
 
 ## 2026-10-22 — The skill gate and the limits of scripted bots
 

@@ -1,6 +1,6 @@
 // HTML overlay: resources, selection, messages, hotkeys, and the text view. Plain DOM keeps it readable,
 // scalable and screen-reader friendly.
-import { BUILDINGS, describeView, MILLI, powerHeadroom, TICK_RATE, type FactionView, type World } from '../sim/index.ts';
+import { BUILDINGS, describeView, MILLI, powerHeadroom, TICK_RATE, training, type FactionView, type World } from '../sim/index.ts';
 import { pretty, type CardButton } from './card.ts';
 import { renderGuide } from './guide.ts';
 import { HOTKEYS } from './input.ts';
@@ -54,7 +54,8 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
   function renderSelection(v: FactionView, selected: Set<number>): void {
     const units = v.units.filter((u) => selected.has(u.id));
     const b = v.buildings.find((x) => selected.has(x.id));
-    const key = units.map((u) => `${u.id}:${u.hp}`).join(',') + (b ? `b${b.id}:${b.hp}:${b.queue.length}:${b.built}` : '');
+    const t = b ? training(v, b) : null;
+    const key = units.map((u) => `${u.id}:${u.hp}`).join(',') + (b ? `b${b.id}:${b.hp}:${b.queue.length}:${b.built}:${JSON.stringify(t)}` : '');
     if (key === selKey) return;
     selKey = key;
     const el = $('hud-selection');
@@ -74,7 +75,7 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
     } else if (b) {
       el.innerHTML = `<div class="sel-head">${pretty(b.type)}${b.built ? '' : ' (under construction)'}</div>`
         + `${bar(b.hp, BUILDINGS[b.type].hp)} <span class="dim">${b.hp}/${BUILDINGS[b.type].hp} hp</span>`
-        + (b.queue.length ? `<div>Training: ${b.queue.map((q) => pretty(q)).join(', ')}</div>` : '');
+        + (t ? `<div>${trainingText(t)}</div>` : '');
     } else {
       el.innerHTML = '<span class="dim">Nothing selected. Drag a box or click a unit.</span>';
     }
@@ -192,3 +193,8 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
   };
 }
 
+/** "Training Red Team: 6s (+2 queued)", or a Power warning when the finished unit can't come online. */
+export function trainingText(t: NonNullable<ReturnType<typeof training>>): string {
+  const when = t.waitingForPower ? '<b class="warn">waiting for Power</b>' : `<b>${t.seconds}s</b>`;
+  return `Training ${pretty(t.unit)}: ${when}${t.queued ? ` <span class="dim">(+${t.queued} queued)</span>` : ''}`;
+}

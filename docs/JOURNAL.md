@@ -2,6 +2,11 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-22 — Sixth playtest: first win against a strategy AI
+
+- Owner beat `?ai=turtle`, the first win against a full-strength strategy bot.
+- Asked for a countdown to the next unit. Production buildings now show a training bar on the map. The selection panel and intel panel say "Training Red Team: 6s (+2 queued)", or "waiting for Power". The text view carries the same, so LLMs get it too.
+
 ## 2026-10-22 — Fifth playtest: faster win, ready for the real AI
 
 - Owner won again against the training AI in 16:07, down from 23:56, playing conservatively and managing Power and units better. Getting faster once a rule makes sense is what Gate 1 means by "better play wins".

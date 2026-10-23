@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCard } from '../src/render/card.ts';
-import { describeView, factionView, powerHeadroom, spawnUnit, TILE } from '../src/sim/index.ts';
+import { describeView, factionView, powerHeadroom, spawnUnit, TILE, training } from '../src/sim/index.ts';
 import { newGame } from './helpers.ts';
 
 describe('faction view (fog of war)', () => {
@@ -49,5 +49,24 @@ describe('power cap visibility', () => {
     const ui = { selected: new Set<number>(), mode: { type: 'none' as const } };
     const btn = buildCard(v, ui as never, { setMode: () => {}, select: () => {} }).find((b) => b.id === 'train:field_engineer')!;
     expect(btn.disabled).toMatch(/Power full/);
+  });
+});
+
+describe('training countdown', () => {
+  it('reports seconds to the next unit from progress and Compute, and flags units waiting for Power', () => {
+    const game = newGame();
+    const noc = [...game.world.entities.values()].find((e) => e.kind === 'building' && e.type === 'noc')!;
+    if (noc.kind !== 'building') throw new Error('no noc');
+    noc.queue.push('field_engineer', 'field_engineer');
+    noc.progress = 1000;
+    let v = factionView(game.world, 'human');
+    const b = v.buildings.find((x) => x.id === noc.id)!;
+    // field_engineer work 2000, progress 1000, NOC compute 10 per tick -> 100 ticks = 5 s.
+    expect(training(v, b)).toEqual({ unit: 'field_engineer', seconds: 5, queued: 1, waitingForPower: false });
+    expect(describeView(v)).toMatch(/our noc .*training field_engineer 5s/);
+    noc.progress = 2000;
+    game.world.factions.human.powerUsed = game.world.factions.human.powerCap;
+    v = factionView(game.world, 'human');
+    expect(training(v, v.buildings.find((x) => x.id === noc.id)!)?.waitingForPower).toBe(true);
   });
 });

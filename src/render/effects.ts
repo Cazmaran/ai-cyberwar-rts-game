@@ -1,8 +1,9 @@
 // Visual feedback the sim doesn't need: hit flashes, death markers, map pings, and attack alerts.
 // Derived by comparing the player's view frame to frame (render-only, never affects the game).
 import type { Graphics } from 'pixi.js';
-import { dist2, TILE, UNITS, type FactionView, type Role, type UnitView } from '../sim/index.ts';
+import { dist2, TILE, training, UNITS, type FactionView, type Role, type UnitView } from '../sim/index.ts';
 import { pretty } from './card.ts';
+import { trainingText } from './hud.ts';
 
 interface Mark { x: number; y: number; until: number; color: number }
 
@@ -159,6 +160,10 @@ export function intel(v: FactionView): string {
       const n = enemy.filter((u) => u.role === role);
       if (n.length) lines.push(`&nbsp;· ${composition(n)} (${ROLE_NAME[role]}) → counter: <b>${COUNTER[role]}</b>`);
     }
+  }
+  for (const b of v.buildings) {
+    const t = training(v, b);
+    if (t) lines.push(`<b>${pretty(b.type)}:</b> ${trainingText(t)}`);
   }
   lines.push('<span class="dim">● engineer ▲ fast ◆ ranged ■ tank · blue = you, orange = AI · dark ground = fog (enemies there are hidden)</span>');
   return lines.join('<br>');

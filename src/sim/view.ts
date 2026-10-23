@@ -6,7 +6,11 @@ import { sectorOf, type SectorId } from './sectors.ts';
 import { buildings, TICK_RATE, units, type Order, type World } from './world.ts';
 
 export interface UnitView { id: number; type: UnitTypeId; role: Role; x: number; y: number; hp: number; maxHp: number; sector: SectorId; order: Order['type']; target: number | null }
-export interface BuildingView { id: number; type: BuildingTypeId; x: number; y: number; hp: number; maxHp: number; built: boolean; queue: UnitTypeId[]; sector: SectorId }
+export interface BuildingView {
+  id: number; type: BuildingTypeId; x: number; y: number; hp: number; maxHp: number; built: boolean;
+  /** Own buildings only: units queued, and production work done on the first one. */
+  queue: UnitTypeId[]; progress: number; sector: SectorId;
+}
 export interface SiteView { id: string; kind: SiteKind; x: number; y: number; sector: SectorId; visible: boolean; owner: Faction | null | 'unknown' }
 export interface LinkView { index: number; a: string; b: string; bandwidth: number; mine: boolean }
 
@@ -47,7 +51,7 @@ export function factionView(world: World, faction: Faction): FactionView {
   });
   const buildingView = (b: ReturnType<typeof buildings>[number]): BuildingView => ({
     id: b.id, type: b.type, x: b.x, y: b.y, hp: b.hp, maxHp: BUILDINGS[b.type].hp, built: b.built,
-    queue: b.faction === faction ? [...b.queue] : [], sector: sectorOf(world.map, b.x, b.y),
+    queue: b.faction === faction ? [...b.queue] : [], progress: b.faction === faction ? b.progress : 0, sector: sectorOf(world.map, b.x, b.y),
   });
 
   const allUnits = units(world);
@@ -88,6 +92,22 @@ export function powerHeadroom(v: FactionView): number {
   return Math.max(0, v.powerCap - v.powerUsed - queued);
 }
 
+export interface Training { unit: UnitTypeId; seconds: number; queued: number; waitingForPower: boolean }
+
+/**
+ * What a building is training and when the next unit comes out. Compute is shared equally between
+ * buildings that are training (as in the sim's production step). A finished unit waits for Power.
+ */
+export function training(v: FactionView, b: BuildingView): Training | null {
+  const unit = b.queue[0];
+  if (!unit || !b.built) return null;
+  const busy = v.buildings.filter((x) => x.built && x.queue.length > 0).length;
+  const share = Math.max(1, Math.trunc(v.compute / Math.max(1, busy)));
+  const left = Math.max(0, UNITS[unit].work - b.progress);
+  const waitingForPower = left === 0 && v.powerUsed + UNITS[unit].power > v.powerCap;
+  return { unit, seconds: Math.ceil(Math.ceil(left / share) / TICK_RATE), queued: b.queue.length - 1, waitingForPower };
+}
+
 /** Compact text summary by sector: what an LLM General reads, and what a human can inspect when debugging. */
 export function describeView(v: FactionView): string {
   const secs = Math.trunc(v.tick / TICK_RATE);
@@ -113,7 +133,11 @@ export function describeView(v: FactionView): string {
     if (mine) add(s, `ours: ${mine}`);
     if (theirs) add(s, `ENEMY: ${theirs}`);
   }
-  for (const b of v.buildings) add(b.sector, `our ${b.type}${b.built ? '' : ' (building)'} ${b.hp}/${b.maxHp}hp`);
+  for (const b of v.buildings) {
+    const t = training(v, b);
+    const tr = !t ? '' : ` training ${t.unit} ${t.waitingForPower ? 'waiting for power' : `${t.seconds}s`}${t.queued ? ` (+${t.queued} queued)` : ''}`;
+    add(b.sector, `our ${b.type}${b.built ? '' : ' (building)'} ${b.hp}/${b.maxHp}hp${tr}`);
+  }
   for (const b of v.enemyBuildings) add(b.sector, `ENEMY ${b.type} ${b.hp}/${b.maxHp}hp`);
   for (const s of v.sites) {
     if (s.kind === 'core') continue;

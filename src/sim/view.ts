@@ -2,10 +2,15 @@
 import { BUILDINGS, UNITS, type BuildingTypeId, type Faction, type Role, type UnitTypeId } from './data.ts';
 import { MILLI, within } from './fixed.ts';
 import type { SiteKind } from './map.ts';
+import { workerJob, type Job } from './jobs.ts';
 import { sectorOf, type SectorId } from './sectors.ts';
 import { buildings, TICK_RATE, units, type Order, type World } from './world.ts';
 
-export interface UnitView { id: number; type: UnitTypeId; role: Role; x: number; y: number; hp: number; maxHp: number; sector: SectorId; order: Order['type']; target: number | null }
+export interface UnitView {
+  id: number; type: UnitTypeId; role: Role; x: number; y: number; hp: number; maxHp: number; sector: SectorId; order: Order['type']; target: number | null;
+  /** Own workers only: what they are doing and how far along (null when idle, or for enemy units). */
+  job: Job | null;
+}
 export interface BuildingView {
   id: number; type: BuildingTypeId; x: number; y: number; hp: number; maxHp: number; built: boolean;
   /** Own buildings only: units queued, and production work done on the first one. */
@@ -54,6 +59,7 @@ export function factionView(world: World, faction: Faction): FactionView {
     id: u.id, type: u.type, role: UNITS[u.type].role, x: u.x, y: u.y, hp: u.hp, maxHp: UNITS[u.type].hp,
     sector: sectorOf(world.map, u.x, u.y), order: u.order.type,
     target: u.order.type === 'attack' ? u.order.target : u.target,
+    job: u.faction === faction ? workerJob(world, u) : null,
   });
   const builders = new Map<number, number>();
   for (const u of units(world)) {

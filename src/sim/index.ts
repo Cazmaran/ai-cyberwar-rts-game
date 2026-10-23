@@ -3,6 +3,7 @@ export * from './commands.ts';
 export * from './data.ts';
 export * from './fixed.ts';
 export * from './game.ts';
+export * from './jobs.ts';
 export * from './map.ts';
 export * from './rng.ts';
 export * from './sectors.ts';

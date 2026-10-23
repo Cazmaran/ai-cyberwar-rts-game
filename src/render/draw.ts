@@ -5,6 +5,7 @@ import {
   BUILDINGS, PULL_THE_PLUG, UNITS, type Faction, type FactionView, type Role, type World,
 } from '../sim/index.ts';
 import { drawFog } from './fog.ts';
+import { drawJobs } from './jobs.ts';
 
 export const COLORS = {
   human: 0x4aa3ff,
@@ -80,6 +81,9 @@ export function drawWorld(g: Graphics, world: World, view: FactionView, selected
     const next = b.queue[0];
     if (b.built && next) hpBar(g, b.x, b.y + r + 250, 2 * r, b.progress, UNITS[next].work, 0x7fd4ff);
   }
+
+  // Worker jobs: claim rings, fiber being lit, walking lines, idle markers.
+  drawJobs(g, view, factionColor(view.faction), performance.now());
 
   // Units.
   for (const u of [...view.units, ...view.enemyUnits]) {

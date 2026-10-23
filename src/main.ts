@@ -1,5 +1,7 @@
 // Browser entry: human plays through the UI, the AI faction is a scripted bot (LLM General comes in Phase 2).
 // URL options: ?ai=training|rush|boom|turtle&seed=123&stress=300 (stress spawns N fighting units to check frame rate)
+// Testing: &human=rush|boom|turtle lets a bot play your side (to watch or screenshot), &autostart skips the start screen,
+// &skip=60 fast-forwards 60 seconds before the first frame.
 import { Application, Container, Graphics } from 'pixi.js';
 import { createScriptedBot, STRATEGIES, TRAINING } from './ai/scripted.ts';
 import { createSession, tickSession } from './harness/session.ts';
@@ -15,9 +17,15 @@ import { applyCommand, factionView, issue, spawnUnit, TICK_RATE, TILE, type Comm
 const params = new URLSearchParams(location.search);
 const strategy = STRATEGIES[params.get('ai') ?? 'training'] ?? TRAINING;
 const seed = Number(params.get('seed') ?? Date.now() % 100000);
-const session = createSession({ seed, controllers: { ai: createScriptedBot('ai', strategy, seed) } });
+const humanBot = STRATEGIES[params.get('human') ?? ''];
+const session = createSession({ seed, controllers: {
+  ai: createScriptedBot('ai', strategy, seed),
+  ...(humanBot ? { human: createScriptedBot('human', humanBot, seed) } : {}),
+} });
 const { game } = session;
 const { world } = game;
+
+for (let i = 0; i < Number(params.get('skip') ?? 0) * TICK_RATE; i++) tickSession(session);
 
 const stress = Number(params.get('stress') ?? 0);
 if (stress > 0) {
@@ -66,7 +74,7 @@ hud.onNarrowSelection((ids) => { ui.selected = new Set(ids); });
 let cursor: [number, number] = [0, 0];
 let dragStart: [number, number] | null = null;
 let panStart: [number, number, number, number] | null = null;
-let paused = stress === 0;
+let paused = stress === 0 && !params.has('autostart');
 if (paused) hud.showStart(() => { paused = false; });
 let speed = 1;
 

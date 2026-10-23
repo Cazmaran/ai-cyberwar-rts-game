@@ -3,6 +3,7 @@
 import { BUILDINGS, construction, describeView, MILLI, powerHeadroom, TICK_RATE, training, type FactionView, type World } from '../sim/index.ts';
 import { pretty, type CardButton } from './card.ts';
 import { renderGuide } from './guide.ts';
+import { jobText } from './jobs.ts';
 import { HOTKEYS } from './input.ts';
 
 export interface Hud {
@@ -58,7 +59,7 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
     const b = v.buildings.find((x) => selected.has(x.id));
     const t = b ? training(v, b) : null;
     const c = b ? construction(v, b) : null;
-    const key = units.map((u) => `${u.id}:${u.hp}`).join(',') + (b ? `b${b.id}:${b.hp}:${b.queue.length}:${b.built}:${JSON.stringify(t)}:${JSON.stringify(c)}` : '');
+    const key = units.map((u) => `${u.id}:${u.hp}:${JSON.stringify(u.job)}`).join(',') + (b ? `b${b.id}:${b.hp}:${b.queue.length}:${b.built}:${JSON.stringify(t)}:${JSON.stringify(c)}` : '');
     if (key === selKey) return;
     selKey = key;
     const el = $('hud-selection');
@@ -71,7 +72,11 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
           const max = list.reduce((s, u) => s + u.maxHp, 0);
           return `<button type="button" class="sel-row" data-type="${t}" title="Click to keep only these">`
             + `<span class="ico">${icon[list[0]!.role]}</span> ${list.length} × ${pretty(t)} ${bar(hp, max)} <span class="dim">${hp}/${max}</span></button>`;
-        }).join('');
+        }).join('')
+        // What each selected worker is doing (up to 6), so nobody gets pulled off a job by mistake.
+        + units.filter((u) => u.role === 'worker').slice(0, 6).map((u) => `<div class="job">${icon.worker} ${jobText(u, v)}</div>`).join('')
+        + (units.some((u) => u.job && u.job.kind !== 'build')
+          ? '<div class="dim">Giving a new order resets claim and fiber progress.</div>' : '');
       for (const row of el.querySelectorAll<HTMLButtonElement>('.sel-row')) {
         row.addEventListener('click', () => onNarrow(units.filter((u) => u.type === row.dataset.type).map((u) => u.id)));
       }

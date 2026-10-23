@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-23 — What are my engineers doing?
+
+- Owner: "it's frustrating to just see them sitting there with no visual feedback, so I end up moving them off a capture or connect fiber task." That was costly, because claim and fiber progress belong to the worker: a new order resets them.
+- Now each worker's job is in the view (`src/sim/jobs.ts`: kind, target, working or walking, percent, seconds, contested). On the map: a progress ring around a site being claimed (pulsing orange when an enemy contests it), fiber lighting up from the end being worked, a faint line while walking, and a yellow marker over idle engineers. The selection panel lists each engineer's job and warns that a new order resets progress; the intel panel sums them up ("2 claiming · 1 connecting fiber · 1 idle"); hover text names the job.
+- New test URL options, so agents can see the game mid-match: `human=<strategy>` (a bot plays the human side), `autostart`, `skip=N` (fast-forward).
+
 ## 2026-10-23 — Why rush keeps losing to boom
 
 - Owner: "without at least some defensive play, I'm losing in rush v boom consistently." The bot data agreed: AI boom was the strongest strategy (65–69% overall).

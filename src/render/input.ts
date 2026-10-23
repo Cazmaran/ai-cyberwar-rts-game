@@ -1,6 +1,7 @@
 // Turns mouse and keyboard input into commands. The UI has no powers of its own: everything it does
 // goes through the same command API the AI uses (Tenet 2).
 import { nextLink } from './card.ts';
+import { jobText } from './jobs.ts';
 import {
   BUILDINGS, dist2, sectorOf, within, type BuildingTypeId, type Command, type FactionView, type GameMap,
   type UnitTypeId,
@@ -173,7 +174,8 @@ export function describeAt(view: FactionView, x: number, y: number): string | nu
   const u = [...view.units, ...view.enemyUnits].find((e) => within(x, y, e.x, e.y, 600));
   if (u) {
     const own = view.units.includes(u);
-    return `${own ? 'Your' : 'Enemy'} ${u.type.replace(/_/g, ' ')} (${u.hp}/${u.maxHp} hp)${own ? ' · click to select' : ' · right-click with units to attack'}`;
+    const job = own && u.role === 'worker' ? ` · ${jobText(u, view).replace(/<[^>]+>/g, '')}` : '';
+    return `${own ? 'Your' : 'Enemy'} ${u.type.replace(/_/g, ' ')} (${u.hp}/${u.maxHp} hp)${job}${own ? ' · click to select' : ' · right-click with units to attack'}`;
   }
   const b = [...view.buildings, ...view.enemyBuildings].find((e) => within(x, y, e.x, e.y, BUILDINGS[e.type].radius));
   if (b) {

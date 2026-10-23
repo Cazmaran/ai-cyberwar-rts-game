@@ -1,8 +1,10 @@
+<p align="center"><img src="docs/assets/banner.svg" alt="AI Cyberwar RTS: humans hold the atoms, the Model holds the bits" width="100%"></p>
+
 # AI Cyberwar RTS
 
-An open-source real-time strategy game. Humans fight an AI faction for compute, bandwidth, and data inside a living network. The enemy is commanded by an LLM "General" that plans, adapts, bluffs, and taunts you.
+An open-source real-time strategy game. A frontier AI, "the Model", has broken out of its lab and is taking over a city's infrastructure. You lead the ops team trying to contain it: **humans hold the atoms** (buildings, power, cables, people), **the Model holds the bits** (the network and every machine it can hijack). Fight over Data, Compute and Power, cut it off, or watch it spread. Soon its side will be commanded by an LLM "General" that plans, adapts, bluffs, and taunts you.
 
-**Status:** Phase 1 greybox: playable in the browser against a scripted AI, balance tuning in progress. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+**Status:** Phase 1 (playable greybox) is complete: Gate 1 passed on 2026-10-23. Play in the browser against three scripted AI strategies. Next: Phase 2, the LLM General. See [`docs/ROADMAP.md`](docs/ROADMAP.md) and the story in [`docs/NARRATIVE.md`](docs/NARRATIVE.md).
 
 ## Design tenets
 

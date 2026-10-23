@@ -114,7 +114,7 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
   - Equal-cost duel matrix for every unit pair.
   - Strategy bots: rush, boom, turtle; bot-vs-bot win-rate table.
   - Skill test: same build, better micro vs sloppy micro.
-- **Status (2026-10-22):** all milestones built. Balance tuning in progress: counters pass. The strategy gate sits at the 65% line (worst 67–68%), and the skill gate passes for rush (70%) but not boom or turtle (59/64%). Scripted-bot measurements are noisy at this level; see the journal. 300 units at 120 fps on owner's machine ✅. First owner playtest found the UI confusing; onboarding added, replay pending.
+- **Status (2026-10-22):** all milestones built. Hard balance criteria (duel matrix, counters) pass. Bot proxies are near target (worst strategy 67–68%; skill 58–70%) and are now warnings (D-015). Next: owner playtests for Gate 1. 300 units at 120 fps on owner's machine ✅. First owner playtest found the UI confusing; onboarding added, replay pending.
 - **Gate 1 criteria:**
   - Owner plays 5+ matches and answers "do I want to play again?" yes.
   - 300 units at 60 fps on the dev machine.
@@ -122,8 +122,10 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
   - Headless 20-min match runs in <10 s.
   - Duel matrix: each counter wins ≥70% of equal-cost fights against its target; no unit has a positive record against every other.
   - A recorded match replays to an identical final state.
-  - Skill test: better micro wins ≥70% with identical builds.
-  - No strategy bot wins >65% against the others.
+  - Skill and strategy are judged by the owner's playtests (D-015):
+    - Better play wins: as the owner learns, results improve, and every loss has a clear reason ("I should have built X", "I left engineers unguarded").
+    - More than one approach works: the owner wins at least once with two different strategies.
+  - Bot proxies, reported as warnings (not gate failures) by `npm run balance`: skill test (target ≥70%) and strategy tournament (target ≤65%). A large miss is a reason to investigate before a playtest.
   - Adaptation cap holds: resistance never exceeds the cap in any sim.
   - APM cap and reaction delay enforced for non-human controllers (tested).
 - **Go-public checklist (after Gate 1 passes, owner approval):**

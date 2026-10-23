@@ -15,6 +15,8 @@ const { values } = parseArgs({
 const seeds = Number(values.seeds);
 const budget = Number(values.budget) * MILLI;
 const failures: string[] = [];
+// Bot-vs-bot results are warnings, not gate failures: the owner's playtests judge skill and strategy (D-015).
+const warnings: string[] = [];
 
 console.log(`\n== Duel matrix: row unit win % vs column unit, ${values.budget} Data each side, ${seeds} seeds ==`);
 const m = duelMatrix(budget, seeds);
@@ -45,16 +47,17 @@ for (const n of names) {
   const asHuman = cells.filter((c) => c.human === n).reduce((s, c) => s + c.humanWinPct, 0) / names.length;
   const asAi = cells.filter((c) => c.ai === n).reduce((s, c) => s + (100 - c.humanWinPct), 0) / names.length;
   for (const [side, p] of [['human', asHuman], ['ai', asAi]] as const) {
-    if (p > 65) failures.push(`${side} ${n} wins ${Math.round(p)}% overall (max 65%)`);
+    if (p > 65) warnings.push(`${side} ${n} wins ${Math.round(p)}% overall (target max 65%)`);
   }
 }
 
-console.log('\n== Skill test: focus-fire micro vs attack-move only, identical builds (must win >= 70%) ==');
+console.log('\n== Skill test: focus-fire micro vs attack-move only, identical builds (target >= 70%) ==');
 for (const s of Object.values(STRATEGIES)) {
   const p = skillTest(s, seeds);
   console.log(`${p >= 70 ? 'ok  ' : 'FAIL'} ${s.name}: skilled side wins ${p}%`);
-  if (p < 70) failures.push(`skill test ${s.name}: ${p}%`);
+  if (p < 70) warnings.push(`skill test ${s.name}: ${p}% (target 70%)`);
 }
 
-console.log(failures.length ? `\nGATE FAILURES (${failures.length}):\n- ${failures.join('\n- ')}` : '\nAll balance gate criteria pass.');
+if (warnings.length) console.log(`\nWARNINGS (${warnings.length}), bot proxies for the owner's playtests:\n- ${warnings.join('\n- ')}`);
+console.log(failures.length ? `\nGATE FAILURES (${failures.length}):\n- ${failures.join('\n- ')}` : '\nAll hard balance criteria pass (duel matrix and counters).');
 if (values.gate && failures.length) process.exit(1);

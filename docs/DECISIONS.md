@@ -2,6 +2,11 @@
 
 Newest first. Each entry: date, decision, options considered, reason. Changes to design pillars need owner approval.
 
+## D-015 — 2026-10-22 — Owner playtests judge skill and strategy at Gate 1
+- **Decision:** the bot skill test and strategy tournament become warnings. Gate 1 skill and strategy criteria are judged in owner playtests: better play wins, and more than one strategy can win. The duel matrix and counter checks stay hard criteria.
+- **Options:** more seeds plus a tolerance band; owner playtests; new skill-expressive mechanics.
+- **Reason:** scripted bots are crude, so their results swing ±20 points on one parameter. Near the 65%/70% lines they can't tell a real imbalance from noise. Tenet 4 is about how skill feels to real players. Owner chose playtests.
+
 ## D-014 — 2026-10-22 — Signal range shelved until Phase 3
 - **Decision:** AI machines keep moving freely. The signal-range prototype stays in code behind `SIGNAL.enabled = false`; revisit it in Phase 3 together with fiber cutting and an AI rebalance. See `docs/proposals/0001-signal-range.md`.
 - **Options:** hard leash, mesh swarms, soft leash (all tested); shelve.

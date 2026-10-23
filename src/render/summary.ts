@@ -63,10 +63,13 @@ export function summaryHtml(s: MatchStats, winner: Faction, you: Faction = 'huma
   // when nobody pulled ahead for good.
   const lead = economicLead(s);
   const last = s.samples.at(-1);
-  const leadLine = lead && last
-    ? `Turning point: from <b>${clock(lead.tick)}</b> ${lead.leader === you ? 'you out-earned the AI' : 'the AI out-earned you'} for the rest of the match`
-      + ` (at the end: you <b>${last.income[you].toFixed(1)}</b> Data/s, AI <b>${last.income[them].toFixed(1)}</b>).<br>`
-    : '';
+  const who = lead?.leader === you ? 'you out-earned the AI' : 'the AI out-earned you';
+  const earned = `${s.totals[you].earned} Data earned to the AI's ${s.totals[them].earned}`;
+  // A side that led nearly all match had no turning point; say so instead of naming a late one.
+  const leadLine = !lead || !last ? ''
+    : lead.share >= 80 ? `Economy: ${who} for <b>${lead.share}%</b> of the match (${earned}).<br>`
+    : `Turning point: from <b>${clock(lead.tick)}</b> ${who} for the rest of the match`
+      + ` (at the end: you <b>${last.income[you].toFixed(1)}</b> Data/s, AI <b>${last.income[them].toFixed(1)}</b>).<br>`;
   const inc = lead ? null : incomeGap(s, you);
   const incomeLine = inc
     ? `<br>Economy: from <b>${clock(inc.tick)}</b> the AI earned <b>${inc.theirs.toFixed(1)}</b> Data/s to your <b>${inc.yours.toFixed(1)}</b> (Data sources: AI ${inc.sources[1]}, you ${inc.sources[0]}).`

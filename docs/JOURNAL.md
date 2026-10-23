@@ -2,6 +2,11 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-23 — Eleventh playtest: Center First is fragile
+
+- Lost a rush against boom in 7:21. The AI earned 4,535 Data to the owner's 2,225. The owner's income ramped slowly: none until 1:00, one source until 2:30, about 10 Data/s only after 5:00. In the Center First win it was about 7 Data/s by 2:30. On top of that, 1:47 of idle production while units were affordable, and 13-for-13 unit trades that lost Data because human units cost more.
+- The summary misled again: "Turning point: from 5:35 the AI out-earned you", when the AI had led almost the whole match apart from a brief dip. Turning points are now reported only for real comebacks; when one side led at least 80% of the time, the summary says so ("the AI out-earned you for 91% of the match").
+
 ## 2026-10-23 — Tenth playtest: center-first beats boom
 
 - After three losses to `?ai=boom`, the owner won with their own plan: claim the two center Data sources first, then work back to connect everything. Data arrived later, but taking the center starved the AI's economy, and the rush held.

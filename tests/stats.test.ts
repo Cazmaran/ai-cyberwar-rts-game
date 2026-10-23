@@ -47,11 +47,23 @@ describe('match stats (post-match summary)', () => {
       const human = t < 3800 ? (t === 2000 ? 9 : 2) : 12;
       stats.samples.push({ tick: t, army: { human: 0, ai: 0 }, income: { human, ai: 7 }, sources: { human: 0, ai: 0 } });
     }
-    expect(economicLead(stats)).toEqual({ leader: 'human', tick: 3800 });
+    expect(economicLead(stats)).toEqual({ leader: 'human', tick: 3800, share: 59 });
     // A lead that only starts in the last minute doesn't count.
     const late = createStats(100);
     for (let t = 0; t <= 3000; t += 100) late.samples.push({ tick: t, army: { human: 0, ai: 0 }, income: { human: t >= 2500 ? 9 : 2, ai: 7 }, sources: { human: 0, ai: 0 } });
     expect(economicLead(late)).toBeNull();
+  });
+
+  it("a side that led almost all match isn't reported as a late turning point", () => {
+    const stats = createStats(100);
+    // AI ahead the whole match except a 30 s blip at 5:00, then ahead again from 5:35 to the end at 7:20.
+    for (let t = 0; t <= 8800; t += 100) {
+      const human = t >= 6000 && t < 6700 ? 12 : 5;
+      stats.samples.push({ tick: t, army: { human: 0, ai: 0 }, income: { human, ai: 10 }, sources: { human: 0, ai: 0 } });
+    }
+    const lead = economicLead(stats)!;
+    expect(lead.leader).toBe('ai');
+    expect(lead.share).toBeGreaterThanOrEqual(90);
   });
 
   it('splits idle production into "could afford a unit" and "starved of Data"', () => {

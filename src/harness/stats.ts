@@ -119,9 +119,10 @@ export function incomeGap(s: MatchStats, you: Faction): { tick: number; yours: n
 
 /**
  * The turning point: the earliest moment from which one side earned more than the other for the rest of
- * the match (at least a minute of it). Null if the lead kept changing hands to the end.
+ * the match (at least a minute of it), and the share of the whole match that side was ahead. Null if the
+ * lead kept changing hands to the end.
  */
-export function economicLead(s: MatchStats): { leader: Faction; tick: number } | null {
+export function economicLead(s: MatchStats): { leader: Faction; tick: number; share: number } | null {
   const last = s.samples.at(-1);
   if (!last) return null;
   const ahead = (x: Sample): Faction | null => x.income.human > x.income.ai ? 'human' : x.income.ai > x.income.human ? 'ai' : null;
@@ -130,5 +131,7 @@ export function economicLead(s: MatchStats): { leader: Faction; tick: number } |
   let i = s.samples.length - 1;
   while (i > 0 && ahead(s.samples[i - 1]!) === leader) i--;
   const tick = s.samples[i]!.tick;
-  return last.tick - tick >= 60 * TICK_RATE ? { leader, tick } : null;
+  // Share of the match (percent of samples) the final leader was out-earning the other side.
+  const share = Math.round((100 * s.samples.filter((x) => ahead(x) === leader).length) / s.samples.length);
+  return last.tick - tick >= 60 * TICK_RATE ? { leader, tick, share } : null;
 }

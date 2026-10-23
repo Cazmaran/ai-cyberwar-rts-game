@@ -54,6 +54,20 @@
       #hud-intel { right: 8px; bottom: 52px; max-width: 320px; font-size: 13px; }
       #hud-banner { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: var(--panel);
         padding: 20px 32px; border-radius: 8px; font-size: 24px; text-align: center; pointer-events: auto; }
+      #hud-banner.has-summary { font-size: 14px; text-align: left; top: 50%; max-height: 92vh; overflow: auto; }
+      .summary .head { font-size: 22px; margin-bottom: 4px; }
+      .summary .totals { border-collapse: collapse; margin: 10px 0; font-variant-numeric: tabular-nums; }
+      .summary .totals td, .summary .totals th { padding: 2px 12px; text-align: right; border-bottom: 1px solid #2c333d; }
+      .summary .totals td:first-child { text-align: left; color: var(--dim); }
+      .summary .chart { position: relative; margin: 8px 0; }
+      .summary .chart svg { display: block; max-width: 100%; height: auto; }
+      .summary .grid { stroke: #2c333d; stroke-width: 1; }
+      .summary .axis { fill: var(--dim); font-size: 10px; }
+      .summary .end { fill: var(--text); font-size: 10px; }
+      .summary .cross { stroke: var(--dim); stroke-width: 1; }
+      .summary .sw { display: inline-block; width: 10px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+      .summary .legend { margin-left: 8px; color: var(--dim); }
+      .summary .tip { position: absolute; top: 24px; background: #0b0e12; border: 1px solid #3a4250; border-radius: 4px; padding: 4px 8px; font-size: 12px; pointer-events: none; white-space: nowrap; }
     </style>
   </head>
   <body>

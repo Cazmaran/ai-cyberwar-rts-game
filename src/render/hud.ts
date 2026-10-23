@@ -14,6 +14,8 @@ export interface Hud {
   showStart(onStart: () => void): void;
   alert(text: string): void;
   setIntel(html: string): void;
+  /** Replace the end-of-match banner with the post-match summary; `attach` wires up its interactivity. */
+  showSummary(html: string, attach: (el: HTMLElement) => void): void;
   onNarrowSelection(fn: (ids: number[]) => void): void;
 }
 
@@ -84,6 +86,7 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
   const alerts: { text: string; at: number }[] = [];
   let guideKey = '';
   let powerWasFull = false;
+  let summaryShown = false;
   let powerAlertAt = -Infinity;
 
   return {
@@ -124,12 +127,20 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
         lastTextTick = world.tick;
         $('hud-text').textContent = describeView(v);
       }
-      if (world.winner) {
+      if (world.winner && !summaryShown) {
         $('hud-banner').hidden = false;
         $('hud-banner').innerHTML = world.winner === 'human'
           ? 'The network holds. <b>Humans win.</b><br><small>Reload to play again.</small>'
           : 'The Model has taken the network. <b>AI wins.</b><br><small>Reload to play again.</small>';
       }
+    },
+    showSummary(html, attach) {
+      summaryShown = true;
+      const el = $('hud-banner');
+      el.hidden = false;
+      el.classList.add('has-summary');
+      el.innerHTML = html;
+      attach(el);
     },
     message(text) {
       messages.push({ text, at: performance.now() });

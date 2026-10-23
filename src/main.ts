@@ -3,6 +3,8 @@
 import { Application, Container, Graphics } from 'pixi.js';
 import { createScriptedBot, STRATEGIES, TRAINING } from './ai/scripted.ts';
 import { createSession, tickSession } from './harness/session.ts';
+import { createStats, recordStats } from './harness/stats.ts';
+import { attachSummaryHover, summaryHtml } from './render/summary.ts';
 import { drawWorld } from './render/draw.ts';
 import { createHud } from './render/hud.ts';
 import { buildCard } from './render/card.ts';
@@ -145,6 +147,8 @@ window.addEventListener('keydown', (e) => {
 // Fixed-timestep loop: the sim advances at TICK_RATE × speed regardless of frame rate.
 let accumulator = 0;
 let seenRejections = 0;
+const stats = createStats();
+let summaryShown = false;
 app.ticker.add((ticker) => {
   const pan = 900 / cam.zoom * (ticker.deltaMS / 1000);
   if (held.has('ArrowLeft')) cam.x -= pan;
@@ -158,6 +162,7 @@ app.ticker.add((ticker) => {
     let steps = 0;
     while (accumulator >= msPerTick && steps++ < 8) {
       tickSession(session);
+      recordStats(stats, world);
       accumulator -= msPerTick;
     }
     if (steps >= 8) accumulator = 0;
@@ -177,6 +182,10 @@ app.ticker.add((ticker) => {
   drawEffects(fxLayer, view, fx, now);
   hud.setIntel(intel(view));
   hud.update(world, view, ui.selected, describeMode(ui.mode), speed, paused, Math.round(app.ticker.FPS));
+  if (world.winner && !summaryShown) {
+    summaryShown = true;
+    hud.showSummary(summaryHtml(stats, world.winner), (el) => attachSummaryHover(el, stats));
+  }
   hud.setCard(buildCard(view, ui, {
     setMode: (m) => { ui.mode = m; },
     select: (ids) => { ui.selected = new Set(ids); },

@@ -1,0 +1,83 @@
+// Match statistics for the post-match summary: what each side earned, trained, lost and fielded over
+// time. Reads the full world (the match is over when it is shown, so fog no longer applies). No DOM.
+import { buildings, FACTIONS, TICK_RATE, UNITS, units, type Faction, type World } from '../sim/index.ts';
+
+export interface Sample {
+  tick: number;
+  /** Data value of combat units alive. */
+  army: Record<Faction, number>;
+  /** Data per second arriving at the core. */
+  income: Record<Faction, number>;
+}
+
+export interface Totals {
+  /** Data earned (whole units). */
+  earned: number;
+  /** Combat units trained and lost. */
+  trained: number;
+  lost: number;
+  peakArmy: number;
+  /** Seconds with a finished production building and nothing in training. */
+  idleSeconds: number;
+}
+
+export interface MatchStats {
+  every: number;
+  samples: Sample[];
+  totals: Record<Faction, Totals>;
+  /** Combat units seen so far, to count new and lost ones. */
+  known: Map<number, Faction>;
+  earnedMilli: Record<Faction, number>;
+  idleTicks: Record<Faction, number>;
+}
+
+const PRODUCTION = new Set(['soc', 'training_cluster']);
+
+export function createStats(every = 5 * TICK_RATE): MatchStats {
+  const totals = () => ({ earned: 0, trained: 0, lost: 0, peakArmy: 0, idleSeconds: 0 });
+  return {
+    every, samples: [], known: new Map(),
+    totals: { human: totals(), ai: totals() },
+    earnedMilli: { human: 0, ai: 0 }, idleTicks: { human: 0, ai: 0 },
+  };
+}
+
+/** Call once per tick, after the world advances. */
+export function recordStats(s: MatchStats, world: World): void {
+  const army: Record<Faction, number> = { human: 0, ai: 0 };
+  const alive = new Set<number>();
+  for (const u of units(world)) {
+    if (UNITS[u.type].role === 'worker') continue;
+    alive.add(u.id);
+    army[u.faction] += UNITS[u.type].cost / 1000;
+    if (!s.known.has(u.id)) { s.known.set(u.id, u.faction); s.totals[u.faction].trained++; }
+  }
+  for (const [id, f] of s.known) {
+    if (!alive.has(id)) { s.known.delete(id); s.totals[f].lost++; }
+  }
+  for (const f of FACTIONS) {
+    const t = s.totals[f];
+    s.earnedMilli[f] += world.factions[f].income;
+    t.earned = Math.trunc(s.earnedMilli[f] / 1000);
+    t.peakArmy = Math.max(t.peakArmy, army[f]);
+    const prod = buildings(world).filter((b) => b.faction === f && b.built && PRODUCTION.has(b.type));
+    if (prod.length > 0 && prod.every((b) => b.queue.length === 0)) s.idleTicks[f]++;
+    t.idleSeconds = Math.trunc(s.idleTicks[f] / TICK_RATE);
+  }
+  if (world.tick % s.every === 0 || world.winner !== null) {
+    const income = (f: Faction) => (world.factions[f].income * TICK_RATE) / 1000;
+    s.samples.push({ tick: world.tick, army, income: { human: income('human'), ai: income('ai') } });
+  }
+}
+
+/** The moment the opponent's army was furthest ahead of yours (by ratio), if it ever was. */
+export function biggestGap(s: MatchStats, you: Faction): { tick: number; ratio: number } | null {
+  const them: Faction = you === 'human' ? 'ai' : 'human';
+  let best: { tick: number; ratio: number } | null = null;
+  for (const x of s.samples) {
+    if (x.army[them] < 100) continue;
+    const ratio = x.army[them] / Math.max(1, x.army[you]);
+    if (ratio >= 1.5 && (!best || ratio > best.ratio)) best = { tick: x.tick, ratio };
+  }
+  return best;
+}

@@ -13,7 +13,9 @@
       [hidden] { display: none !important; }
       #hud { position: fixed; inset: 0; pointer-events: none; }
       .hud-panel { position: absolute; background: var(--panel); border: 1px solid #2c333d; border-radius: 6px; padding: 6px 10px; pointer-events: auto; }
-      #hud-top { top: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 18px; white-space: nowrap; }
+      #hud-top { top: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+      /* Fixed widths so changing numbers don't shift the rest of the bar (it looked like flicker). */
+      #hud-top .t-time { min-width: 6.5ch; } #hud-top .t-data { min-width: 15ch; } #hud-top .t-power { min-width: 12.5ch; } #hud-top .t-compute { min-width: 8.5ch; } #hud-top .t-plug { min-width: 9ch; } #hud-top .t-meta { min-width: 15ch; }
       #hud-top b { color: #fff; } .ready, #hud-top .ready { color: #55d27a; } .warn, #hud-top .warn { color: #ff7a59; } .dim { color: var(--dim); }
       #hud-mode { top: 140px; left: 50%; transform: translateX(-50%); color: #ffd866; }
       #hud-messages { position: absolute; top: 175px; left: 50%; transform: translateX(-50%); text-align: center; color: #ff9b94; }

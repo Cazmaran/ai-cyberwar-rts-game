@@ -36,6 +36,9 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
     <div id="hud-banner" hidden></div>`;
   const $ = (id: string) => root.querySelector<HTMLElement>(`#${id}`)!;
   const messages: { text: string; at: number }[] = [];
+  // Write to the DOM only when content changes: rewriting every frame causes needless repaints.
+  const shown = new Map<string, string>();
+  const setHtml = (id: string, html: string) => { if (shown.get(id) !== html) { shown.set(id, html); $(id).innerHTML = html; } };
   let showText = false;
   let lastTextTick = -1;
   let cardKey = '';
@@ -80,18 +83,19 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
   const alerts: { text: string; at: number }[] = [];
   let guideKey = '';
   let powerWasFull = false;
+  let powerAlertAt = -Infinity;
 
   return {
     update(world, v, selected, modeText, speed, paused, fps) {
       const secs = Math.trunc(world.tick / TICK_RATE);
       const plug = v.plugReadyIn === 0 ? '<b class="ready">READY</b>' : `${Math.ceil((v.plugReadyIn ?? 0) / TICK_RATE)}s`;
-      $('hud-top').innerHTML = `
-        <span>⏱ ${Math.trunc(secs / 60)}:${String(secs % 60).padStart(2, '0')}${paused ? ' <b>PAUSED</b>' : ''}${speed !== 1 ? ` ×${speed}` : ''}</span>
-        <span title="Data: spend on units and buildings">Data <b>${Math.trunc(v.data / MILLI)}</b> (+${((v.income * TICK_RATE) / MILLI).toFixed(1)}/s)</span>
-        <span title="Power is your unit limit: every unit and building draws Power; your NOC and each substation you hold supply it. When it's full, new units wait.">Power <b${powerHeadroom(v) === 0 ? ' class="warn"' : ''}>${v.powerUsed}/${v.powerCap}${powerHeadroom(v) === 0 ? ' FULL' : ''}</b></span>
-        <span title="Compute: production speed; server racks add more">Compute <b>${v.compute}</b></span>
-        <span title="Pull the Plug: black out a zone, freezing AI units and unpowering buildings">Plug ${plug}</span>
-        <span class="dim">vs ${aiName} · ${fps} fps</span>`;
+      setHtml('hud-top', `
+        <span class="t-time">⏱ ${Math.trunc(secs / 60)}:${String(secs % 60).padStart(2, '0')}${paused ? ' <b>PAUSED</b>' : ''}${speed !== 1 ? ` ×${speed}` : ''}</span>
+        <span class="t-data" title="Data: spend on units and buildings">Data <b>${Math.trunc(v.data / MILLI)}</b> (+${((v.income * TICK_RATE) / MILLI).toFixed(1)}/s)</span>
+        <span class="t-power" title="Power is your unit limit: every unit and building draws Power; your NOC and each substation you hold supply it. When it's full, new units wait.">Power <b${powerHeadroom(v) === 0 ? ' class="warn"' : ''}>${v.powerUsed}/${v.powerCap}${powerHeadroom(v) === 0 ? ' FULL' : ''}</b></span>
+        <span class="t-compute" title="Compute: production speed; server racks add more">Compute <b>${v.compute}</b></span>
+        <span class="t-plug" title="Pull the Plug: black out a zone, freezing AI units and unpowering buildings">Plug ${plug}</span>
+        <span class="dim t-meta">vs ${aiName} · ${fps} fps</span>`);
       $('hud-mode').textContent = modeText;
       $('hud-mode').hidden = !modeText;
 
@@ -99,16 +103,17 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
 
       // Warn once each time Power fills up: new units wait in their building until there is Power for them.
       const powerFull = powerHeadroom(v) === 0;
-      if (powerFull && !powerWasFull) {
-        alerts.push({ text: '⚡ Power full: new units will wait. Claim substations for more Power.', at: performance.now() });
+      if (powerFull && !powerWasFull && performance.now() - powerAlertAt > 30_000) {
+        powerAlertAt = performance.now();
+        alerts.push({ text: '⚡ Power full: new units will wait. Claim substations for more Power.', at: powerAlertAt });
       }
       powerWasFull = powerFull;
 
       const now = performance.now();
       while (messages.length && now - messages[0]!.at > 4000) messages.shift();
       while (alerts.length && now - alerts[0]!.at > 6000) alerts.shift();
-      $('hud-alerts').innerHTML = alerts.map((m) => `<div>${m.text}</div>`).join('');
-      $('hud-messages').innerHTML = messages.map((m) => `<div>${m.text}</div>`).join('');
+      setHtml('hud-alerts', alerts.map((m) => `<div>${m.text}</div>`).join(''));
+      setHtml('hud-messages', messages.map((m) => `<div>${m.text}</div>`).join(''));
 
       // Re-render the guide only when progress changes (keeps text selectable and cheap).
       const gk = `${v.income > 0}|${v.units.length}|${v.buildings.length}|${v.sites.filter((x) => x.owner === v.faction).length}`;

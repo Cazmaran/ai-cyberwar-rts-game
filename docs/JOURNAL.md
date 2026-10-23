@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-23 — Seventeenth playtest: defend, then counter, beats AI rush
+
+- First match against `?ai=rush`: a win in 6:36. The rush AI took the center first (14.8 to 5.8 Data/s at 1:20). The owner retook it behind two Security Posts, and the AI's attack at about 2:20 broke on the defenses (its army 390 → 35 Data; the owner lost one Armored Vehicle). Then Router Choke again: `a_router_fwd` at 4:00, `a_router` at 5:00, AI income 0.
+- The owner has now beaten all three AI strategies, each with a different approach: defensive (turtle), Center First / Router Choke (boom), and defend-then-counter (rush).
+- AI note for later: from 3:00 the rush AI banked 500–740 Data it couldn't spend. A rush builds no Server Racks, so it was stuck at base Compute, feeding small waves into Security Posts. A smarter bot would add racks once it is banking.
+
 ## 2026-10-23 — Sixteenth playtest: the recipe holds (6:12)
 
 - Another rush win against boom with the same recipe: center by 0:40, the router won by 2:40, AI drones dead, Router Choke (`a_router_fwd` at 3:40, `a_router` at 4:40, AI income 0).

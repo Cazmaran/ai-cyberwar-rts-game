@@ -2,6 +2,11 @@
 
 Newest first. Each entry: date, decision, options considered, reason. Changes to design pillars need owner approval.
 
+## D-016 — 2026-10-23 — Gate 1 passed
+- **Decision:** Phase 1 (greybox core loop) is complete; start the go-public checklist, then Phase 2 (the LLM General).
+- **Evidence:** 17 owner playtests. Wins against turtle (defensive), boom (Center First and Router Choke) and rush (defend, then counter); losses with clear, actionable causes that turned into wins (D-015). Determinism, replay, APM and Adaptation tests pass. A 20-minute headless match runs in well under 10 s. 300 units at a steady 120 fps on the owner's machine. Owner: "play again?" yes.
+- **Known gaps carried forward:** bot proxies near their targets but over them (human rush 68%; skill test 48–63%); the rush AI banks Data it can't spend; signal range shelved (D-014).
+
 ## D-015 — 2026-10-22 — Owner playtests judge skill and strategy at Gate 1
 - **Decision:** the bot skill test and strategy tournament become warnings. Gate 1 skill and strategy criteria are judged in owner playtests: better play wins, and more than one strategy can win. The duel matrix and counter checks stay hard criteria.
 - **Options:** more seeds plus a tolerance band; owner playtests; new skill-expressive mechanics.

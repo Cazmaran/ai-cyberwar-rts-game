@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-23 — Gate 1 passed
+
+- After 17 playtests, the owner's answer to "do I want to play again?" was yes. Phase 1 is done.
+- What got it there was mostly not balance numbers. It was making the game readable: Power and Compute rules explained, fog shading, strength readouts, engineer job feedback, dead-source warnings, and a post-match summary plus replays that turned every loss into a clear lesson.
+- Next: make the repo ready to go public, then Phase 2, the LLM General.
+
 ## 2026-10-23 — Seventeenth playtest: defend, then counter, beats AI rush
 
 - First match against `?ai=rush`: a win in 6:36. The rush AI took the center first (14.8 to 5.8 Data/s at 1:20). The owner retook it behind two Security Posts, and the AI's attack at about 2:20 broke on the defenses (its army 390 → 35 Data; the owner lost one Armored Vehicle). Then Router Choke again: `a_router_fwd` at 4:00, `a_router` at 5:00, AI income 0.

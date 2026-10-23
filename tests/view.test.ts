@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCard } from '../src/render/card.ts';
-import { describeView, factionView, powerHeadroom, spawnBuilding, spawnUnit, TILE, training } from '../src/sim/index.ts';
+import { construction, describeView, factionView, powerHeadroom, spawnBuilding, spawnUnit, TILE, training } from '../src/sim/index.ts';
 import { newGame } from './helpers.ts';
 
 describe('faction view (fog of war)', () => {
@@ -84,5 +84,22 @@ describe('explaining the economy', () => {
     const noc = [...game.world.entities.values()].find((e) => e.kind === 'building' && e.type === 'noc')!;
     spawnBuilding(game.world, 'soc', 'human', noc.x, noc.y + 5 * TILE).built = true;
     expect(soc().tip).toMatch(/already have a SOC/);
+  });
+});
+
+describe('construction progress', () => {
+  it('reports percent done and seconds left from the engineers assigned, or that nobody is building', () => {
+    const game = newGame();
+    const noc = [...game.world.entities.values()].find((e) => e.kind === 'building' && e.type === 'noc')!;
+    const soc = spawnBuilding(game.world, 'soc', 'human', noc.x, noc.y + 5 * TILE);
+    soc.buildProgress = 100; // of 400
+    let v = factionView(game.world, 'human');
+    expect(construction(v, v.buildings.find((b) => b.id === soc.id)!)).toEqual({ percent: 25, seconds: null, builders: 0 });
+    const engineers = [...game.world.entities.values()].filter((e) => e.kind === 'unit' && e.faction === 'human').slice(0, 2);
+    for (const e of engineers) if (e.kind === 'unit') e.order = { type: 'build', building: soc.id };
+    v = factionView(game.world, 'human');
+    // 300 work left, 2 engineers at 1 work per tick each -> 150 ticks = 7.5 s -> 8 s.
+    expect(construction(v, v.buildings.find((b) => b.id === soc.id)!)).toEqual({ percent: 25, seconds: 8, builders: 2 });
+    expect(describeView(v)).toMatch(/our soc \(building 25%, 8s\)/);
   });
 });

@@ -6,6 +6,7 @@ The story of building this game, newest first. Wins, failures, surprises, and wh
 
 - Another rush loss against boom: "the AI had many more armor and ranged units than I did around 2:50." In bot matches, boom is normally behind a rush at 2:50 (45–195 Data of army against 160–260). So the likely causes were production gaps, plus AI units being cheaper (more bodies for the same Data). Neither of us could see which.
 - Added a post-match summary: who won and when, the moment the AI's army was furthest ahead, totals (Data earned, combat units trained and lost, biggest army, time production sat idle), and army-value and income charts for both sides with hover readouts. Stats live in `src/harness/stats.ts` (no DOM), so headless runs and LLM benchmarks can use them later.
+- Owner also asked for a counter on construction. The bar under unfinished buildings was showing their HP, not progress. It now shows real progress. The selection and intel panels say "Building: 45% · 8s (2 engineers)", or warn when no engineer is assigned, and the text view carries the same.
 
 ## 2026-10-22 — Seventh playtest: crushed rushing a boom
 

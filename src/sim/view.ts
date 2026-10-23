@@ -10,6 +10,8 @@ export interface BuildingView {
   id: number; type: BuildingTypeId; x: number; y: number; hp: number; maxHp: number; built: boolean;
   /** Own buildings only: units queued, and production work done on the first one. */
   queue: UnitTypeId[]; progress: number; sector: SectorId;
+  /** Own unfinished buildings: construction work done, and workers assigned to build it. */
+  buildProgress: number; builders: number;
 }
 export interface SiteView {
   id: string; kind: SiteKind; x: number; y: number; sector: SectorId; visible: boolean; owner: Faction | null | 'unknown';
@@ -53,9 +55,15 @@ export function factionView(world: World, faction: Faction): FactionView {
     sector: sectorOf(world.map, u.x, u.y), order: u.order.type,
     target: u.order.type === 'attack' ? u.order.target : u.target,
   });
+  const builders = new Map<number, number>();
+  for (const u of units(world)) {
+    if (u.faction === faction && u.order.type === 'build') builders.set(u.order.building, (builders.get(u.order.building) ?? 0) + 1);
+  }
   const buildingView = (b: ReturnType<typeof buildings>[number]): BuildingView => ({
     id: b.id, type: b.type, x: b.x, y: b.y, hp: b.hp, maxHp: BUILDINGS[b.type].hp, built: b.built,
     queue: b.faction === faction ? [...b.queue] : [], progress: b.faction === faction ? b.progress : 0, sector: sectorOf(world.map, b.x, b.y),
+    buildProgress: b.faction === faction ? b.buildProgress : 0,
+    builders: b.faction === faction ? builders.get(b.id) ?? 0 : 0,
   });
 
   const allUnits = units(world);
@@ -94,6 +102,17 @@ export function powerHeadroom(v: FactionView): number {
   let queued = 0;
   for (const b of v.buildings) for (const t of b.queue) queued += UNITS[t].power;
   return Math.max(0, v.powerCap - v.powerUsed - queued);
+}
+
+export interface Construction { percent: number; seconds: number | null; builders: number }
+
+/** Construction progress of an unfinished building. Each assigned worker adds 1 work per tick once there. */
+export function construction(v: FactionView, b: BuildingView): Construction | null {
+  if (b.built) return null;
+  const work = BUILDINGS[b.type].buildWork;
+  const percent = Math.trunc((100 * b.buildProgress) / work);
+  const seconds = b.builders > 0 ? Math.ceil((work - b.buildProgress) / b.builders / TICK_RATE) : null;
+  return { percent, seconds, builders: b.builders };
 }
 
 export interface Training { unit: UnitTypeId; seconds: number; queued: number; waitingForPower: boolean }
@@ -140,7 +159,9 @@ export function describeView(v: FactionView): string {
   for (const b of v.buildings) {
     const t = training(v, b);
     const tr = !t ? '' : ` training ${t.unit} ${t.waitingForPower ? 'waiting for power' : `${t.seconds}s`}${t.queued ? ` (+${t.queued} queued)` : ''}`;
-    add(b.sector, `our ${b.type}${b.built ? '' : ' (building)'} ${b.hp}/${b.maxHp}hp${tr}`);
+    const c = construction(v, b);
+    const cs = !c ? '' : ` (building ${c.percent}%, ${c.seconds === null ? 'no workers assigned' : `${c.seconds}s`})`;
+    add(b.sector, `our ${b.type}${cs} ${b.hp}/${b.maxHp}hp${tr}`);
   }
   for (const b of v.enemyBuildings) add(b.sector, `ENEMY ${b.type} ${b.hp}/${b.maxHp}hp`);
   for (const s of v.sites) {

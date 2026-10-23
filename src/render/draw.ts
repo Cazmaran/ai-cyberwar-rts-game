@@ -74,7 +74,8 @@ export function drawWorld(g: Graphics, world: World, view: FactionView, selected
     else g.rect(b.x - r, b.y - r, 2 * r, 2 * r).fill({ color: c, alpha: alpha * 0.5 }).stroke({ width: 100, color: c, alpha });
     if (selected.has(b.id)) g.rect(b.x - r - 200, b.y - r - 200, 2 * r + 400, 2 * r + 400).stroke({ width: 70, color: COLORS.selection });
     hpBar(g, b.x, b.y - r - 350, 2 * r, b.hp, b.maxHp);
-    if (!b.built) hpBar(g, b.x, b.y + r + 250, 2 * r, b.hp, b.maxHp, 0x9fb3c8);
+    // Construction progress (own buildings only; enemy progress is unknown).
+    if (!b.built && view.buildings.includes(b)) hpBar(g, b.x, b.y + r + 250, 2 * r, b.buildProgress, BUILDINGS[b.type].buildWork, 0x9fb3c8);
     // Training progress for the unit at the front of the queue (own buildings only).
     const next = b.queue[0];
     if (b.built && next) hpBar(g, b.x, b.y + r + 250, 2 * r, b.progress, UNITS[next].work, 0x7fd4ff);

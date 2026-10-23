@@ -1,6 +1,6 @@
 // HTML overlay: resources, selection, messages, hotkeys, and the text view. Plain DOM keeps it readable,
 // scalable and screen-reader friendly.
-import { BUILDINGS, describeView, MILLI, powerHeadroom, TICK_RATE, training, type FactionView, type World } from '../sim/index.ts';
+import { BUILDINGS, construction, describeView, MILLI, powerHeadroom, TICK_RATE, training, type FactionView, type World } from '../sim/index.ts';
 import { pretty, type CardButton } from './card.ts';
 import { renderGuide } from './guide.ts';
 import { HOTKEYS } from './input.ts';
@@ -57,7 +57,8 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
     const units = v.units.filter((u) => selected.has(u.id));
     const b = v.buildings.find((x) => selected.has(x.id));
     const t = b ? training(v, b) : null;
-    const key = units.map((u) => `${u.id}:${u.hp}`).join(',') + (b ? `b${b.id}:${b.hp}:${b.queue.length}:${b.built}:${JSON.stringify(t)}` : '');
+    const c = b ? construction(v, b) : null;
+    const key = units.map((u) => `${u.id}:${u.hp}`).join(',') + (b ? `b${b.id}:${b.hp}:${b.queue.length}:${b.built}:${JSON.stringify(t)}:${JSON.stringify(c)}` : '');
     if (key === selKey) return;
     selKey = key;
     const el = $('hud-selection');
@@ -75,7 +76,8 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
         row.addEventListener('click', () => onNarrow(units.filter((u) => u.type === row.dataset.type).map((u) => u.id)));
       }
     } else if (b) {
-      el.innerHTML = `<div class="sel-head">${pretty(b.type)}${b.built ? '' : ' (under construction)'}</div>`
+      el.innerHTML = `<div class="sel-head">${pretty(b.type)}</div>`
+        + (c ? `<div>${constructionText(c)}</div>` : '')
         + `${bar(b.hp, BUILDINGS[b.type].hp)} <span class="dim">${b.hp}/${BUILDINGS[b.type].hp} hp</span>`
         + (t ? `<div>${trainingText(t)}</div>` : '');
     } else {
@@ -208,4 +210,12 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
 export function trainingText(t: NonNullable<ReturnType<typeof training>>): string {
   const when = t.waitingForPower ? '<b class="warn">waiting for Power</b>' : `<b>${t.seconds}s</b>`;
   return `Training ${pretty(t.unit)}: ${when}${t.queued ? ` <span class="dim">(+${t.queued} queued)</span>` : ''}`;
+}
+
+/** "Building: 45% · 8s (2 engineers)", or a warning when no engineer is assigned. */
+export function constructionText(c: NonNullable<ReturnType<typeof construction>>): string {
+  const eta = c.seconds === null
+    ? '<b class="warn">paused: no engineers building it</b> <span class="dim">(select engineers, right-click it)</span>'
+    : `<b>${c.seconds}s</b> <span class="dim">(${c.builders} engineer${c.builders === 1 ? '' : 's'}; more build faster)</span>`;
+  return `Building: <b>${c.percent}%</b> · ${eta}`;
 }

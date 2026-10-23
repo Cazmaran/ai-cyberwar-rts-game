@@ -2,6 +2,13 @@
 
 Newest first. Each entry: date, decision, options considered, reason. Changes to design pillars need owner approval.
 
+## D-017 — 2026-10-23 — OPEN: renderer for final art (2D vs 3D)
+- **Question:** stay on PixiJS (2D, top-down or isometric "2.5D" sprites, as in the original Age of Empires) or move to a 3D renderer (Three.js or Babylon.js: perspective camera, glTF models)?
+- **What's fixed either way:** the stack (TypeScript, npm, browser). The sim, AI, harness, tests, replays and HTML HUD stay unchanged, because the renderer only reads `FactionView` and issues commands. Only `src/render/` drawing (about 1,000 lines) and map picking would change.
+- **Main cost:** art, not code. Models or sprites, licenses (contributed art CC-BY-4.0 or CC0), download size, one consistent style.
+- **Plan:** keep PixiJS through Phases 2–3. At the start of Phase 4, a renderer spike (M4.0) compares a Three.js top-down prototype with isometric 2D sprites on the same game state; the owner picks the art direction from that.
+- **Status:** open, owner to decide at M4.0. Tracking issue: #7.
+
 ## D-016 — 2026-10-23 — Gate 1 passed
 - **Decision:** Phase 1 (greybox core loop) is complete; start the go-public checklist, then Phase 2 (the LLM General).
 - **Evidence:** 17 owner playtests. Wins against turtle (defensive), boom (Center First and Router Choke) and rush (defend, then counter); losses with clear, actionable causes that turned into wins (D-015). Determinism, replay, APM and Adaptation tests pass. A 20-minute headless match runs in well under 10 s. 300 units at a steady 120 fps on the owner's machine. Owner: "play again?" yes.

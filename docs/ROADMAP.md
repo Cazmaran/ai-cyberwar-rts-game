@@ -63,7 +63,7 @@ Owner constraints: light coding (owner's own workflow: agents write most code), 
 
 **Known risk:** perf ceiling and no visual editor. **Re-evaluation trigger:** at Gate 1, if 300 units cannot hold 60 fps, port the renderer to Godot (sim logic ports with it as a design, not code).
 
-**Art direction:** top-down 2D. Avoid the "Tron trap": distinct silhouettes per role, readable color coding, not all neon-on-black.
+**Art direction:** top-down 2D for now; 2D vs 3D is open until the M4.0 renderer spike (D-017). Avoid the "Tron trap": distinct silhouettes per role, readable color coding, not all neon-on-black.
 
 ## 3. Resources & Tools
 
@@ -173,6 +173,7 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
   - **Owner decision:** match-length target (short skirmish vs long siege mode).
 
 ### Phase 4 — Vertical Slice (6–8 weeks)
+- M4.0 Renderer spike (D-017): a Three.js top-down/perspective prototype and an isometric 2D sprite prototype, both drawing the same `FactionView`. Compare look, performance with `?stress=300`, and asset cost; the owner picks.
 - M4.1 Art direction pass (readable silhouettes, role colors), UI/HUD, audio.
 - M4.2 Onboarding/tutorial vs "Edge Node AI".
 - M4.3 Difficulty ladder = model tier (Edge Node 8B / Datacenter 32B / Frontier cloud).

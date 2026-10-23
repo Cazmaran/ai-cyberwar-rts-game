@@ -8,6 +8,8 @@ export interface Sample {
   army: Record<Faction, number>;
   /** Data per second arriving at the core. */
   income: Record<Faction, number>;
+  /** Data sources owned. */
+  sources: Record<Faction, number>;
 }
 
 export interface Totals {
@@ -66,18 +68,41 @@ export function recordStats(s: MatchStats, world: World): void {
   }
   if (world.tick % s.every === 0 || world.winner !== null) {
     const income = (f: Faction) => (world.factions[f].income * TICK_RATE) / 1000;
-    s.samples.push({ tick: world.tick, army, income: { human: income('human'), ai: income('ai') } });
+    const sources = (f: Faction) => [...world.sites.values()].filter((x) => x.kind === 'data_source' && x.owner === f).length;
+    s.samples.push({ tick: world.tick, army, income: { human: income('human'), ai: income('ai') }, sources: { human: sources('human'), ai: sources('ai') } });
   }
 }
 
-/** The moment the opponent's army was furthest ahead of yours (by ratio), if it ever was. */
-export function biggestGap(s: MatchStats, you: Faction): { tick: number; ratio: number } | null {
+/**
+ * The moment the opponent's army was furthest ahead of yours, if it ever was. When you had no army at
+ * all, `ratio` is null and the gap is the opponent's army value.
+ */
+export function biggestGap(s: MatchStats, you: Faction): { tick: number; ratio: number | null; theirs: number } | null {
   const them: Faction = you === 'human' ? 'ai' : 'human';
-  let best: { tick: number; ratio: number } | null = null;
+  let best: { tick: number; ratio: number | null; theirs: number; score: number } | null = null;
   for (const x of s.samples) {
     if (x.army[them] < 100) continue;
-    const ratio = x.army[them] / Math.max(1, x.army[you]);
-    if (ratio >= 1.5 && (!best || ratio > best.ratio)) best = { tick: x.tick, ratio };
+    const ratio = x.army[you] > 0 ? x.army[them] / x.army[you] : null;
+    if (ratio !== null && ratio < 1.5) continue;
+    // Rank by how far behind you were; having no army at all ranks by the size of theirs.
+    const score = ratio ?? 1000 + x.army[them];
+    if (!best || score > best.score) best = { tick: x.tick, ratio, theirs: x.army[them], score };
   }
-  return best;
+  return best && { tick: best.tick, ratio: best.ratio, theirs: best.theirs };
+}
+
+/** The first moment the opponent's income stayed at least 1.5x yours for a minute or more, if it did. */
+export function incomeGap(s: MatchStats, you: Faction): { tick: number; yours: number; theirs: number; sources: [number, number] } | null {
+  const them: Faction = you === 'human' ? 'ai' : 'human';
+  const minute = 60 * TICK_RATE;
+  for (let i = 0; i < s.samples.length; i++) {
+    const a = s.samples[i]!;
+    const behind = (x: Sample) => x.income[them] >= 1.5 * Math.max(1, x.income[you]);
+    if (!behind(a)) continue;
+    const run = s.samples.filter((x) => x.tick >= a.tick && x.tick <= a.tick + minute);
+    if (run.length > 1 && run.at(-1)!.tick - a.tick >= minute && run.every(behind)) {
+      return { tick: a.tick, yours: a.income[you], theirs: a.income[them], sources: [a.sources[you], a.sources[them]] };
+    }
+  }
+  return null;
 }

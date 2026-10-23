@@ -2,7 +2,7 @@
 // (army value, income) for both sides. Colors are the faction hues stepped for a dark chart surface
 // (validated: lightness band, colorblind separation, contrast).
 import { TICK_RATE, type Faction } from '../sim/index.ts';
-import { biggestGap, type MatchStats, type Sample } from '../harness/stats.ts';
+import { biggestGap, incomeGap, type MatchStats, type Sample } from '../harness/stats.ts';
 
 const SERIES: Record<Faction, { color: string; label: string }> = {
   human: { color: '#3d96f2', label: 'You' },
@@ -56,9 +56,14 @@ export function summaryHtml(s: MatchStats, winner: Faction, you: Faction = 'huma
     ? `The network holds. <b>You win</b> in ${clock(end)}.`
     : `The Model has taken the network. <b>AI wins</b> in ${clock(end)}.`;
   const gap = biggestGap(s, you);
-  const insight = gap
-    ? `Biggest gap: at <b>${clock(gap.tick)}</b> the AI's army was worth <b>${gap.ratio.toFixed(1)}×</b> yours.`
-    : 'The AI\'s army never got far ahead of yours.';
+  const armyLine = !gap ? 'The AI\'s army never got far ahead of yours.'
+    : gap.ratio === null ? `Biggest gap: at <b>${clock(gap.tick)}</b> you had no army; the AI's was worth <b>${Math.round(gap.theirs)} Data</b>.`
+    : `Biggest gap: at <b>${clock(gap.tick)}</b> the AI's army was worth <b>${gap.ratio.toFixed(1)}×</b> yours.`;
+  const inc = incomeGap(s, you);
+  const incomeLine = inc
+    ? `<br>Economy: from <b>${clock(inc.tick)}</b> the AI earned <b>${inc.theirs.toFixed(1)}</b> Data/s to your <b>${inc.yours.toFixed(1)}</b> (Data sources: AI ${inc.sources[1]}, you ${inc.sources[0]}).`
+    : '';
+  const insight = armyLine + incomeLine;
   const rows: [string, (f: Faction) => string][] = [
     ['Data earned', (f) => String(s.totals[f].earned)],
     ['Combat units trained', (f) => String(s.totals[f].trained)],

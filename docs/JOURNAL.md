@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-22 — Ninth playtest: the summary explains a loss
+
+- Lost a rush against boom in 5:26 ("the AI is mass producing units at a rate I can't compete with"). The new summary said why. From about 1:15 the AI made 15 Data/s to the owner's 6: it held both center Data sources and its expansions, the owner only their home sources. It earned 3,838 Data to 1,619. The owner lost all 14 units while killing 4 of 38, and the SOC sat idle for 1:56.
+- So it was economy, not unit spam. The game is behaving as designed; the lesson is to contest the center early and raid enemy workers.
+- Summary fixes: "biggest gap" divided by a zero army ("1810.0×"). It now says "you had no army; the AI's was worth 1810 Data". A new economy line reports when the AI's income stayed 1.5× yours for a minute, and how many Data sources each side held.
+
 ## 2026-10-22 — Eighth playtest: a post-match summary
 
 - Another rush loss against boom: "the AI had many more armor and ranged units than I did around 2:50." In bot matches, boom is normally behind a rush at 2:50 (45–195 Data of army against 160–260). So the likely causes were production gaps, plus AI units being cheaper (more bodies for the same Data). Neither of us could see which.

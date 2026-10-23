@@ -114,7 +114,7 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
   - Equal-cost duel matrix for every unit pair.
   - Strategy bots: rush, boom, turtle; bot-vs-bot win-rate table.
   - Skill test: same build, better micro vs sloppy micro.
-- **Status (2026-10-22):** all milestones built. Hard balance criteria (duel matrix, counters) pass. Bot proxies are near target (worst strategy 67–68%; skill 58–70%) and are now warnings (D-015). Next: owner playtests for Gate 1. 300 units at 120 fps on owner's machine ✅. First owner playtest found the UI confusing; onboarding added, replay pending.
+- **Status (2026-10-22):** all milestones built. Hard balance criteria (duel matrix, counters) pass. Bot proxies are warnings (D-015). Owner playtests: wins against turtle and boom with different strategies (defensive; Center First and Router Choke). 300 units run at 60–120 fps after fog and separation (re-checked 2026-10-23). Remaining: the owner's "play again?" answer. 300 units at 120 fps on owner's machine ✅. First owner playtest found the UI confusing; onboarding added, replay pending.
 - **Gate 1 criteria:**
   - Owner plays 5+ matches and answers "do I want to play again?" yes.
   - 300 units at 60 fps on the dev machine.

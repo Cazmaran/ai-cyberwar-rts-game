@@ -24,6 +24,7 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
   root.innerHTML = `
     <div id="hud-top" class="hud-panel">
       <span class="t-time" id="t-time"></span>
+      <span class="t-state" id="t-state"></span>
       <span class="t-data" title="Data: spend on units and buildings">Data <b id="t-data"></b> <span id="t-inc"></span></span>
       <span class="t-power" title="Power is your unit limit: every unit and building draws Power; your NOC and each substation you hold supply it. When it's full, new units wait.">Power <span id="t-power"></span></span>
       <span class="t-compute" title="Compute: training speed, shared by all your buildings that are training. Server Racks add 5; extra SOCs add nothing.">Compute <b id="t-compute"></b></span>
@@ -113,7 +114,8 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
       // needlessly. The fps reading refreshes twice a second.
       const now0 = performance.now();
       if (now0 - fpsAt > 500) { fpsAt = now0; fpsShown = fps; }
-      setHtml('t-time', `⏱ ${Math.trunc(secs / 60)}:${String(secs % 60).padStart(2, '0')}${paused ? ' <b>PAUSED</b>' : ''}${speed !== 1 ? ` ×${speed}` : ''}`);
+      setHtml('t-time', `⏱ ${Math.trunc(secs / 60)}:${String(secs % 60).padStart(2, '0')}`);
+      setHtml('t-state', `${paused ? '<b>PAUSED</b> ' : ''}${speed !== 1 ? `×${speed}` : ''}`);
       setHtml('t-data', String(Math.trunc(v.data / MILLI)));
       setHtml('t-inc', `(+${((v.income * TICK_RATE) / MILLI).toFixed(1)}/s)`);
       setHtml('t-power', `<b${powerHeadroom(v) === 0 ? ' class="warn"' : ''}>${v.powerUsed}/${v.powerCap}${powerHeadroom(v) === 0 ? ' FULL' : ''}</b>`);

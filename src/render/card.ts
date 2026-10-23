@@ -26,8 +26,8 @@ const UNIT_TIPS: Partial<Record<UnitTypeId, string>> = {
 };
 
 const BUILD_TIPS: Partial<Record<BuildingTypeId, string>> = {
-  soc: 'Security Operations Center: trains your combat units. Build one first.',
-  server_rack: 'Adds Compute (faster training). Uses Power.',
+  soc: 'Security Operations Center: trains your combat units. Build one first. One is usually enough: all your training shares one pool of Compute, so extra SOCs don’t train faster. Server Racks do.',
+  server_rack: '+5 Compute: all your training gets faster (your NOC gives 10). Draws 2 Power.',
   barricade: 'A physical wall that blocks AI machines until they break through it. Your units pass freely.',
   security_post: 'Armed guard post: shoots AI machines within 5 tiles. Guards need no grid power, so it keeps firing in a blackout.',
 };
@@ -53,8 +53,10 @@ export function buildCard(view: FactionView, ui: UiState, actions: {
     disabled: !b ? 'Build a SOC first' : b.queue.length >= 5 ? 'Queue full' : power(t) ?? afford(UNITS[t].cost),
     run: () => (b ? [{ type: 'train', building: b.id, unit: t }] : []),
   });
+  const haveSoc = view.buildings.some((b) => b.type === 'soc');
   const build = (t: BuildingTypeId, key: string): CardButton => ({
-    id: `build:${t}`, label: `Build ${pretty(t)}`, key, cost: BUILDINGS[t].cost, tip: `${BUILD_TIPS[t] ?? ''} Click, then click the map to place it.`,
+    id: `build:${t}`, label: `Build ${pretty(t)}`, key, cost: BUILDINGS[t].cost,
+    tip: `${t === 'soc' && haveSoc ? 'You already have a SOC: another one won’t train faster, because training shares your Compute. Build a Server Rack instead. ' : ''}${BUILD_TIPS[t] ?? ''} Click, then click the map to place it.`,
     disabled: afford(BUILDINGS[t].cost),
     run: () => { actions.setMode({ type: 'place', building: t }); return []; },
   });

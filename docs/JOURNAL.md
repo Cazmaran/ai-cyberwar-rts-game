@@ -6,6 +6,7 @@ The story of building this game, newest first. Wins, failures, surprises, and wh
 
 - Owner tried a rush against `?ai=boom` and lost badly. Their own diagnosis: "I should have been more aggressive with attacks. By the time I got moving, the AI had way more heavy units and I had no counter."
 - A loss with a clear reason meets the Gate 1 "better play wins" criterion. The counter they were missing was the Red Team (double damage against tanks). Open question: did they see the counter hint in the intel panel?
+- Also "data starved, even with 3 SOCs". Two hidden rules: training speed comes from one shared Compute pool, so extra SOCs add nothing (only Server Racks do); and the two home sources give only 4.8 Data/s. Owner chose to keep the pool and explain it. The SOC and Server Rack tips, and the Compute tooltip, now say so; the SOC button warns when you already have one; and hovering a Data source shows its rate.
 
 ## 2026-10-22 — Sixth playtest: first win against a strategy AI
 

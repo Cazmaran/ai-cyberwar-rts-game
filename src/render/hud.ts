@@ -94,7 +94,7 @@ export function createHud(root: HTMLElement, aiName: string): Hud {
         <span class="t-time">⏱ ${Math.trunc(secs / 60)}:${String(secs % 60).padStart(2, '0')}${paused ? ' <b>PAUSED</b>' : ''}${speed !== 1 ? ` ×${speed}` : ''}</span>
         <span class="t-data" title="Data: spend on units and buildings">Data <b>${Math.trunc(v.data / MILLI)}</b> (+${((v.income * TICK_RATE) / MILLI).toFixed(1)}/s)</span>
         <span class="t-power" title="Power is your unit limit: every unit and building draws Power; your NOC and each substation you hold supply it. When it's full, new units wait.">Power <b${powerHeadroom(v) === 0 ? ' class="warn"' : ''}>${v.powerUsed}/${v.powerCap}${powerHeadroom(v) === 0 ? ' FULL' : ''}</b></span>
-        <span class="t-compute" title="Compute: production speed; server racks add more">Compute <b>${v.compute}</b></span>
+        <span class="t-compute" title="Compute: training speed, shared by all your buildings that are training. Server Racks add 5; extra SOCs add nothing.">Compute <b>${v.compute}</b></span>
         <span class="t-plug" title="Pull the Plug: black out a zone, freezing AI units and unpowering buildings">Plug ${plug}</span>
         <span class="dim t-meta">vs ${aiName} · ${fps} fps</span>`);
       $('hud-mode').textContent = modeText;

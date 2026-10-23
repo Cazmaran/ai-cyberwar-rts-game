@@ -188,7 +188,7 @@ export function describeAt(view: FactionView, x: number, y: number): string | nu
   const s = view.sites.find((e) => e.kind !== 'core' && within(x, y, e.x, e.y, 900));
   if (s) {
     const what: Record<string, string> = {
-      data_source: 'Data Source: produces Data once claimed and connected to your NOC by fiber.',
+      data_source: `Data Source: ${((s.rate * 20) / 1000).toFixed(1)} Data/s once claimed and connected to your NOC by fiber.`,
       router: 'Router: forwards traffic. Neutral routers forward for everyone; claim one to block the AI\'s traffic.',
       substation: 'Substation: claim it for +20 Power (lets you field more units).',
     };

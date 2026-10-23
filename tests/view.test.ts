@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCard } from '../src/render/card.ts';
-import { describeView, factionView, powerHeadroom, spawnUnit, TILE, training } from '../src/sim/index.ts';
+import { describeView, factionView, powerHeadroom, spawnBuilding, spawnUnit, TILE, training } from '../src/sim/index.ts';
 import { newGame } from './helpers.ts';
 
 describe('faction view (fog of war)', () => {
@@ -68,5 +68,21 @@ describe('training countdown', () => {
     game.world.factions.human.powerUsed = game.world.factions.human.powerCap;
     v = factionView(game.world, 'human');
     expect(training(v, v.buildings.find((x) => x.id === noc.id)!)?.waitingForPower).toBe(true);
+  });
+});
+
+describe('explaining the economy', () => {
+  it('sites expose their Data rate, and the SOC tip says a second SOC does not train faster', () => {
+    const game = newGame();
+    const v = factionView(game.world, 'human');
+    expect(v.sites.find((s) => s.id === 'mid_src_n')!.rate).toBe(200);
+    const ui = { selected: new Set<number>(), mode: { type: 'none' as const } };
+    const engineer = v.units.find((u) => u.role === 'worker')!;
+    ui.selected.add(engineer.id);
+    const soc = () => buildCard(factionView(game.world, 'human'), ui as never, { setMode: () => {}, select: () => {} }).find((b) => b.id === 'build:soc')!;
+    expect(soc().tip).not.toMatch(/already have/);
+    const noc = [...game.world.entities.values()].find((e) => e.kind === 'building' && e.type === 'noc')!;
+    spawnBuilding(game.world, 'soc', 'human', noc.x, noc.y + 5 * TILE).built = true;
+    expect(soc().tip).toMatch(/already have a SOC/);
   });
 });

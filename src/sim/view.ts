@@ -11,7 +11,11 @@ export interface BuildingView {
   /** Own buildings only: units queued, and production work done on the first one. */
   queue: UnitTypeId[]; progress: number; sector: SectorId;
 }
-export interface SiteView { id: string; kind: SiteKind; x: number; y: number; sector: SectorId; visible: boolean; owner: Faction | null | 'unknown' }
+export interface SiteView {
+  id: string; kind: SiteKind; x: number; y: number; sector: SectorId; visible: boolean; owner: Faction | null | 'unknown';
+  /** Data sources: milli-Data per tick once claimed and connected (public map knowledge). */
+  rate: number;
+}
 export interface LinkView { index: number; a: string; b: string; bandwidth: number; mine: boolean }
 
 export interface FactionView {
@@ -76,7 +80,7 @@ export function factionView(world: World, faction: Faction): FactionView {
     enemyBuildings: allBuildings.filter((b) => b.faction !== faction && seen(b.x, b.y)).map(buildingView),
     sites: [...world.sites.values()].map((s) => {
       const visible = s.owner === faction || seen(s.x, s.y);
-      return { id: s.id, kind: s.kind, x: s.x, y: s.y, sector: sectorOf(world.map, s.x, s.y), visible, owner: visible ? s.owner : 'unknown' };
+      return { id: s.id, kind: s.kind, x: s.x, y: s.y, sector: sectorOf(world.map, s.x, s.y), visible, owner: visible ? s.owner : 'unknown', rate: s.rate };
     }),
     links: world.links.map((l) => ({ index: l.index, a: l.a, b: l.b, bandwidth: l.bandwidth, mine: l.owner === faction })),
   };

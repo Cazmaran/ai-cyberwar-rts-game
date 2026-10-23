@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-23 — Fifteenth playtest: rush beats boom in 5:04
+
+- Fastest win yet. The owner took both center sources and the center router by 0:40, retook the router at 1:20 and held it, killed all 7 AI drones by 2:40, and took `a_router_fwd` at 3:00 (Router Choke again). Income was 14.8 to 5.8 Data/s from 2:40. They built 4 Server Racks and 4 Security Posts this time, applying the earlier replay's lessons.
+- The replay also showed an AI bot bug: with every drone dead and a human army on its half, the bot never trained another worker. Its rule "under pressure, train army only" never cleared, so it sat on 500 Data with no economy. Bots now keep at least 2 workers even under pressure.
+- `npm run replay` now also reports buildings built and destroyed.
+
 ## 2026-10-23 — Fourteenth playtest: Router Choke (first replay analysis)
 
 - Owner beat `?ai=boom` in 14:17 (at 0.5× speed) and saved the first replay. `npm run replay` told the story:

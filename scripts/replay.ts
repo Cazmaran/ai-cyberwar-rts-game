@@ -1,10 +1,11 @@
 // Re-run a saved replay and print what happened: a timeline every 15 s (income, Data sources and any that
-// aren't feeding home, armies, workers) plus the events in between (sites claimed, fiber lit, losses).
+// aren't feeding home, armies, workers) plus the events in between (sites claimed, fiber lit, buildings
+// built and destroyed, losses).
 // Usage: npm run replay -- path/to/replay.json [--every 15]
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import {
-  FACTIONS, runReplay, sourceIssue, TICK_RATE, UNITS, units, type Faction, type Game, type Replay,
+  buildings, FACTIONS, runReplay, sourceIssue, TICK_RATE, UNITS, units, type Faction, type Game, type Replay,
 } from '../src/sim/index.ts';
 
 const { values, positionals } = parseArgs({ allowPositionals: true, options: { every: { type: 'string', default: '15' } } });
@@ -18,6 +19,7 @@ const short = (id: string) => id.replace('data_source', 'src');
 let owners = new Map<string, Faction | null>();
 let lit = new Map<number, Faction | null>();
 let alive = new Map<number, { f: Faction; type: string }>();
+let built = new Map<number, string>();
 let events: string[] = [];
 
 function line(game: Game): string {
@@ -50,6 +52,10 @@ const game = runReplay(replay, (g) => {
   for (const [id, u] of alive) if (!now.has(id)) lost[`${u.f} ${u.type}`] = (lost[`${u.f} ${u.type}`] ?? 0) + 1;
   for (const [k, n] of Object.entries(lost)) events.push(`lost ${n} ${k}`);
   alive = now;
+  const standing = new Map(buildings(w).map((b) => [b.id, `${b.faction} ${b.type}`]));
+  for (const [id, name] of built) if (!standing.has(id)) events.push(`destroyed ${name}`);
+  for (const b of buildings(w)) if (b.built && !built.has(b.id)) events.push(`built ${b.faction} ${b.type}`);
+  built = new Map(buildings(w).filter((b) => b.built).map((b) => [b.id, `${b.faction} ${b.type}`]));
   if (w.tick % every === 0 || w.winner) {
     console.log(line(g));
     if (events.length) console.log(`        ${[...new Set(events)].join('; ')}`);

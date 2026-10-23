@@ -155,7 +155,9 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
         }
       }
 
-      if (!underPressure && workers.length < strategy.workers && core.queue.length === 0 && !pending(core.id)
+      // Under pressure, keep at least a minimal workforce so the economy can recover after a raid.
+      const wantWorkers = underPressure ? Math.min(2, strategy.workers) : strategy.workers;
+      if (workers.length < wantWorkers && core.queue.length === 0 && !pending(core.id)
         && v.data >= UNITS[WORKER[faction]].cost) {
         order({ type: 'train', building: core.id, unit: WORKER[faction] }, [core.id], UNITS[WORKER[faction]].cost);
       }

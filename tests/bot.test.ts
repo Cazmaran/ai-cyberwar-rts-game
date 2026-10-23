@@ -54,4 +54,19 @@ describe('scripted bot', () => {
     const cmds = bot.decide(factionView(game.world, 'human'));
     expect(cmds.some((c) => c.type === 'attackMove' && c.units.length === 9)).toBe(true);
   });
+
+  // Replay seed78297: with every drone dead and a human army on its half, the AI sat on 500 Data and never
+  // trained a worker again, so its economy could not recover.
+  it('under pressure, a bot still rebuilds a minimal workforce', () => {
+    const game = newGame();
+    for (const e of [...game.world.entities.values()]) {
+      if (e.kind === 'unit' && e.faction === 'ai') game.world.entities.delete(e.id);
+    }
+    const core = buildings(game.world).find((b) => b.type === 'primary_cluster')!;
+    for (let i = 0; i < 4; i++) spawnUnit(game.world, 'counter_drone_team', 'human', core.x - 8 * TILE, core.y + i * TILE);
+    game.world.factions.ai.data = 500 * 1000;
+    const bot = createScriptedBot('ai', STRATEGIES.boom!, 1);
+    const cmds = bot.decide(factionView(game.world, 'ai'));
+    expect(cmds.some((c) => c.type === 'train' && c.unit === 'maintenance_drone')).toBe(true);
+  });
 });

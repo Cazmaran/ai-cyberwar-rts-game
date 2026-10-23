@@ -4,6 +4,7 @@ import type { Graphics } from 'pixi.js';
 import {
   BUILDINGS, PULL_THE_PLUG, type Faction, type FactionView, type Role, type World,
 } from '../sim/index.ts';
+import { drawFog } from './fog.ts';
 
 export const COLORS = {
   human: 0x4aa3ff,
@@ -16,7 +17,7 @@ export const COLORS = {
   hpGood: 0x55d27a,
   hpBad: 0xe5534b,
   blackout: 0x000000,
-  ground: 0x161b22,
+  ground: 0x1f2631,
 } as const;
 
 const factionColor = (f: Faction | null | 'unknown') =>
@@ -52,6 +53,9 @@ export function drawWorld(g: Graphics, world: World, view: FactionView, selected
       g.poly([s.x + 100, s.y - 450, s.x - 250, s.y + 50, s.x, s.y + 50, s.x - 100, s.y + 450, s.x + 250, s.y - 50, s.x, s.y - 50]).fill(c);
     }
   }
+
+  // Fog of war over the ground and sites; your buildings and units draw on top.
+  drawFog(g, view);
 
   // Buildings (own + visible enemy).
   for (const b of [...view.buildings, ...view.enemyBuildings]) {

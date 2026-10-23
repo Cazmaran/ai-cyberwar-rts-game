@@ -4,10 +4,11 @@ The story of building this game, newest first. Wins, failures, surprises, and wh
 
 ## 2026-10-22 — Fourth playtest: first win, 23:56
 
-- The owner beat the default AI in 23:56, a length that felt about right.
+- The owner beat the AI in 23:56, a length that felt about right. Correction: with no `?ai=` in the URL the game uses the gentle training opponent, so this was a win against training, not the full-strength bots.
 - What won it: defenses held, the right counters, and out-expanding the AI. Three different systems mattered, and two of them are new this session (defenses and expansions).
 - "Play again?": maybe. Gate 1 needs a clear yes; finding out what's holding it back is next.
 - What held it back: "I couldn't build any more armor or fast units, but I had plenty of Data." They had hit the Power cap, and nothing said so. Finished units waited silently and the Train buttons kept taking Data. Now the Power counter shows FULL, an alert fires, the Train buttons explain why they're disabled, and the text view marks `FULL` for LLMs.
+- Owner kept the Power cap ("I just didn't understand it as a game rule"). Also hard to read: overlapping units, the enemy's strength, and what was fogged. Fixes: units spread apart; the intel panel shows an army strength for each side (Data value scaled by health) with a verdict; fogged ground is shaded.
 
 ## 2026-10-22 — The skill gate and the limits of scripted bots
 

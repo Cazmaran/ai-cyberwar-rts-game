@@ -14,7 +14,7 @@
       #hud { position: fixed; inset: 0; pointer-events: none; }
       .hud-panel { position: absolute; background: var(--panel); border: 1px solid #2c333d; border-radius: 6px; padding: 6px 10px; pointer-events: auto; }
       #hud-top { top: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 18px; white-space: nowrap; }
-      #hud-top b { color: #fff; } #hud-top .ready { color: #55d27a; } #hud-top .warn { color: #ff7a59; } .dim { color: var(--dim); }
+      #hud-top b { color: #fff; } .ready, #hud-top .ready { color: #55d27a; } .warn, #hud-top .warn { color: #ff7a59; } .dim { color: var(--dim); }
       #hud-mode { top: 140px; left: 50%; transform: translateX(-50%); color: #ffd866; }
       #hud-messages { position: absolute; top: 175px; left: 50%; transform: translateX(-50%); text-align: center; color: #ff9b94; }
       #hud-selection { left: 8px; bottom: 8px; width: 300px; box-sizing: border-box; }

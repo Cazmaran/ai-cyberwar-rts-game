@@ -87,6 +87,21 @@ function alert(fx: Effects, out: string[], key: string, now: number, text: strin
   return true;
 }
 
+/**
+ * Army strength: Data value scaled by remaining health, so a battered army counts for less. A rough
+ * guide only: counters and Adaptation can swing a fight either way.
+ */
+export function strength(list: UnitView[]): number {
+  return list.reduce((sum, u) => sum + Math.trunc((UNITS[u.type].cost / 1000) * u.hp / u.maxHp), 0);
+}
+
+export function verdict(ours: number, theirs: number): string {
+  if (theirs === 0) return 'no enemy army in sight';
+  if (ours >= theirs * 1.3) return '<b class="ready">you are stronger</b>';
+  if (theirs >= ours * 1.3) return '<b class="warn">they are stronger</b>';
+  return '<b>evenly matched</b>';
+}
+
 export function composition(list: UnitView[]): string {
   const m = new Map<string, number>();
   for (const u of list) m.set(u.type, (m.get(u.type) ?? 0) + 1);
@@ -134,16 +149,17 @@ const ROLE_NAME: Record<Exclude<Role, 'worker'>, string> = { fast: 'fast', range
 export function intel(v: FactionView): string {
   const enemy = v.enemyUnits.filter((u) => u.role !== 'worker');
   const ours = v.units.filter((u) => u.role !== 'worker');
-  const lines = [`<b>Your army:</b> ${ours.length ? composition(ours) : 'none'}`];
+  const lines = [`<b>Your army:</b> ${ours.length ? `${composition(ours)} · strength ${strength(ours)}` : 'none'}`];
   if (enemy.length === 0) {
     lines.push('<b>Enemy seen:</b> none in sight');
   } else {
-    lines.push(`<b>Enemy seen:</b> ${enemy.length} units`);
+    lines.push(`<b>Enemy seen:</b> ${enemy.length} units · strength ${strength(enemy)}`);
+    lines.push(`&nbsp;→ ${verdict(strength(ours), strength(enemy))} <span class="dim">(only what you can see)</span>`);
     for (const role of ['fast', 'ranged', 'tank'] as const) {
       const n = enemy.filter((u) => u.role === role);
       if (n.length) lines.push(`&nbsp;· ${composition(n)} (${ROLE_NAME[role]}) → counter: <b>${COUNTER[role]}</b>`);
     }
   }
-  lines.push('<span class="dim">● engineer ▲ fast ◆ ranged ■ tank · blue = you, orange = AI</span>');
+  lines.push('<span class="dim">● engineer ▲ fast ◆ ranged ■ tank · blue = you, orange = AI · dark ground = fog (enemies there are hidden)</span>');
   return lines.join('<br>');
 }

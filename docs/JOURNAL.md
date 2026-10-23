@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-23 — Tenth playtest: center-first beats boom
+
+- After three losses to `?ai=boom`, the owner won with their own plan: claim the two center Data sources first, then work back to connect everything. Data arrived later, but taking the center starved the AI's economy, and the rush held.
+- That is the first strategy found by a player rather than suggested by the game or by us: a candidate for the lore system (Tenet 5). Name it "Center First".
+- Gate 1 status: wins with two different approaches (defensive against turtle, Center First against boom), and every loss had a reason the owner could act on. That covers the D-015 skill and strategy criteria. Remaining: "do I want to play again?" and the 300-unit/60 fps check, which passed earlier.
+
 ## 2026-10-22 — Ninth playtest: the summary explains a loss
 
 - Lost a rush against boom in 5:26 ("the AI is mass producing units at a rate I can't compete with"). The new summary said why. From about 1:15 the AI made 15 Data/s to the owner's 6: it held both center Data sources and its expansions, the owner only their home sources. It earned 3,838 Data to 1,619. The owner lost all 14 units while killing 4 of 38, and the SOC sat idle for 1:56.

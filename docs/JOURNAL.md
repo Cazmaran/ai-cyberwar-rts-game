@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-23 — Twelfth playtest: closer, then one bad fight
+
+- Lost to boom in 9:40, but with a clearly better economy and production than last time: Data earned 4,029 to 6,103 (1.5× behind, down from 2×), and 0:43 idle while units were affordable (down from 1:47).
+- Armies were even (about 400 Data each) until a fight around 5:20 that the owner lost at about 435 against 550. The AI then camped the base and killed every new unit as it came out: 25 trained, 25 lost.
+- A trend Gate 1 wants to see: each loss is closer, and the cause is clear and actionable.
+
 ## 2026-10-23 — Eleventh playtest: Center First is fragile
 
 - Lost a rush against boom in 7:21. The AI earned 4,535 Data to the owner's 2,225. The owner's income ramped slowly: none until 1:00, one source until 2:30, about 10 Data/s only after 5:00. In the Center First win it was about 7 Data/s by 2:30. On top of that, 1:47 of idle production while units were affordable, and 13-for-13 unit trades that lost Data because human units cost more.

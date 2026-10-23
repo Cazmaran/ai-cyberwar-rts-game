@@ -2,6 +2,11 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-22 — Seventh playtest: crushed rushing a boom
+
+- Owner tried a rush against `?ai=boom` and lost badly. Their own diagnosis: "I should have been more aggressive with attacks. By the time I got moving, the AI had way more heavy units and I had no counter."
+- A loss with a clear reason meets the Gate 1 "better play wins" criterion. The counter they were missing was the Red Team (double damage against tanks). Open question: did they see the counter hint in the intel panel?
+
 ## 2026-10-22 — Sixth playtest: first win against a strategy AI
 
 - Owner beat `?ai=turtle`, the first win against a full-strength strategy bot.

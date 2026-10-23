@@ -6,4 +6,4 @@ In short: be respectful and welcoming, critique ideas and code, not people, and 
 
 ## Reporting
 
-Report unacceptable behavior to the maintainer: TODO (owner to provide a contact address before the repo goes public).
+Report unacceptable behavior to the maintainer at **ai.cyberwar.rts.game@gmail.com**. Reports are kept confidential.

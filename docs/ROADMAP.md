@@ -134,9 +134,9 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
   - [x] Gemini PDF: stays private (gitignored), owner decision 2026-10-23.
   - [x] `CODE_OF_CONDUCT.md` contact address: ai.cyberwar.rts.game@gmail.com (dedicated project email).
   - [x] Name: keep the working title "AI Cyberwar RTS" for now (owner decision 2026-10-23); a GitHub rename keeps redirects.
-  - [ ] Branch protection: PR-only `main`, required CI. Set right after going public (free plans don't offer it on private repos).
+  - [x] Branch protection on `main` (2026-10-23): pull requests required, CI (`check`) and `dco` must pass, no force pushes or deletion. The owner can still push directly.
   - [x] DCO check on PRs (`.github/workflows/dco.yml`, no third-party app).
-  - [ ] Flip to public; owner decides where to announce.
+  - [x] Public since 2026-10-23. [ ] Announce: owner decides where.
 
 ### Phase 2 — The LLM General (4–6 weeks)
 - M2.1 State digest: extends the M1.1b text view into a ~400-token JSON summary by named sector, with pre-computed threat levels.

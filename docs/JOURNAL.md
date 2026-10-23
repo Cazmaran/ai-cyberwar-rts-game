@@ -2,6 +2,11 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-23 — Public
+
+- The repo is public. Before the flip: the history scan was clean, issue templates and six good first issues (#1–#6) were added, plus a DCO sign-off check, and a Code of Conduct contact. After: `main` requires pull requests with CI and DCO passing.
+- Welcome. Start with `AGENTS.md` (hand it to your coding agent too) and an issue labeled `good first issue`.
+
 ## 2026-10-23 — Gate 1 passed
 
 - After 17 playtests, the owner's answer to "do I want to play again?" was yes. Phase 1 is done.

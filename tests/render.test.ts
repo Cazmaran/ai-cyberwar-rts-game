@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { strength, verdict } from '../src/render/effects.ts';
 import { visibleTiles } from '../src/render/fog.ts';
+import { selectSameType } from '../src/render/input.ts';
 import { factionView, spawnUnit, TILE } from '../src/sim/index.ts';
 import { newGame } from './helpers.ts';
 
@@ -29,5 +30,18 @@ describe('readability helpers', () => {
     expect(verdict(100, 70)).toMatch(/stronger/);
     expect(verdict(100, 90)).toMatch(/evenly/);
     expect(verdict(60, 100)).toMatch(/they are stronger/);
+  });
+});
+
+describe('double-click selection', () => {
+  it('selects every own unit of the clicked type inside the visible area, and nothing else', () => {
+    const game = newGame();
+    const a = spawnUnit(game.world, 'red_team', 'human', 20 * TILE, 10 * TILE);
+    const b = spawnUnit(game.world, 'red_team', 'human', 22 * TILE, 12 * TILE);
+    spawnUnit(game.world, 'red_team', 'human', 40 * TILE, 30 * TILE); // off screen
+    spawnUnit(game.world, 'counter_drone_team', 'human', 21 * TILE, 11 * TILE); // other type
+    const v = factionView(game.world, 'human');
+    expect(selectSameType(v, a.id, [15 * TILE, 5 * TILE], [30 * TILE, 20 * TILE]).sort()).toEqual([a.id, b.id].sort());
+    expect(selectSameType(v, -1, [0, 0], [48 * TILE, 32 * TILE])).toEqual([]);
   });
 });

@@ -2,6 +2,14 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-23 — Fourteenth playtest: Router Choke (first replay analysis)
+
+- Owner beat `?ai=boom` in 14:17 (at 0.5× speed) and saved the first replay. `npm run replay` told the story:
+  - The center router changed hands about 10 times between 1:00 and 9:30. Every AI retake cut off the owner's center sources (`blocked`), and income fell from 13.8 to 5.8–9.8 Data/s.
+  - The owner banked Data the whole match (2,700 unspent at the end) with Power to spare: training speed (Server Racks) was the limit, not money.
+  - The winning move: taking the AI's own routers (`a_router_fwd` from about 10:00, `a_router` at 13:00). Every AI source was then blocked from its core and its income fell to 0. That is containment, the game's core theme, found by a player. Lore name: **Router Choke**.
+- Owner asked for double-click to select all units of a type on screen (as in AoE). Added.
+
 ## 2026-10-23 — Thirteenth playtest: "a decent opening, but still lost"
 
 - Lost a rush to boom in 6:42 (Data earned 1,722 to 3,825). The owner's income came online at about 1:50 and stuck at about 6 Data/s, so the center source probably never fed the base: unconnected fiber, or a center router held by the AI (an enemy router doesn't forward your traffic). The summary couldn't tell which.

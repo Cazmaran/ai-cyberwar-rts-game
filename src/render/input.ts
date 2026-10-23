@@ -23,6 +23,7 @@ const BUILD_KEYS: Record<string, BuildingTypeId> = { q: 'soc', r: 'server_rack',
 
 export const HOTKEYS: [string, string][] = [
   ['Left click / drag', 'select units'],
+  ['Double-click a unit', 'select all of that type on screen'],
   ['Right click', 'move / attack / claim site / light link'],
   ['A then click', 'attack-move'],
   ['E', 'train Field Engineer (NOC)'],
@@ -50,6 +51,13 @@ export function pickOwn(view: FactionView, x: number, y: number): number | null 
   if (best !== null) return best;
   for (const b of view.buildings) if (within(x, y, b.x, b.y, BUILDINGS[b.type].radius)) return b.id;
   return null;
+}
+
+/** Double-click: every own unit of the clicked unit's type inside the visible area (corners in world units). */
+export function selectSameType(view: FactionView, id: number, [x0, y0]: [number, number], [x1, y1]: [number, number]): number[] {
+  const type = view.units.find((u) => u.id === id)?.type;
+  if (!type) return [];
+  return view.units.filter((u) => u.type === type && u.x >= x0 && u.x <= x1 && u.y >= y0 && u.y <= y1).map((u) => u.id);
 }
 
 export function boxSelect(view: FactionView, x0: number, y0: number, x1: number, y1: number): number[] {

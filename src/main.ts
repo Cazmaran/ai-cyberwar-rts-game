@@ -11,7 +11,7 @@ import { drawWorld } from './render/draw.ts';
 import { createHud } from './render/hud.ts';
 import { buildCard } from './render/card.ts';
 import { createEffects, drawEffects, intel, updateEffects } from './render/effects.ts';
-import { boxSelect, describeAt, describeMode, key, modeClick, pickOwn, rightClick, type UiState } from './render/input.ts';
+import { boxSelect, describeAt, describeMode, key, modeClick, pickOwn, rightClick, selectSameType, type UiState } from './render/input.ts';
 import { applyCommand, factionView, issue, spawnUnit, TICK_RATE, TILE, toReplay, type Command } from './sim/index.ts';
 
 const params = new URLSearchParams(location.search);
@@ -125,6 +125,17 @@ window.addEventListener('pointerup', (e) => {
     for (const id of boxSelect(view, ax, ay, bx, by)) ui.selected.add(id);
   }
   dragStart = null;
+});
+canvas.addEventListener('dblclick', (e) => {
+  // Select every unit of the clicked type that is on screen (shift adds to the selection).
+  const view = factionView(world, 'human');
+  const [x, y] = toWorld(e.offsetX, e.offsetY);
+  const id = pickOwn(view, x, y);
+  if (id === null) return;
+  const ids = selectSameType(view, id, toWorld(0, 0), toWorld(canvas.clientWidth, canvas.clientHeight));
+  if (ids.length === 0) return;
+  if (!e.shiftKey) ui.selected.clear();
+  for (const i of ids) ui.selected.add(i);
 });
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();

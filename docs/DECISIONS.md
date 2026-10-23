@@ -2,6 +2,11 @@
 
 Newest first. Each entry: date, decision, options considered, reason. Changes to design pillars need owner approval.
 
+## D-014 — 2026-10-22 — Signal range shelved until Phase 3
+- **Decision:** AI machines keep moving freely. The signal-range prototype stays in code behind `SIGNAL.enabled = false`; revisit it in Phase 3 together with fiber cutting and an AI rebalance. See `docs/proposals/0001-signal-range.md`.
+- **Options:** hard leash, mesh swarms, soft leash (all tested); shelve.
+- **Reason:** every variant crushed the AI's attacks (AI rush 2–23% overall), because the AI always fights in the human base, out of its own signal. Making it fair needs a redesign of the AI side. Owner approved shelving.
+
 ## D-013 — 2026-10-22 — Expansion sites
 - **Decision:** each side gets two extra Data sources far from its core (`h_exp_n`, `h_exp_s` and their mirrors), linked into its network.
 - **Options:** more, farther sites; workers stationed at a site raise its output; booming means racks only.

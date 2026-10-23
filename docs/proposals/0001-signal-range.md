@@ -1,6 +1,6 @@
 # Proposal 0001: Signal range for AI machines
 
-Status: **proposed, not approved; three rounds tested; recommendation: shelve until Phase 3.** Prototype in code behind `SIGNAL.enabled` (default `false`), so the live game is unchanged.
+Status: **shelved until Phase 3 (D-014).** Three rounds tested. Prototype in code behind `SIGNAL.enabled` (default `false`), so the live game is unchanged.
 
 ## Problem
 

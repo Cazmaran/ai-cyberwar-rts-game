@@ -3,7 +3,7 @@
 // resources in milli-units (MILLI = 1000). Change DATA_VERSION whenever a number changes.
 import { MILLI, TILE } from './fixed.ts';
 
-export const DATA_VERSION = 10;
+export const DATA_VERSION = 11;
 
 export type Faction = 'human' | 'ai';
 export const FACTIONS: readonly Faction[] = ['human', 'ai'];
@@ -56,7 +56,7 @@ export const UNITS: Record<UnitTypeId, UnitStats> = {
   // AI: machines the Model has hijacked. Many and cheap; they need the Model's network and power to act.
   maintenance_drone: {
     faction: 'ai', role: 'worker', hp: 30, damage: 2, bonusVs: {}, range: 1000, sight: 6 * TILE,
-    cooldown: 20, speed: 70, cost: 42 * MILLI, power: 1, work: 1680, trainedAt: 'primary_cluster',
+    cooldown: 20, speed: 70, cost: 45 * MILLI, power: 1, work: 1800, trainedAt: 'primary_cluster',
   },
   botnet_swarm: {
     faction: 'ai', role: 'fast', hp: 35, damage: 4, bonusVs: { ranged: 75 }, range: 900, sight: 6 * TILE,

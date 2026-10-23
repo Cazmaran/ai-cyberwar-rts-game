@@ -2,6 +2,13 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-23 — Why rush keeps losing to boom
+
+- Owner: "without at least some defensive play, I'm losing in rush v boom consistently." The bot data agreed: AI boom was the strongest strategy (65–69% overall).
+- A deeper look (rush bot against AI boom, 20 seeds): the rush bot wins 14/20, because it takes the center Data sources first and out-earns boom by 2:00. AI boom builds a Sentry Gun at 0:12, and 50–80% of the rusher's losses happen near it. Pull the Plug silences it, but nothing tells the player.
+- Tried and reverted: making boom build its turret at 2:30 instead. AI boom got stronger (73% overall; rush won 11/20), because the turret's 60 Data went into economy instead.
+- Applied, with owner approval: Maintenance Drone cost 42 → 45 Data (work 1800). AI boom 69% → about 61%; human boom becomes viable. DATA_VERSION 11.
+
 ## 2026-10-23 — Twelfth playtest: closer, then one bad fight
 
 - Lost to boom in 9:40, but with a clearly better economy and production than last time: Data earned 4,029 to 6,103 (1.5× behind, down from 2×), and 0:43 idle while units were affordable (down from 1:47).

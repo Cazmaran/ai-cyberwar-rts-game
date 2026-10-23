@@ -12,7 +12,7 @@ import { createHud } from './render/hud.ts';
 import { buildCard } from './render/card.ts';
 import { createEffects, drawEffects, intel, updateEffects } from './render/effects.ts';
 import { boxSelect, describeAt, describeMode, key, modeClick, pickOwn, rightClick, type UiState } from './render/input.ts';
-import { applyCommand, factionView, issue, spawnUnit, TICK_RATE, TILE, type Command } from './sim/index.ts';
+import { applyCommand, factionView, issue, spawnUnit, TICK_RATE, TILE, toReplay, type Command } from './sim/index.ts';
 
 const params = new URLSearchParams(location.search);
 const strategy = STRATEGIES[params.get('ai') ?? 'training'] ?? TRAINING;
@@ -177,7 +177,7 @@ app.ticker.add((ticker) => {
   }
   for (; seenRejections < game.rejected.length; seenRejections++) {
     const r = game.rejected[seenRejections]!;
-    if (r.cmd.faction === 'human') hud.message(`✗ ${r.cmd.command.type}: ${r.reason}`);
+    if (r.cmd.faction === 'human' && !humanBot) hud.message(`✗ ${r.cmd.command.type}: ${r.reason}`);
   }
 
   const view = factionView(world, 'human');
@@ -192,7 +192,18 @@ app.ticker.add((ticker) => {
   hud.update(world, view, ui.selected, describeMode(ui.mode), speed, paused, Math.round(app.ticker.FPS));
   if (world.winner && !summaryShown) {
     summaryShown = true;
-    hud.showSummary(summaryHtml(stats, world.winner), (el) => attachSummaryHover(el, stats));
+    hud.showSummary(summaryHtml(stats, world.winner), (el) => {
+      attachSummaryHover(el, stats);
+      el.querySelector('#save-replay')?.addEventListener('click', () => {
+        // Seed + command log + versions: enough to re-run the match exactly.
+        const blob = new Blob([JSON.stringify(toReplay(game))], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `replay-${world.winner}-seed${seed}-${Math.trunc(world.tick / TICK_RATE)}s.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+    });
   }
   hud.setCard(buildCard(view, ui, {
     setMode: (m) => { ui.mode = m; },

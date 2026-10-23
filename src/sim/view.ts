@@ -3,6 +3,7 @@ import { BUILDINGS, UNITS, type BuildingTypeId, type Faction, type Role, type Un
 import { MILLI, within } from './fixed.ts';
 import type { SiteKind } from './map.ts';
 import { workerJob, type Job } from './jobs.ts';
+import { sourceIssue, type SourceIssue } from './routes.ts';
 import { sectorOf, type SectorId } from './sectors.ts';
 import { buildings, TICK_RATE, units, type Order, type World } from './world.ts';
 
@@ -22,6 +23,9 @@ export interface SiteView {
   id: string; kind: SiteKind; x: number; y: number; sector: SectorId; visible: boolean; owner: Faction | null | 'unknown';
   /** Data sources: milli-Data per tick once claimed and connected (public map knowledge). */
   rate: number;
+  /** Own Data sources: milli-Data per tick actually arriving, and why it is short (null if fine). */
+  flow: number;
+  issue: SourceIssue | null;
 }
 export interface LinkView { index: number; a: string; b: string; bandwidth: number; mine: boolean }
 
@@ -94,7 +98,8 @@ export function factionView(world: World, faction: Faction): FactionView {
     enemyBuildings: allBuildings.filter((b) => b.faction !== faction && seen(b.x, b.y)).map(buildingView),
     sites: [...world.sites.values()].map((s) => {
       const visible = s.owner === faction || seen(s.x, s.y);
-      return { id: s.id, kind: s.kind, x: s.x, y: s.y, sector: sectorOf(world.map, s.x, s.y), visible, owner: visible ? s.owner : 'unknown', rate: s.rate };
+      return { id: s.id, kind: s.kind, x: s.x, y: s.y, sector: sectorOf(world.map, s.x, s.y), visible, owner: visible ? s.owner : 'unknown', rate: s.rate,
+        flow: s.owner === faction ? s.flow : 0, issue: sourceIssue(world, s, faction) };
     }),
     links: world.links.map((l) => ({ index: l.index, a: l.a, b: l.b, bandwidth: l.bandwidth, mine: l.owner === faction })),
   };
@@ -173,7 +178,7 @@ export function describeView(v: FactionView): string {
   for (const s of v.sites) {
     if (s.kind === 'core') continue;
     const owner = s.owner === v.faction ? 'ours' : s.owner === null ? 'neutral' : s.owner === 'unknown' ? 'unseen' : 'ENEMY';
-    add(s.sector, `${s.kind} ${s.id}: ${owner}`);
+    add(s.sector, `${s.kind} ${s.id}: ${owner}${s.issue ? ` (${s.issue === 'bandwidth' ? 'THROTTLED' : 'NOT FEEDING'}: ${s.issue})` : ''}`);
   }
   for (const [sector, items] of [...bySector].sort(([a], [b]) => a.localeCompare(b))) {
     lines.push(`${sector}: ${items.join('; ')}`);

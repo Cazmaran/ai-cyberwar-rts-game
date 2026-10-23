@@ -33,6 +33,7 @@ npm run typecheck
 npm run sim -- --matches 10 --human boom --ai rush   # headless bot matches, prints win rates
 npm run sim -- --matches 1 --verbose                 # also print each side's text view at the end
 npm run sim -- --matches 5 --max-ms 10000          # fail if any match exceeds the time budget (CI)
+npm run replay -- replay.json --every 15            # re-run a saved match (summary's "Save replay") and print a timeline
 npm run balance -- --seeds 40                       # duel matrix + counters (--gate exits 1 on failures); tournament and skill test print warnings
 npm run build
 # Visual checks: with `npm run dev` running, open (or screenshot headless) e.g.

@@ -43,6 +43,7 @@ export function updateEconomy(world: World): void {
  */
 function flowData(world: World): void {
   const remaining = world.links.map((l) => l.bandwidth);
+  for (const src of world.sites.values()) src.flow = 0;
   for (const src of world.sites.values()) {
     if (src.kind !== 'data_source' || src.owner === null) continue;
     const faction = src.owner;
@@ -51,6 +52,7 @@ function flowData(world: World): void {
     const flow = Math.min(src.rate, route.bottleneck);
     if (flow <= 0) continue;
     for (const li of route.links) remaining[li] = (remaining[li] ?? 0) - flow;
+    src.flow = flow;
     world.factions[faction].data += flow;
     world.factions[faction].income += flow;
   }

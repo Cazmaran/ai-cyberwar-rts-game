@@ -3,7 +3,7 @@
 import { nextLink } from './card.ts';
 import { jobText } from './jobs.ts';
 import {
-  BUILDINGS, dist2, sectorOf, within, type BuildingTypeId, type Command, type FactionView, type GameMap,
+  BUILDINGS, dist2, issueText, sectorOf, within, type BuildingTypeId, type Command, type FactionView, type GameMap,
   type UnitTypeId,
 } from '../sim/index.ts';
 
@@ -194,7 +194,8 @@ export function describeAt(view: FactionView, x: number, y: number): string | nu
       router: 'Router: forwards traffic. Neutral routers forward for everyone; claim one to block the AI\'s traffic.',
       substation: 'Substation: claim it for +20 Power (lets you field more units).',
     };
-    return `${what[s.kind]} Currently ${mine(s.owner)}.${s.owner !== view.faction ? ' Right-click with engineers to claim.' : ''}`;
+    const issue = s.issue ? ` ⚠ Yours, but ${issueText(s.issue, s.flow, s.rate)}` : '';
+    return `${what[s.kind]} Currently ${mine(s.owner)}.${issue}${s.owner !== view.faction ? ' Right-click with engineers to claim.' : ''}`;
   }
   const l = nearestLink(view, x, y);
   if (l) {

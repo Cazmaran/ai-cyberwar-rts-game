@@ -88,6 +88,7 @@ export function summaryHtml(s: MatchStats, winner: Faction, you: Faction = 'huma
   return `<div class="summary"><div class="head">${head}</div><div>${insight}</div>${table}`
     + chart('chart-army', 'Army value', 'Data', s.samples, (x, f) => x.army[f])
     + chart('chart-income', 'Income', 'Data/s', s.samples, (x, f) => x.income[f])
+    + '<div class="replay"><button type="button" id="save-replay">Save replay</button> <span class="dim">A small file that re-runs this exact match, for analysis (<code>npm run replay -- file.json</code>).</span></div>'
     + '<small class="dim">"Production idle": time your SOC sat empty after it was built, split by whether you had Data for a unit (lost time you could have used) or not (starved). Reload to play again.</small></div>';
 }
 

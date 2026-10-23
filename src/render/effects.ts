@@ -4,7 +4,7 @@ import type { Graphics } from 'pixi.js';
 import { construction, dist2, TILE, training, UNITS, type FactionView, type Role, type UnitView } from '../sim/index.ts';
 import { pretty } from './card.ts';
 import { constructionText, trainingText } from './hud.ts';
-import { workforce } from './jobs.ts';
+import { sourceWarnings, workforce } from './jobs.ts';
 
 interface Mark { x: number; y: number; until: number; color: number }
 
@@ -163,6 +163,7 @@ export function intel(v: FactionView): string {
     }
   }
   if (v.units.some((u) => u.role === 'worker')) lines.push(`<b>Engineers:</b> ${workforce(v)}`);
+  lines.push(...sourceWarnings(v));
   for (const b of v.buildings) {
     const t = training(v, b);
     if (t) lines.push(`<b>${pretty(b.type)}:</b> ${trainingText(t)}`);

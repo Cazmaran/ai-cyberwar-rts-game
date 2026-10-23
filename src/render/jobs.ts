@@ -1,7 +1,7 @@
 // Worker job feedback (playtest: "I can't tell what engineers are doing"). Map marks show work in
 // progress where it happens; text helpers describe each job for panels and tooltips.
 import type { Graphics } from 'pixi.js';
-import type { FactionView, Job, UnitView } from '../sim/index.ts';
+import { issueText, type FactionView, type Job, type UnitView } from '../sim/index.ts';
 import { pretty } from './card.ts';
 
 const WARN = 0xff7a59;
@@ -68,4 +68,25 @@ export function workforce(view: FactionView): string {
     counts.set(k, (counts.get(k) ?? 0) + 1);
   }
   return [...counts].map(([k, n]) => (k === 'idle' || k === 'contested' ? `<b class="warn">${n} ${k}</b>` : `${n} ${k}`)).join(' · ');
+}
+
+/** Mark owned Data sources that aren't feeding the base (red, pulsing) or are throttled (orange). */
+export function drawSourceIssues(g: Graphics, view: FactionView, now: number): void {
+  for (const s of view.sites) {
+    if (!s.issue) continue;
+    const dead = s.issue !== 'bandwidth';
+    const color = dead ? 0xe5534b : WARN;
+    g.circle(s.x, s.y, 1250).stroke({ width: 140, color, alpha: dead ? 0.55 + 0.35 * Math.sin(now / 200) : 0.7 });
+    if (dead) {
+      // A cross through the source: nothing is getting home.
+      g.moveTo(s.x - 450, s.y - 450).lineTo(s.x + 450, s.y + 450).moveTo(s.x + 450, s.y - 450).lineTo(s.x - 450, s.y + 450)
+        .stroke({ width: 140, color });
+    }
+  }
+}
+
+/** Intel panel lines for owned sources that aren't feeding the base properly. */
+export function sourceWarnings(view: FactionView): string[] {
+  return view.sites.filter((s) => s.issue).map((s) =>
+    `<b class="warn">⚠ ${s.id.startsWith('mid') ? 'Center' : s.id.includes('exp') ? 'Far' : 'Home'} Data Source</b> ${issueText(s.issue!, s.flow, s.rate)}`);
 }

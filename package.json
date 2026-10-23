@@ -16,7 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "sim": "node scripts/sim.ts",
-    "balance": "node scripts/balance.ts"
+    "balance": "node scripts/balance.ts",
+    "replay": "node scripts/replay.ts"
   },
   "dependencies": {
     "pixi.js": "^8.22.0"

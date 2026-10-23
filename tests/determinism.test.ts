@@ -27,6 +27,14 @@ describe('simulation determinism', () => {
     expect(hashWorld(replayed.world)).toBe(hashWorld(game.world));
   });
 
+  it('replay analysis sees every tick without changing the result', () => {
+    const game = scriptedMatch(7);
+    let ticks = 0;
+    const replayed = runReplay(toReplay(game), () => { ticks++; });
+    expect(ticks).toBe(game.world.tick);
+    expect(hashWorld(replayed.world)).toBe(hashWorld(game.world));
+  });
+
   it('replay refuses a different data version', () => {
     const rep = toReplay(scriptedMatch(1));
     expect(() => runReplay({ ...rep, dataVersion: rep.dataVersion + 1 })).toThrow(/data version/);

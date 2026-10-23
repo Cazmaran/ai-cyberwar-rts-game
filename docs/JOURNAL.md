@@ -2,6 +2,13 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-23 — Thirteenth playtest: "a decent opening, but still lost"
+
+- Lost a rush to boom in 6:42 (Data earned 1,722 to 3,825). The owner's income came online at about 1:50 and stuck at about 6 Data/s, so the center source probably never fed the base: unconnected fiber, or a center router held by the AI (an enemy router doesn't forward your traffic). The summary couldn't tell which.
+- Two additions so this can't stay hidden:
+  - Dead-source warnings. The economy records each source's actual flow; `sourceIssue()` explains a shortfall (no fiber, no route home, blocked by an enemy router, or throttled by a full link). Shown as a red cross on the map, a line in the intel panel, hover text, and the text view.
+  - Save replay. The summary offers the match as a file; `npm run replay -- file.json` re-runs it and prints a timeline. On a bot match it immediately showed the suspected failure: a center source marked `blocked` once the AI retook the center router.
+
 ## 2026-10-23 — What are my engineers doing?
 
 - Owner: "it's frustrating to just see them sitting there with no visual feedback, so I end up moving them off a capture or connect fiber task." That was costly, because claim and fiber progress belong to the worker: a new order resets them.

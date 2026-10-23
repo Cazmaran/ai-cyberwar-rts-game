@@ -68,8 +68,11 @@ export function toReplay(game: Game): Replay {
   };
 }
 
-/** Re-run a replay from scratch. Refuses replays recorded with different game data. */
-export function runReplay(replay: Replay): Game {
+/**
+ * Re-run a replay from scratch. Refuses replays recorded with different game data. `onTick` sees the
+ * game after every tick (for analysis tools).
+ */
+export function runReplay(replay: Replay, onTick?: (game: Game) => void): Game {
   if (replay.dataVersion !== DATA_VERSION) {
     throw new Error(`replay data version ${replay.dataVersion} does not match game data version ${DATA_VERSION}`);
   }
@@ -81,6 +84,7 @@ export function runReplay(replay: Replay): Game {
       issue(game, c.faction, c.command);
     }
     advance(game);
+    onTick?.(game);
   }
   return game;
 }

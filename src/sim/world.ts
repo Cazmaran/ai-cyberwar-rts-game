@@ -67,6 +67,8 @@ export interface Site {
   y: number;
   owner: Faction | null;
   rate: number;
+  /** Data sources: milli-Data that actually reached the owner's core last tick (0 if cut off). */
+  flow: number;
 }
 
 export interface Link {
@@ -135,7 +137,7 @@ export function createWorld(seed: number, map: GameMap): World {
     winner: null,
   };
   for (const s of map.sites) {
-    world.sites.set(s.id, { id: s.id, kind: s.kind, x: s.x * TILE, y: s.y * TILE, owner: s.owner ?? null, rate: s.rate ?? 0 });
+    world.sites.set(s.id, { id: s.id, kind: s.kind, x: s.x * TILE, y: s.y * TILE, owner: s.owner ?? null, rate: s.rate ?? 0, flow: 0 });
   }
   for (const faction of FACTIONS) {
     const core = [...world.sites.values()].find((s) => s.kind === 'core' && s.owner === faction);

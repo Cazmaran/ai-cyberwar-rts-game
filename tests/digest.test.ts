@@ -1,0 +1,46 @@
+import { describe, expect, it } from 'vitest';
+import { createScriptedBot, STRATEGIES } from '../src/ai/scripted.ts';
+import { runMatch } from '../src/harness/match.ts';
+import { digestView, factionView, spawnUnit, TILE } from '../src/sim/index.ts';
+import { newGame } from './helpers.ts';
+
+// Phase 2 (M2.1, issue #6): the compact state an LLM General reads each turn.
+describe('state digest for the LLM General', () => {
+  const midGame = () => runMatch({
+    seed: 3, maxTicks: 4 * 60 * 20,
+    human: createScriptedBot('human', STRATEGIES.boom!, 3), ai: createScriptedBot('ai', STRATEGIES.boom!, 3),
+  }).game.world;
+
+  it('is deterministic: the same view gives the same JSON string', () => {
+    const w = midGame();
+    expect(JSON.stringify(digestView(factionView(w, 'ai')))).toBe(JSON.stringify(digestView(factionView(w, 'ai'))));
+  });
+
+  it('stays small in a busy mid-game state', () => {
+    const json = JSON.stringify(digestView(factionView(midGame(), 'ai')));
+    expect(json.length).toBeLessThan(1600);
+  });
+
+  it('never leaks units hidden by fog of war', () => {
+    const game = newGame();
+    // A human army far from anything the AI can see.
+    for (let i = 0; i < 5; i++) spawnUnit(game.world, 'armored_vehicle', 'human', 4 * TILE, (4 + i) * TILE);
+    const d = digestView(factionView(game.world, 'ai'));
+    expect(JSON.stringify(d)).not.toContain('armored_vehicle');
+    expect(d.threats).toEqual([]);
+  });
+
+  it('reports economy, visible enemies by sector, and a threat level where enemies are near our assets', () => {
+    const game = newGame();
+    const core = game.world.sites.get('a_core')!;
+    for (let i = 0; i < 4; i++) spawnUnit(game.world, 'armored_vehicle', 'human', core.x - 4 * TILE, core.y + i * TILE);
+    const d = digestView(factionView(game.world, 'ai'));
+    expect(d.you).toBe('ai');
+    expect(d.economy).toMatchObject({ data: 260, power: { used: expect.any(Number), cap: expect.any(Number), full: false } });
+    const east = d.sectors.find((s) => s.sector === 'E')!;
+    expect(east.enemy).toMatchObject({ armored_vehicle: 4 });
+    expect(d.threats[0]).toMatchObject({ sector: 'E', level: 'high' });
+    // Sites carry their owner as the AI sees them; unseen ones say so.
+    expect(d.sectors.flatMap((s) => s.sites).some((x) => x.endsWith('=unseen'))).toBe(true);
+  });
+});

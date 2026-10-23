@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-22 — Fifth playtest: faster win, ready for the real AI
+
+- Owner won again against the training AI in 16:07, down from 23:56, playing conservatively and managing Power and units better. Getting faster once a rule makes sense is what Gate 1 means by "better play wins".
+- Unit spacing, the strength readout and fog shading all helped. The Power cap never came up.
+- "Play again?": ready to face the strategy AIs (rush, boom, turtle). Those matches decide the rest of Gate 1.
+
 ## 2026-10-22 — Fourth playtest: first win, 23:56
 
 - The owner beat the AI in 23:56, a length that felt about right. Correction: with no `?ai=` in the URL the game uses the gentle training opponent, so this was a win against training, not the full-strength bots.

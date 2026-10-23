@@ -1,7 +1,7 @@
 // Scripted strategy bots. They play either faction through the same commands and view a human or LLM gets.
 // Strategies are data, so new ones (and balance experiments) need no new logic.
 import {
-  BUILDINGS, createRng, FAIRNESS, isqrt, SIGNAL, UNITS, TILE, dist2, type BuildingTypeId, type Command, type Faction, type FactionView,
+  BUILDINGS, createRng, FAIRNESS, isqrt, MILLI, SIGNAL, UNITS, TILE, dist2, type BuildingTypeId, type Command, type Faction, type FactionView,
   type Rng, type Role, type SiteView, type UnitTypeId, type UnitView,
 } from '../sim/index.ts';
 import type { Controller } from './controller.ts';
@@ -15,8 +15,11 @@ export interface Strategy {
   /** Static defenses (Security Post / Sentry Gun) to build in front of the core. */
   defenses: number;
   mix: Partial<Record<Role, number>>;
-  /** Army size that triggers an attack. */
-  attackAt: number;
+  /**
+   * Army value (Data spent on combat units) that triggers an attack. Value, not unit count: human
+   * units cost more, so a count threshold made humans wait far longer than the AI.
+   */
+  attackValue: number;
   /** Skilled play: in a fight, each role focuses the weakest enemy it counters (else the weakest in reach). */
   focusFire: boolean;
   /** Skilled play: shift the build mix toward counters of scouted enemy units. */
@@ -28,14 +31,14 @@ export interface Strategy {
 }
 
 export const STRATEGIES: Record<string, Strategy> = {
-  rush: { name: 'rush', workers: 4, racks: 0, barricades: 0, defenses: 0, mix: { fast: 2, ranged: 1 }, attackAt: 5, focusFire: true, counterBuild: true, usePlug: true },
-  boom: { name: 'boom', workers: 8, racks: 2, barricades: 0, defenses: 1, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 14, focusFire: true, counterBuild: true, usePlug: true },
-  turtle: { name: 'turtle', workers: 6, racks: 1, barricades: 3, defenses: 3, mix: { ranged: 2, tank: 2, fast: 1 }, attackAt: 18, focusFire: true, counterBuild: true, usePlug: true },
+  rush: { name: 'rush', workers: 4, racks: 0, barricades: 0, defenses: 0, mix: { fast: 2, ranged: 1 }, attackValue: 250, focusFire: true, counterBuild: true, usePlug: true },
+  boom: { name: 'boom', workers: 8, racks: 2, barricades: 0, defenses: 1, mix: { fast: 1, ranged: 1, tank: 1 }, attackValue: 700, focusFire: true, counterBuild: true, usePlug: true },
+  turtle: { name: 'turtle', workers: 6, racks: 1, barricades: 3, defenses: 3, mix: { ranged: 2, tank: 2, fast: 1 }, attackValue: 900, focusFire: true, counterBuild: true, usePlug: true },
 };
 
 /** Gentle opponent for learning the game: slow economy, no micro, attacks late. Not part of balance runs. */
 export const TRAINING: Strategy = {
-  name: 'training', workers: 4, racks: 0, barricades: 0, defenses: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackAt: 10,
+  name: 'training', workers: 4, racks: 0, barricades: 0, defenses: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackValue: 500,
   focusFire: false, counterBuild: false, usePlug: false, attackNotBefore: 8 * 60 * 20,
 };
 
@@ -52,7 +55,7 @@ const DEFENSE: Record<Faction, BuildingTypeId> = { human: 'security_post', ai: '
 export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1): Controller {
   const rng = createRng(seed);
   // Small per-seed variation so batch matches differ.
-  const attackAt = strategy.attackAt + rng.int(-1, 2);
+  const attackValue = strategy.attackValue + 50 * rng.int(-1, 2);
   const busy = new Map<number, string>(); // worker id -> job key
   let attacking = false;
   let rallySet = false;
@@ -85,6 +88,7 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
       const enemyCore = v.sites.find((s) => s.kind === 'core' && !(s.x === core.x && s.y === core.y));
       const workers = v.units.filter((u) => u.role === 'worker');
       const army = v.units.filter((u) => u.role !== 'worker');
+      const value = (us: UnitView[]) => us.reduce((sum, u) => sum + Math.trunc(UNITS[u.type].cost / MILLI), 0);
       const prod = v.buildings.find((b) => b.type === PRODUCTION[faction]);
       const towardCenter = Math.sign(v.mapWidth * TILE / 2 - core.x);
 
@@ -159,7 +163,7 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
       // 5. Jobs for idle workers.
       for (const w of workers) {
         if (w.order !== 'idle' || busy.has(w.id)) continue;
-        const wantRelay = SIGNAL.enabled && faction === 'ai' && army.length >= attackAt;
+        const wantRelay = SIGNAL.enabled && faction === 'ai' && value(army) >= attackValue;
         const job = nextJob(v, faction, strategy, core, prod, busy, rng, towardCenter, wantRelay);
         if (!job) break;
         busy.set(w.id, job.key);
@@ -170,7 +174,8 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
       // 6. Attack once the army is big enough; keep feeding reinforcements.
       const idleArmy = army.filter((u) => u.order === 'idle' && !pending(u.id));
       const mayAttack = v.tick >= (strategy.attackNotBefore ?? 0);
-      if (enemyCore && mayAttack && (attacking ? idleArmy.length >= 3 : army.length >= attackAt)) {
+      // Reinforcements go out in waves worth about three average units.
+      if (enemyCore && mayAttack && (attacking ? value(idleArmy) >= 150 : value(army) >= attackValue)) {
         const group = attacking ? idleArmy : army;
         attacking = true;
         if (group.length > 0) order({ type: 'attackMove', units: group.map((u) => u.id), x: enemyCore.x, y: enemyCore.y }, group.map((u) => u.id));

@@ -43,4 +43,15 @@ describe('scripted bot', () => {
     const r = rushMirror();
     expect(r.game.rejected.filter((x) => x.cmd.tick < 60 * 20)).toEqual([]);
   });
+
+  // Bots used to attack at N units. Human units cost more, so humans waited far longer than the AI.
+  it('attacks once the army is worth the threshold in Data, whatever the unit count', () => {
+    const game = newGame();
+    const noc = buildings(game.world).find((b) => b.type === 'noc')!;
+    // 9 Armored Vehicles: 900 Data, far fewer units than the old 14-unit boom threshold.
+    for (let i = 0; i < 9; i++) spawnUnit(game.world, 'armored_vehicle', 'human', noc.x + 3 * TILE, noc.y + (i - 4) * TILE);
+    const bot = createScriptedBot('human', STRATEGIES.boom!, 1);
+    const cmds = bot.decide(factionView(game.world, 'human'));
+    expect(cmds.some((c) => c.type === 'attackMove' && c.units.length === 9)).toBe(true);
+  });
 });

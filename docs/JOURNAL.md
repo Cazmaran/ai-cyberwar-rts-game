@@ -2,6 +2,13 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-22 — The skill gate and the limits of scripted bots
+
+- Bots attacked once their army reached N units. Human units cost about 1.6× more, so in boom matches the human army never reached the threshold and never attacked. The AI won by attrition. Bots now attack by army value in Data. Sloppy mirror matches went from 68/13/73% to 58/34/60% human wins.
+- The skill test mixed in counter-building, which changes the build. Gate 1 says "better micro with identical builds", so the test now measures focus fire only. Counter-building turned out to hurt humans in boom anyway: Adaptation stacks resistance against whatever kills AI units, so massing one counter backfires. That is working as designed.
+- Tried and dropped: split fire, fire distribution, kiting, regrouping, retreating wounded units, and denying the sloppy side Pull the Plug. None gave a consistent gain.
+- The numbers are fragile. Raising rush's attack threshold from 250 to 300 Data dropped rush skill from 70% to 49%. With bots this crude, 40 seeds can't tell a 65% line from noise.
+
 ## 2026-10-22 — Third playtest: "botnets destroyed all my engineers"
 
 - As soon as attacks started, Botnet Swarms flew straight to the human engineers. The owner asked whether botnets can travel off the network. They can, and that bends reality: hijacked drones need a control link.

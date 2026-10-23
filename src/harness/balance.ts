@@ -97,10 +97,11 @@ export function tournament(seeds: number, minutes = 20, strategies: Strategy[] =
 }
 
 /**
- * Same strategy on both sides; the skilled side focus-fires and counter-builds, the sloppy side only
- * attack-moves with a fixed mix. Returns the skilled side's win %.
+ * Same strategy and identical builds on both sides (Gate 1: "better micro wins with identical builds").
+ * The skilled side focus-fires with counter-aware targeting; the sloppy side only attack-moves. Neither
+ * counter-builds, since that changes the build. Returns the skilled side's win %.
  */
-export function skillTest(strategy: Strategy, seeds: number, minutes = 20, skill: Partial<Strategy> = { focusFire: true, counterBuild: true }): number {
+export function skillTest(strategy: Strategy, seeds: number, minutes = 20, skill: Partial<Strategy> = { focusFire: true }): number {
   let score = 0;
   for (let seed = 1; seed <= seeds; seed++) {
     for (const skilled of ['human', 'ai'] as const) {

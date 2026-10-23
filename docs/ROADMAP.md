@@ -114,7 +114,7 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
   - Equal-cost duel matrix for every unit pair.
   - Strategy bots: rush, boom, turtle; bot-vs-bot win-rate table.
   - Skill test: same build, better micro vs sloppy micro.
-- **Status (2026-10-22):** all milestones built. Balance tuning in progress: counters and the strategy gate pass (40 seeds); the skill gate fails. 300 units at 120 fps on owner's machine ✅. First owner playtest found the UI confusing; onboarding added, replay pending.
+- **Status (2026-10-22):** all milestones built. Balance tuning in progress: counters pass. The strategy gate sits at the 65% line (worst 67–68%), and the skill gate passes for rush (70%) but not boom or turtle (59/64%). Scripted-bot measurements are noisy at this level; see the journal. 300 units at 120 fps on owner's machine ✅. First owner playtest found the UI confusing; onboarding added, replay pending.
 - **Gate 1 criteria:**
   - Owner plays 5+ matches and answers "do I want to play again?" yes.
   - 300 units at 60 fps on the dev machine.

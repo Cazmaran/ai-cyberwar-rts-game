@@ -49,7 +49,7 @@ for (const n of names) {
   }
 }
 
-console.log('\n== Skill test: focus-fire micro vs attack-move only, same strategy (must win >= 70%) ==');
+console.log('\n== Skill test: focus-fire micro vs attack-move only, identical builds (must win >= 70%) ==');
 for (const s of Object.values(STRATEGIES)) {
   const p = skillTest(s, seeds);
   console.log(`${p >= 70 ? 'ok  ' : 'FAIL'} ${s.name}: skilled side wins ${p}%`);

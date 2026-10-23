@@ -1,0 +1,30 @@
+name: Bug report
+description: Something in the game or tools doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. A saved replay makes most bugs easy to reproduce: at the end of a match, click **Save replay** on the summary and attach the file.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Steps, the URL you used (e.g. `?ai=boom&seed=123`), or a replay file.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      description: Output of `git rev-parse --short HEAD`, if you can.
+  - type: input
+    id: env
+    attributes:
+      label: Browser and OS

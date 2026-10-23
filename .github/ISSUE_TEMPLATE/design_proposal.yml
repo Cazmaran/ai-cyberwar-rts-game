@@ -1,0 +1,30 @@
+name: Design proposal
+description: Propose a change to units, resources, factions, maps or win conditions.
+labels: [design]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Design changes need owner approval and an entry in `docs/DECISIONS.md`. Please read `docs/TENETS.md`, `docs/PILLARS.md` (including the **grounding rule**: every term must behave like its real-world counterpart) and `docs/NARRATIVE.md` first.
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+    validations:
+      required: true
+  - type: textarea
+    id: grounding
+    attributes:
+      label: Real-world basis
+      description: What real thing does this behave like, and how? Which layer is it in (atoms or bits)?
+    validations:
+      required: true
+  - type: textarea
+    id: tenets
+    attributes:
+      label: Which tenets does it serve, and does it risk any?
+  - type: textarea
+    id: balance
+    attributes:
+      label: How would we test the balance?
+      description: e.g. bot tournament numbers before and after, or a playtest plan.

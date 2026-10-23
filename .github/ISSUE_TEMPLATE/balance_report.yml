@@ -1,0 +1,26 @@
+name: Balance report
+description: A unit, strategy or matchup feels too strong or too weak.
+labels: [balance]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Numbers help most. Attach a replay (**Save replay** on the post-match summary), a screenshot of the summary, or output from `npm run balance -- --seeds 40`. `npm run replay -- file.json` prints a timeline of any saved match.
+  - type: textarea
+    id: what
+    attributes:
+      label: What feels off?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Replays, summary screenshots, balance output, or how many matches you played.
+    validations:
+      required: true
+  - type: dropdown
+    id: side
+    attributes:
+      label: Which side were you playing against?
+      options: [training, rush, boom, turtle, other]

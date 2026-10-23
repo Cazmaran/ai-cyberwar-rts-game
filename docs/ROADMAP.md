@@ -129,8 +129,8 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
   - Adaptation cap holds: resistance never exceeds the cap in any sim.
   - APM cap and reaction delay enforced for non-human controllers (tested).
 - **Go-public checklist (after Gate 1 passes, owner approval):**
-  - [ ] Issue templates + 5–10 `good first issue`s.
-  - [ ] Secrets/history scan.
+  - [x] Issue templates (bug, design proposal, balance report). [ ] 5–10 `good first issue`s.
+  - [x] Secrets/history scan (2026-10-23: no secrets, no personal paths or emails; all 51 commits use the noreply address; the PDF and `.env` were never committed).
   - [ ] Decide whether the Gemini PDF goes in the repo.
   - [ ] `CODE_OF_CONDUCT.md` contact address.
   - [ ] Name + trademark check ("AI Cyberwar RTS" is a working title).

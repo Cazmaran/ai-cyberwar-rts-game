@@ -1,6 +1,6 @@
 // Unit behavior: carry out orders, move, fight, and resolve deaths.
-import { ADAPTATION, BUILDINGS, ECONOMY, SIGNAL, UNITS, type Faction } from './data.ts';
-import { dist2, pct, stepToward, within } from './fixed.ts';
+import { ADAPTATION, BUILDINGS, ECONOMY, MOVEMENT, SIGNAL, UNITS, type Faction } from './data.ts';
+import { dist2, isqrt, pct, stepToward, within } from './fixed.ts';
 import { inBlackout } from './economy.ts';
 import { inSignal, leashed, nearestSignal, onAutopilot } from './signal.ts';
 import { CORE_BUILDING, type Building, type Entity, type Unit, type World } from './world.ts';
@@ -20,7 +20,69 @@ export function updateUnits(world: World): void {
     if (SIGNAL.leash === 'hard' && leashed(e) && !inSignal(world, e.x, e.y, e.id)) { returnToSignal(world, e); continue; }
     runOrder(world, e);
   }
+  separate(world);
   resolveDeaths(world);
+}
+
+/**
+ * Push overlapping units apart. Pushes are computed from positions before any are applied, so the
+ * result doesn't depend on processing order. A spatial grid keeps it near-linear in unit count.
+ */
+function separate(world: World): void {
+  const cell = MOVEMENT.spacing;
+  const grid = new Map<number, Unit[]>();
+  const key = (cx: number, cy: number) => cx * 4096 + cy;
+  const list: Unit[] = [];
+  for (const e of world.entities.values()) {
+    if (e.kind !== 'unit' || e.hp <= 0) continue;
+    list.push(e);
+    const k = key(Math.trunc(e.x / cell), Math.trunc(e.y / cell));
+    const bucket = grid.get(k);
+    if (bucket) bucket.push(e); else grid.set(k, [e]);
+  }
+  const push = new Map<number, [number, number]>();
+  for (const u of list) {
+    const cx = Math.trunc(u.x / cell);
+    const cy = Math.trunc(u.y / cell);
+    let px = 0;
+    let py = 0;
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        for (const o of grid.get(key(cx + dx, cy + dy)) ?? []) {
+          if (o === u) continue;
+          const d2 = dist2(u.x, u.y, o.x, o.y);
+          if (d2 >= MOVEMENT.spacing * MOVEMENT.spacing) continue;
+          const d = isqrt(d2);
+          const overlap = Math.trunc((MOVEMENT.spacing - d) / 2);
+          if (d === 0) {
+            // Exactly stacked: split along a direction fixed by the pair's ids.
+            const s = u.id < o.id ? -1 : 1;
+            const turn = (Math.min(u.id, o.id) * 7 + Math.max(u.id, o.id)) % 4;
+            px += s * overlap * (turn === 0 ? 1 : turn === 2 ? -1 : 0);
+            py += s * overlap * (turn === 1 ? 1 : turn === 3 ? -1 : 0);
+          } else {
+            px += Math.trunc(((u.x - o.x) * overlap) / d);
+            py += Math.trunc(((u.y - o.y) * overlap) / d);
+          }
+        }
+      }
+    }
+    if (px !== 0 || py !== 0) push.set(u.id, [px, py]);
+  }
+  const maxX = world.map.width * 1000;
+  const maxY = world.map.height * 1000;
+  for (const u of list) {
+    const p = push.get(u.id);
+    if (!p) continue;
+    const len = isqrt(p[0] * p[0] + p[1] * p[1]);
+    const scale = len > MOVEMENT.maxPush ? MOVEMENT.maxPush : len;
+    const nx = u.x + (len === 0 ? 0 : Math.trunc((p[0] * scale) / len));
+    const ny = u.y + (len === 0 ? 0 : Math.trunc((p[1] * scale) / len));
+    // Never push a unit into an enemy Barricade.
+    if (blockingBarricade(world, u.faction, nx, ny)) continue;
+    u.x = Math.max(0, Math.min(maxX, nx));
+    u.y = Math.max(0, Math.min(maxY, ny));
+  }
 }
 
 function runOrder(world: World, u: Unit): void {
@@ -32,12 +94,12 @@ function runOrder(world: World, u: Unit): void {
       return;
     }
     case 'move':
-      if (moveTo(world, u, o.x, o.y)) u.order = { type: 'idle' };
+      if (arrived(world, u, o.x, o.y) || moveTo(world, u, o.x, o.y)) u.order = { type: 'idle' };
       return;
     case 'attackMove': {
       const t = currentTarget(world, u);
       if (t) engage(world, u, t);
-      else if (moveTo(world, u, o.x, o.y)) u.order = { type: 'idle' };
+      else if (arrived(world, u, o.x, o.y) || moveTo(world, u, o.x, o.y)) u.order = { type: 'idle' };
       return;
     }
     case 'attack': {
@@ -76,6 +138,21 @@ function runOrder(world: World, u: Unit): void {
       return;
     }
   }
+}
+
+/**
+ * A group sent to one point can't all stand on it. A unit has arrived once it is within one spacing of
+ * the point, or near it and touching a friendly unit that has already stopped there.
+ */
+function arrived(world: World, u: Unit, x: number, y: number): boolean {
+  const s = MOVEMENT.spacing;
+  if (u.x === x && u.y === y) return false; // moveTo finishes exact arrivals
+  if (within(u.x, u.y, x, y, s)) return true;
+  if (!within(u.x, u.y, x, y, 4 * s)) return false;
+  for (const e of world.entities.values()) {
+    if (e.kind === 'unit' && e !== u && e.faction === u.faction && e.order.type === 'idle' && within(u.x, u.y, e.x, e.y, s)) return true;
+  }
+  return false;
 }
 
 function contested(world: World, u: Unit, site: string, x: number, y: number): boolean {

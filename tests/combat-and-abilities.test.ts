@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ADAPTATION, PULL_THE_PLUG } from '../src/sim/data.ts';
-import { applyCommand, hashWorld, spawnBuilding, spawnUnit, TILE, units } from '../src/sim/index.ts';
+import { applyCommand, dist2, hashWorld, MOVEMENT, spawnBuilding, spawnUnit, TILE, units } from '../src/sim/index.ts';
 import { command, newGame, run } from './helpers.ts';
 
 describe('combat', () => {
@@ -131,5 +131,27 @@ describe('fairness of resolution order', () => {
     // Both fired on the same tick: both dead, not just the later-spawned one.
     expect(game.world.entities.has(a.id)).toBe(false);
     expect(game.world.entities.has(b.id)).toBe(false);
+  });
+});
+
+describe('unit separation', () => {
+  it('pushes stacked units apart, deterministically, until they stop overlapping', () => {
+    const spread = () => {
+      const game = newGame();
+      const ids = [0, 1, 2, 3].map(() => spawnUnit(game.world, 'counter_drone_team', 'human', 20 * TILE, 16 * TILE).id);
+      for (const id of ids) {
+        const u = game.world.entities.get(id)!;
+        if (u.kind === 'unit') u.order = { type: 'move', x: u.x, y: u.y };
+      }
+      run(game, 60);
+      return ids.map((id) => game.world.entities.get(id)!).map((u) => [u.x, u.y] as const);
+    };
+    const a = spread();
+    expect(spread()).toEqual(a);
+    for (let i = 0; i < a.length; i++) {
+      for (let j = i + 1; j < a.length; j++) {
+        expect(dist2(a[i]![0], a[i]![1], a[j]![0], a[j]![1])).toBeGreaterThanOrEqual((MOVEMENT.spacing - 50) ** 2);
+      }
+    }
   });
 });

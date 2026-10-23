@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { applyCommand, inSignal, pct, SIGNAL, spawnBuilding, spawnUnit, TILE, UNITS } from '../src/sim/index.ts';
+import { applyCommand, inSignal, MOVEMENT, pct, SIGNAL, spawnBuilding, spawnUnit, TILE, UNITS } from '../src/sim/index.ts';
 import { newGame, run } from './helpers.ts';
 
 // Proposal 0001 (signal range): hijacked machines need a control link to the Model. Off by default.
@@ -80,7 +80,7 @@ describe('signal range (proposal, behind SIGNAL.enabled)', () => {
       const lone = spawnUnit(game.world, 'botnet_swarm', 'ai', 20 * TILE, 4 * TILE);
       lone.order = { type: 'move', x: 16 * TILE, y: 4 * TILE };
       run(game, 100);
-      for (const u of group) expect(u.x).toBeLessThanOrEqual(17 * TILE);
+      for (const u of group) expect(u.x).toBeLessThanOrEqual(17 * TILE + MOVEMENT.spacing);
       expect(lone.x).toBeGreaterThan(20 * TILE);
     } finally { SIGNAL.mesh = 'none'; }
   });
@@ -113,6 +113,6 @@ describe('signal range (proposal, behind SIGNAL.enabled)', () => {
     const u = spawnUnit(game.world, 'botnet_swarm', 'ai', 20 * TILE, 16 * TILE);
     u.order = { type: 'move', x: 16 * TILE, y: 16 * TILE };
     run(game, 200);
-    expect(u.x).toBe(16 * TILE);
+    expect(u.x).toBeLessThanOrEqual(16 * TILE + MOVEMENT.spacing);
   });
 });

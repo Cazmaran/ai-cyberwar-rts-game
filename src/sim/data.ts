@@ -3,7 +3,7 @@
 // resources in milli-units (MILLI = 1000). Change DATA_VERSION whenever a number changes.
 import { MILLI, TILE } from './fixed.ts';
 
-export const DATA_VERSION = 9;
+export const DATA_VERSION = 10;
 
 export type Faction = 'human' | 'ai';
 export const FACTIONS: readonly Faction[] = ['human', 'ai'];
@@ -136,6 +136,13 @@ export const ECONOMY = {
   workRange: 1500,
   /** Power supplied by an owned substation. */
   substationPower: 20,
+};
+
+export const MOVEMENT = {
+  /** Units closer than this push apart, so groups spread out instead of stacking on one spot. */
+  spacing: 700,
+  /** Most a unit is pushed per tick (world units). */
+  maxPush: 40,
 };
 
 export const PULL_THE_PLUG = {

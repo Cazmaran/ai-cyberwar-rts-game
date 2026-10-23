@@ -2,7 +2,7 @@
 // (army value, income) for both sides. Colors are the faction hues stepped for a dark chart surface
 // (validated: lightness band, colorblind separation, contrast).
 import { TICK_RATE, type Faction } from '../sim/index.ts';
-import { biggestGap, incomeGap, type MatchStats, type Sample } from '../harness/stats.ts';
+import { biggestGap, economicLead, incomeGap, type MatchStats, type Sample } from '../harness/stats.ts';
 
 const SERIES: Record<Faction, { color: string; label: string }> = {
   human: { color: '#3d96f2', label: 'You' },
@@ -59,25 +59,36 @@ export function summaryHtml(s: MatchStats, winner: Faction, you: Faction = 'huma
   const armyLine = !gap ? 'The AI\'s army never got far ahead of yours.'
     : gap.ratio === null ? `Biggest gap: at <b>${clock(gap.tick)}</b> you had no army; the AI's was worth <b>${Math.round(gap.theirs)} Data</b>.`
     : `Biggest gap: at <b>${clock(gap.tick)}</b> the AI's army was worth <b>${gap.ratio.toFixed(1)}×</b> yours.`;
-  const inc = incomeGap(s, you);
+  // The turning point tells the match's economic story; an early income gap is only worth mentioning
+  // when nobody pulled ahead for good.
+  const lead = economicLead(s);
+  const last = s.samples.at(-1);
+  const leadLine = lead && last
+    ? `Turning point: from <b>${clock(lead.tick)}</b> ${lead.leader === you ? 'you out-earned the AI' : 'the AI out-earned you'} for the rest of the match`
+      + ` (at the end: you <b>${last.income[you].toFixed(1)}</b> Data/s, AI <b>${last.income[them].toFixed(1)}</b>).<br>`
+    : '';
+  const inc = lead ? null : incomeGap(s, you);
   const incomeLine = inc
     ? `<br>Economy: from <b>${clock(inc.tick)}</b> the AI earned <b>${inc.theirs.toFixed(1)}</b> Data/s to your <b>${inc.yours.toFixed(1)}</b> (Data sources: AI ${inc.sources[1]}, you ${inc.sources[0]}).`
     : '';
-  const insight = armyLine + incomeLine;
+  const insight = leadLine + armyLine + incomeLine;
   const rows: [string, (f: Faction) => string][] = [
     ['Data earned', (f) => String(s.totals[f].earned)],
     ['Combat units trained', (f) => String(s.totals[f].trained)],
     ['Combat units lost', (f) => String(s.totals[f].lost)],
     ['Biggest army (Data)', (f) => String(Math.round(s.totals[f].peakArmy))],
-    ['Production idle', (f) => `${Math.trunc(s.totals[f].idleSeconds / 60)}:${String(s.totals[f].idleSeconds % 60).padStart(2, '0')}`],
+    ['Production idle, could afford a unit', (f) => mmss(s.totals[f].idleSeconds)],
+    ['Production idle, not enough Data', (f) => mmss(s.totals[f].starvedSeconds)],
   ];
   const table = `<table class="totals"><tr><th></th><th>${SERIES[you].label}</th><th>${SERIES[them].label}</th></tr>`
     + rows.map(([k, v]) => `<tr><td>${k}</td><td>${v(you)}</td><td>${v(them)}</td></tr>`).join('') + '</table>';
   return `<div class="summary"><div class="head">${head}</div><div>${insight}</div>${table}`
     + chart('chart-army', 'Army value', 'Data', s.samples, (x, f) => x.army[f])
     + chart('chart-income', 'Income', 'Data/s', s.samples, (x, f) => x.income[f])
-    + '<small class="dim">"Production idle": time your SOC sat empty after it was built. Reload to play again.</small></div>';
+    + '<small class="dim">"Production idle": time your SOC sat empty after it was built, split by whether you had Data for a unit (lost time you could have used) or not (starved). Reload to play again.</small></div>';
 }
+
+const mmss = (secs: number) => `${Math.trunc(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
 
 /** Hover: a crosshair and a tooltip with both sides' values at the nearest sample. */
 export function attachSummaryHover(root: HTMLElement, s: MatchStats): void {

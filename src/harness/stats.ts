@@ -19,8 +19,10 @@ export interface Totals {
   trained: number;
   lost: number;
   peakArmy: number;
-  /** Seconds with a finished production building and nothing in training. */
+  /** Seconds with a finished production building, nothing in training, and Data for a unit (real slack). */
   idleSeconds: number;
+  /** Seconds with a finished production building and nothing in training, but not enough Data for any unit. */
+  starvedSeconds: number;
 }
 
 export interface MatchStats {
@@ -31,16 +33,20 @@ export interface MatchStats {
   known: Map<number, Faction>;
   earnedMilli: Record<Faction, number>;
   idleTicks: Record<Faction, number>;
+  starvedTicks: Record<Faction, number>;
 }
 
 const PRODUCTION = new Set(['soc', 'training_cluster']);
+/** Cheapest unit each faction's production buildings can train (milli-Data). */
+const CHEAPEST = Object.fromEntries(FACTIONS.map((f) => [f, Math.min(...Object.values(UNITS)
+  .filter((u) => u.faction === f && PRODUCTION.has(u.trainedAt)).map((u) => u.cost))])) as Record<Faction, number>;
 
 export function createStats(every = 5 * TICK_RATE): MatchStats {
-  const totals = () => ({ earned: 0, trained: 0, lost: 0, peakArmy: 0, idleSeconds: 0 });
+  const totals = () => ({ earned: 0, trained: 0, lost: 0, peakArmy: 0, idleSeconds: 0, starvedSeconds: 0 });
   return {
     every, samples: [], known: new Map(),
     totals: { human: totals(), ai: totals() },
-    earnedMilli: { human: 0, ai: 0 }, idleTicks: { human: 0, ai: 0 },
+    earnedMilli: { human: 0, ai: 0 }, idleTicks: { human: 0, ai: 0 }, starvedTicks: { human: 0, ai: 0 },
   };
 }
 
@@ -63,8 +69,12 @@ export function recordStats(s: MatchStats, world: World): void {
     t.earned = Math.trunc(s.earnedMilli[f] / 1000);
     t.peakArmy = Math.max(t.peakArmy, army[f]);
     const prod = buildings(world).filter((b) => b.faction === f && b.built && PRODUCTION.has(b.type));
-    if (prod.length > 0 && prod.every((b) => b.queue.length === 0)) s.idleTicks[f]++;
+    if (prod.length > 0 && prod.every((b) => b.queue.length === 0)) {
+      if (world.factions[f].data >= CHEAPEST[f]) s.idleTicks[f]++;
+      else s.starvedTicks[f]++;
+    }
     t.idleSeconds = Math.trunc(s.idleTicks[f] / TICK_RATE);
+    t.starvedSeconds = Math.trunc(s.starvedTicks[f] / TICK_RATE);
   }
   if (world.tick % s.every === 0 || world.winner !== null) {
     const income = (f: Faction) => (world.factions[f].income * TICK_RATE) / 1000;
@@ -105,4 +115,20 @@ export function incomeGap(s: MatchStats, you: Faction): { tick: number; yours: n
     }
   }
   return null;
+}
+
+/**
+ * The turning point: the earliest moment from which one side earned more than the other for the rest of
+ * the match (at least a minute of it). Null if the lead kept changing hands to the end.
+ */
+export function economicLead(s: MatchStats): { leader: Faction; tick: number } | null {
+  const last = s.samples.at(-1);
+  if (!last) return null;
+  const ahead = (x: Sample): Faction | null => x.income.human > x.income.ai ? 'human' : x.income.ai > x.income.human ? 'ai' : null;
+  const leader = ahead(last);
+  if (!leader) return null;
+  let i = s.samples.length - 1;
+  while (i > 0 && ahead(s.samples[i - 1]!) === leader) i--;
+  const tick = s.samples[i]!.tick;
+  return last.tick - tick >= 60 * TICK_RATE ? { leader, tick } : null;
 }

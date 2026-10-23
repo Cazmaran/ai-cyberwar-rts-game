@@ -6,6 +6,7 @@ The story of building this game, newest first. Wins, failures, surprises, and wh
 
 - After three losses to `?ai=boom`, the owner won with their own plan: claim the two center Data sources first, then work back to connect everything. Data arrived later, but taking the center starved the AI's economy, and the rush held.
 - That is the first strategy found by a player rather than suggested by the game or by us: a candidate for the lore system (Tenet 5). Name it "Center First".
+- The summary told the wrong story for this win: both insight lines described the slow Center First opening, not the turnaround. Behind early, the owner out-earned the AI from about 3:00 to the end (6,992 Data to 3,880); the AI lost all 31 of its units. Added a "turning point" line (from when one side out-earned the other for good), and split idle production into "could afford a unit" (real slack) and "not enough Data" (starved).
 - Gate 1 status: wins with two different approaches (defensive against turtle, Center First against boom), and every loss had a reason the owner could act on. That covers the D-015 skill and strategy criteria. Remaining: "do I want to play again?" and the 300-unit/60 fps check, which passed earlier.
 
 ## 2026-10-22 — Ninth playtest: the summary explains a loss

@@ -2,6 +2,13 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-24 — The sim was quietly picking a side
+
+- Chasing the unfair mirrors (D-018), I put identical units on both sides in mirrored positions. They should split 50/50, but the AI side won up to 62% (over 200 seeds).
+- Two order bugs. Units act one at a time, and the AI's spawn later. A human unit would step into range, then an AI unit acting later in the same tick saw it already in range and fired first. Later units also knew which enemies had died earlier that tick, so they never wasted a shot. Now combat reads enemy positions and who is alive from the start of the tick. Identical fights split 44-54%, and exact mirror positions end in mutual destruction every time.
+- Detective lessons: two of my probes were confounded (the random layouts changed with what I was swapping), and 40 seeds were too few: ±8 points of noise looked like a 30/70 bias. 200 seeds settled it.
+- Fixing it barely moved the strategy mirrors (rush 63%, boom 30%, turtle 23% human wins). That gap is faction balance, not a sim bug: humans win short fights, and the AI wins long economic games.
+
 ## 2026-10-24 — The General's first wars, and a humbling control
 
 - The LLM General played its first 30 full matches: qwen3:8b on the 3090 vs the scripted bots. The sim pauses while the model thinks, but each reply still costs its measured latency in game ticks. About 15 s of wall time per match.

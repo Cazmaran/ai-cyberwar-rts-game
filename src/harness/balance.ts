@@ -17,11 +17,13 @@ export interface DuelResult {
 }
 
 /** Equal-Data armies of type A and type B meet in open ground away from both bases. */
-export function duel(a: UnitTypeId, b: UnitTypeId, budget: number, seeds: number): DuelResult {
+/** `adaptation: false` stops AI retraining, to test the sim itself for side bias. */
+export function duel(a: UnitTypeId, b: UnitTypeId, budget: number, seeds: number, adaptation = true): DuelResult {
   let score = 0;
   for (let seed = 1; seed <= seeds; seed++) {
     const game = createGame(seed);
     const rng = createRng(seed * 31);
+    if (!adaptation) game.world.factions.ai.nextRetrainAt = Number.MAX_SAFE_INTEGER;
     const spawn = (type: UnitTypeId, faction: Faction, x: number) => {
       const n = Math.max(1, Math.trunc(budget / UNITS[type].cost));
       const ids: number[] = [];

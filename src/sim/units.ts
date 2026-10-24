@@ -9,7 +9,18 @@ import { CORE_BUILDING, type Building, type Entity, type Unit, type World } from
  * the same ticks so neither side spots the other first. */
 const ACQUIRE_EVERY = 5;
 
+/**
+ * Where each unit stood at the start of the tick. Combat reads enemy positions from here, so a unit
+ * processed later never sees an enemy that already stepped into range this tick and fires first.
+ */
+const startPos = new Map<number, [number, number]>();
+const seenAt = (e: Entity): [number, number] => startPos.get(e.id) ?? [e.x, e.y];
+/** A unit alive at the start of the tick is still a target until deaths resolve, so later units waste shots too. */
+const standing = (e: Entity): boolean => (e.kind === 'unit' ? startPos.has(e.id) : e.hp > 0);
+
 export function updateUnits(world: World): void {
+  startPos.clear();
+  for (const e of world.entities.values()) if (e.kind === 'unit') startPos.set(e.id, [e.x, e.y]);
   // Every unit alive at the start of the tick acts, even if hit earlier this tick: combat resolves
   // simultaneously, so creation order (which faction spawned first) gives no first-strike advantage.
   for (const e of world.entities.values()) {
@@ -104,7 +115,7 @@ function runOrder(world: World, u: Unit): void {
     }
     case 'attack': {
       const t = world.entities.get(o.target);
-      if (!t || t.hp <= 0 || t.faction === u.faction) { u.order = { type: 'idle' }; return; }
+      if (!t || !standing(t) || t.faction === u.faction) { u.order = { type: 'idle' }; return; }
       engage(world, u, t);
       return;
     }
@@ -168,7 +179,7 @@ function currentTarget(world: World, u: Unit): Entity | null {
   if (UNITS[u.type].role === 'worker') return null;
   if (u.target !== null) {
     const t = world.entities.get(u.target);
-    if (t && t.hp > 0 && within(u.x, u.y, t.x, t.y, UNITS[u.type].sight + reachOf(t))) return t;
+    if (t && standing(t) && within(u.x, u.y, ...seenAt(t), UNITS[u.type].sight + reachOf(t))) return t;
     u.target = null;
   }
   if (world.tick % ACQUIRE_EVERY !== 0) return null;
@@ -185,8 +196,8 @@ function acquire(world: World, u: Unit): Entity | null {
   let bestBld: Entity | null = null;
   let bestBldD = Infinity;
   for (const e of world.entities.values()) {
-    if (e.faction === u.faction || e.hp <= 0) continue;
-    const d = dist2(u.x, u.y, e.x, e.y);
+    if (e.faction === u.faction || !standing(e)) continue;
+    const d = dist2(u.x, u.y, ...seenAt(e));
     if (d > sight * sight) continue;
     if (e.kind === 'unit') { if (d < bestUnitD) { bestUnitD = d; bestUnit = e; } }
     else if (d < bestBldD) { bestBldD = d; bestBld = e; }
@@ -201,8 +212,9 @@ function reachOf(target: Entity): number {
 /** Fire if in range, otherwise close the distance. */
 function engage(world: World, u: Unit, t: Entity): void {
   const range = UNITS[u.type].range + reachOf(t);
-  if (within(u.x, u.y, t.x, t.y, range)) fire(world, u, t);
-  else moveTo(world, u, t.x, t.y, range);
+  const [tx, ty] = seenAt(t);
+  if (within(u.x, u.y, tx, ty, range)) fire(world, u, t);
+  else moveTo(world, u, tx, ty, range);
 }
 
 function fire(world: World, u: Unit, t: Entity): void {

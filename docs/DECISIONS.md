@@ -2,6 +2,15 @@
 
 Newest first. Each entry: date, decision, options considered, reason. Changes to design pillars need owner approval.
 
+## D-019 — 2026-10-24 — Gate 2 bar: head-to-head against the control; bot checks become warnings
+- **Decision (amends D-018):**
+  - Criteria 1 (bots survive pressure) and 2 (fair mirrors) become warnings in `npm run balance`, as D-015 did for Gate 1's bot proxies.
+  - Criterion 3 is measured head-to-head. The LLM General plays the AI side against the control on the human side. Baseline B is the control playing itself (AI side vs human side) on the same seeds. The LLM must win at least B + 15 points over at least 30 seeds (`npm run llm-match -- --human control --matches 30 --with-control`). The comparison against scripted bots stays as a secondary report.
+- **Options:** keep criterion 1 as a hard bar and change faction stats; head-to-head (chosen).
+- **Reason:** four rounds of bot changes (outpost defense, kept; wave timing, safe opening, extra production, dropped) fixed the human side but never the AI side, which loses 80–100% to human pressure while winning the economic mirrors. That is faction balance, better judged in owner playtests than by bot proxies. And against today's bots the control already wins 90%, so "beat the control by 15 points" was capped at 10. Head-to-head has no such ceiling, and B absorbs faction balance.
+- **First result (qwen3:8b, `--no-think`, RTX 3090):** seeds 1–30: LLM 87% vs B 67% (+20); seeds 31–60: 93% vs 80% (+13). Pooled over 60 seeds: 90% vs 73% (+17, about 2.4 standard errors). 0 invalid orders out of 3,405; p95 latency 1.5 s. B is high (the AI faction wins the control mirror), which leaves little headroom; re-measure if faction balance changes.
+- **Approved:** owner, 2026-10-24.
+
 ## D-018 — 2026-10-24 — Gate 2 measures the LLM against an attack-every-turn control
 - **Decision:** Gate 2's win criterion changes from "beats the scripted AI in ≥55% of matches" to three criteria:
   1. **Bots survive pressure:** the attack-every-turn control (`src/ai/llm/control.ts`, no model) wins at most 60% against each scripted strategy, on each side (`npm run balance`, pressure test).

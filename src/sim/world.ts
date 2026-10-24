@@ -6,7 +6,7 @@ import { createRng, type Rng } from './rng.ts';
 /** Simulation ticks per second. Rendering runs independently of this. */
 export const TICK_RATE = 20;
 
-export const GAME_VERSION = '0.1.0';
+export const GAME_VERSION = '0.1.1';
 export { DATA_VERSION };
 
 export type Order =

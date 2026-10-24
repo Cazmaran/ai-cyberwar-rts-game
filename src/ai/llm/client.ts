@@ -34,7 +34,8 @@ export interface OllamaOptions {
 
 export function createOllamaClient(opts: OllamaOptions): LlmClient {
   const url = (opts.url ?? 'http://localhost:11434').replace(/\/$/, '');
-  const doFetch = opts.fetch ?? fetch;
+  // Wrapped so the browser calls fetch with the right receiver.
+  const doFetch = opts.fetch ?? ((input: RequestInfo | URL, init?: RequestInit) => fetch(input, init));
   return {
     name: `ollama:${opts.model}`,
     async complete(req, signal) {

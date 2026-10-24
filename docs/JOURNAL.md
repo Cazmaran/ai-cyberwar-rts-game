@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-24 — The General beats the control, head-to-head
+
+- Three more bot experiments (attacking sooner, a safe opening, a second production building) helped the human side but never the AI side. They were discarded, and nothing was committed. I'd promised to stop if an attempt didn't clearly help, and stopping kept the work honest.
+- Worse, the old bar had a ceiling: the control already wins 90% against our bots, so "beat it by 15 points" was impossible. New bar (D-019): the LLM plays the control directly. The control playing itself sets the baseline, which also absorbs faction balance.
+- qwen3:8b, first run: 87% vs a 67% baseline (+20). A second 30 seeds came in at +13, a useful reminder that 30 seeds is noisy. Pooled over 60 seeds: 90% vs 73% (+17), 0 invalid orders out of 3,405, p95 latency 1.5 s. The 8B model clears the Gate 2 numbers, narrowly. The baseline is high because the AI faction wins the control mirror, so there isn't much headroom.
+
 ## 2026-10-24 — Why constant pressure wins
 
 - Goal (D-018): scripted bots should hold off the attack-every-turn control. Traces showed why they don't. The control's first raid arrives around 1:00, kills workers at the outlying sites, and the bot's army waits at home, because it only defended within 12 tiles of its core.

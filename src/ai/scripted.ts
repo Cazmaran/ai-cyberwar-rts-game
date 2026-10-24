@@ -28,12 +28,14 @@ export interface Strategy {
   usePlug: boolean;
   /** Earliest tick for the first attack (gives new players time to learn). */
   attackNotBefore?: number;
+  /** Defend workers, buildings and owned sites anywhere on our half, not just the core (D-018 pressure test). */
+  guardOutposts?: boolean;
 }
 
 export const STRATEGIES: Record<string, Strategy> = {
-  rush: { name: 'rush', workers: 4, racks: 0, barricades: 0, defenses: 0, mix: { fast: 2, ranged: 1 }, attackValue: 250, focusFire: true, counterBuild: true, usePlug: true },
-  boom: { name: 'boom', workers: 8, racks: 2, barricades: 0, defenses: 1, mix: { fast: 1, ranged: 1, tank: 1 }, attackValue: 700, focusFire: true, counterBuild: true, usePlug: true },
-  turtle: { name: 'turtle', workers: 6, racks: 1, barricades: 3, defenses: 3, mix: { ranged: 2, tank: 2, fast: 1 }, attackValue: 900, focusFire: true, counterBuild: true, usePlug: true },
+  rush: { name: 'rush', workers: 4, racks: 0, barricades: 0, defenses: 0, mix: { fast: 2, ranged: 1 }, attackValue: 250, focusFire: true, counterBuild: true, usePlug: true, guardOutposts: true },
+  boom: { name: 'boom', workers: 8, racks: 2, barricades: 0, defenses: 1, mix: { fast: 1, ranged: 1, tank: 1 }, attackValue: 700, focusFire: true, counterBuild: true, usePlug: true, guardOutposts: true },
+  turtle: { name: 'turtle', workers: 6, racks: 1, barricades: 3, defenses: 3, mix: { ranged: 2, tank: 2, fast: 1 }, attackValue: 900, focusFire: true, counterBuild: true, usePlug: true, guardOutposts: true },
 };
 
 /** Gentle opponent for learning the game: slow economy, no micro, attacks late. Not part of balance runs. */
@@ -106,8 +108,13 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
         if (!w || (w.order === 'idle' && !pending(id))) busy.delete(id);
       }
 
-      // 1. Defend the base.
-      const threats = v.enemyUnits.filter((e) => dist2(e.x, e.y, core.x, core.y) < (12 * TILE) ** 2);
+      // 1. Defend the base, and with guardOutposts also workers, buildings and owned sites on our half.
+      const near = (e: UnitView, x: number, y: number, tiles: number) => dist2(e.x, e.y, x, y) < (tiles * TILE) ** 2;
+      const ourHalf = (e: UnitView) => !enemyCore || dist2(e.x, e.y, core.x, core.y) <= dist2(e.x, e.y, enemyCore.x, enemyCore.y);
+      const threats = v.enemyUnits.filter((e) => near(e, core.x, core.y, 12) || (strategy.guardOutposts && ourHalf(e) && (
+        workers.some((w) => near(e, w.x, w.y, 6)) || v.buildings.some((b) => near(e, b.x, b.y, 6))
+        || v.sites.some((s) => s.owner === faction && near(e, s.x, s.y, 6)))))
+        .sort((a, b) => dist2(a.x, a.y, core.x, core.y) - dist2(b.x, b.y, core.x, core.y) || a.id - b.id);
       // Only units not already fighting a threat get orders: at the APM cap, re-issuing the same order
       // every decision would starve production and worker jobs.
       const defenders = army.filter((u) => !pending(u.id) && !threats.some((t) => t.id === u.target));
@@ -119,7 +126,8 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
           }
         } else {
           const ids = defenders.map((u) => u.id);
-          order({ type: 'attackMove', units: ids, x: core.x, y: core.y }, ids);
+          const at = strategy.guardOutposts ? threats[0]! : core;
+          order({ type: 'attackMove', units: ids, x: at.x, y: at.y }, ids);
         }
       }
 

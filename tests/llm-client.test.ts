@@ -1,0 +1,67 @@
+import { describe, expect, it } from 'vitest';
+import { createLlmBrain, createOllamaClient } from '../src/ai/llm/client.ts';
+import { systemPrompt, userPrompt } from '../src/ai/llm/prompt.ts';
+import { toolSpecs, turnSchema } from '../src/ai/llm/tools.ts';
+import { digestView, factionView } from '../src/sim/index.ts';
+import { newGame } from './helpers.ts';
+
+// Phase 2 (M2.4): the Ollama client and the General's prompt. No network: fetch is faked.
+type Call = { url: string; body: Record<string, unknown> };
+
+function fakeFetch(respond: (call: Call) => Response): { fetch: typeof fetch; calls: Call[] } {
+  const calls: Call[] = [];
+  const f = (async (url: string, init: RequestInit) => {
+    const call = { url, body: JSON.parse(init.body as string) as Record<string, unknown> };
+    calls.push(call);
+    return respond(call);
+  }) as unknown as typeof fetch;
+  return { fetch: f, calls };
+}
+
+const ok = (content: string) => new Response(JSON.stringify({ message: { role: 'assistant', content } }), { status: 200 });
+const digest = () => digestView(factionView(newGame().world, 'ai'));
+
+describe('General prompt', () => {
+  it('lists every tool and only the faction’s own units', () => {
+    const p = systemPrompt('ai');
+    for (const t of toolSpecs('ai')) expect(p).toContain(`- ${t.name}(`);
+    expect(p).toContain('botnet_swarm');
+    expect(p).not.toContain('red_team');
+    expect(p).not.toContain('pull_the_plug');
+    expect(systemPrompt('human')).toContain('pull_the_plug');
+  });
+
+  it('sends only the digest as the user message', () => {
+    const d = digest();
+    expect(JSON.parse(userPrompt(d))).toEqual(d);
+  });
+});
+
+describe('Ollama client', () => {
+  it('posts a non-streaming chat with the turn schema as structured output', async () => {
+    const { fetch, calls } = fakeFetch(() => ok('{"orders":[]}'));
+    const client = createOllamaClient({ model: 'qwen3:8b', url: 'http://gpu-box:11434/', fetch, think: false });
+    const reply = await createLlmBrain(client, 'ai')({ tick: 0, digest: digest() });
+    expect(reply).toBe('{"orders":[]}');
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.url).toBe('http://gpu-box:11434/api/chat');
+    expect(calls[0]!.body).toMatchObject({ model: 'qwen3:8b', stream: false, think: false, format: turnSchema('ai') });
+    const messages = calls[0]!.body.messages as { role: string; content: string }[];
+    expect(messages.map((m) => m.role)).toEqual(['system', 'user']);
+    expect(messages[0]!.content).toBe(systemPrompt('ai'));
+  });
+
+  it('omits think unless asked', async () => {
+    const { fetch, calls } = fakeFetch(() => ok('{}'));
+    await createOllamaClient({ model: 'm', fetch }).complete({ system: 's', user: 'u', schema: {} });
+    expect(calls[0]!.body).not.toHaveProperty('think');
+    expect(calls[0]!.url).toBe('http://localhost:11434/api/chat');
+  });
+
+  it('rejects on HTTP errors and malformed bodies, so the General falls back', async () => {
+    const notFound = createOllamaClient({ model: 'nope', fetch: fakeFetch(() => new Response('model "nope" not found', { status: 404 })).fetch });
+    await expect(notFound.complete({ system: '', user: '', schema: {} })).rejects.toThrow('ollama 404: model "nope" not found');
+    const empty = createOllamaClient({ model: 'm', fetch: fakeFetch(() => new Response('{}', { status: 200 })).fetch });
+    await expect(empty.complete({ system: '', user: '', schema: {} })).rejects.toThrow('no message content');
+  });
+});

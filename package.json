@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "sim": "node scripts/sim.ts",
     "balance": "node scripts/balance.ts",
-    "replay": "node scripts/replay.ts"
+    "replay": "node scripts/replay.ts",
+    "llm-turn": "node scripts/llm-turn.ts"
   },
   "dependencies": {
     "pixi.js": "^8.22.0"

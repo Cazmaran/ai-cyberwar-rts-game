@@ -2,6 +2,16 @@
 
 Newest first. Each entry: date, decision, options considered, reason. Changes to design pillars need owner approval.
 
+## D-018 — 2026-10-24 — Gate 2 measures the LLM against an attack-every-turn control
+- **Decision:** Gate 2's win criterion changes from "beats the scripted AI in ≥55% of matches" to three criteria:
+  1. **Bots survive pressure:** the attack-every-turn control (`src/ai/llm/control.ts`, no model) wins at most 60% against each scripted strategy, on each side (`npm run balance`, pressure test).
+  2. **Fair mirrors:** in each scripted mirror match (rush vs rush, …), each side wins 40–60% (`npm run balance`).
+  3. **The LLM beats the control:** on the same seeds, at least 30 per opponent, the LLM General's pooled win rate is at least 15 points above the control's (`npm run llm-match -- --matches 30 --with-control`).
+- **Options:** keep "≥55% vs scripted AI"; beat the control (chosen); add more trivial stub strategies (later, optional).
+- **Reason:** the first 30 LLM matches won 90%, and so did the control. Against today's bots the old bar measures aggression, not judgment. Mirrors favor one side (boom: AI 67%), which hands a General wins it didn't earn. With 10 seeds a 10-point gap is noise, hence 30 seeds and a 15-point margin.
+- **Baseline (2026-10-24, 30 seeds):** control vs human rush / boom / turtle 80% / 90% / 100%, vs AI rush / boom / turtle 37% / 100% / 98%. Mirrors (human win %): rush 70%, boom 33%, turtle 37%. So 5 of 6 pressure checks and all 3 mirrors miss; the next work is tougher bots. The gentle `training` opponent is not part of these checks and stays as it is.
+- **Approved:** owner, 2026-10-24.
+
 ## D-017 — 2026-10-23 — OPEN: renderer for final art (2D vs 3D)
 - **Question:** stay on PixiJS (2D, top-down or isometric "2.5D" sprites, as in the original Age of Empires) or move to a 3D renderer (Three.js or Babylon.js: perspective camera, glTF models)?
 - **What's fixed either way:** the stack (TypeScript, npm, browser). The sim, AI, harness, tests, replays and HTML HUD stay unchanged, because the renderer only reads `FactionView` and issues commands. Only `src/render/` drawing (about 1,000 lines) and map picking would change.

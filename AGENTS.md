@@ -36,8 +36,8 @@ npm run sim -- --matches 5 --max-ms 10000          # fail if any match exceeds t
 npm run replay -- replay.json --every 15            # re-run a saved match (summary's "Save replay") and print a timeline
 npm run balance -- --seeds 40                       # duel matrix + counters (--gate exits 1 on failures); tournament and skill test print warnings
 npm run llm-turn -- --model qwen3:8b               # one LLM General turn against a local Ollama model (needs `ollama serve`)
-npm run llm-match -- --model qwen3:8b --matches 10 --human rush   # full matches, LLM General vs scripted bot; prints Gate 2 numbers
-npm run llm-match -- --control --matches 10 --human rush          # same, with an attack-every-turn stub instead of a model (baseline)
+npm run llm-match -- --model qwen3:8b --matches 30 --with-control   # LLM General vs every scripted bot, plus the control on the same seeds (Gate 2, D-018)
+npm run llm-match -- --control --matches 30                         # control only (attack every turn, no model)
 npm run build
 # Visual checks: with `npm run dev` running, open (or screenshot headless) e.g.
 # http://localhost:5173/?seed=3&human=boom&ai=turtle&autostart&skip=40

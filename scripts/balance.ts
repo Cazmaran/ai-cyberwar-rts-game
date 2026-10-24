@@ -2,7 +2,7 @@
 // --gate: exit non-zero if any Gate 1 balance criterion fails.
 import { parseArgs } from 'node:util';
 import { STRATEGIES } from '../src/ai/scripted.ts';
-import { COMBAT_UNITS, counterChecks, dominantUnits, duelMatrix, skillTest, tournament } from '../src/harness/balance.ts';
+import { COMBAT_UNITS, counterChecks, dominantUnits, duelMatrix, pressureTest, skillTest, tournament } from '../src/harness/balance.ts';
 import { MILLI } from '../src/sim/index.ts';
 
 const { values } = parseArgs({
@@ -49,6 +49,18 @@ for (const n of names) {
   for (const [side, p] of [['human', asHuman], ['ai', asAi]] as const) {
     if (p > 65) warnings.push(`${side} ${n} wins ${Math.round(p)}% overall (target max 65%)`);
   }
+}
+
+// D-018: mirrors must be fair to both sides, or a General gets wins it didn't earn.
+for (const n of names) {
+  const p = cells.find((c) => c.human === n && c.ai === n)!.humanWinPct;
+  if (p < 40 || p > 60) warnings.push(`${n} mirror: human wins ${p}% (target 40-60%)`);
+}
+
+console.log('\n== Pressure test: attack-every-turn control vs each scripted strategy (control target max 60%) ==');
+for (const r of pressureTest(seeds)) {
+  console.log(`${r.controlWinPct <= 60 ? 'ok  ' : 'weak'} ${r.side} ${r.strategy}: control wins ${r.controlWinPct}%`);
+  if (r.controlWinPct > 60) warnings.push(`${r.side} ${r.strategy} loses to the control: ${r.controlWinPct}% (target max 60%)`);
 }
 
 console.log('\n== Skill test: focus-fire micro vs attack-move only, identical builds (target >= 70%) ==');

@@ -11,10 +11,18 @@ const PERSONA: Record<Faction, string> = {
 };
 
 const BEATS = 'fast beats ranged, ranged beats tank, tank beats fast';
+/** For each enemy role, the role that beats it. */
+const COUNTER = { fast: 'tank', ranged: 'fast', tank: 'ranged' } as const;
 
 export function systemPrompt(faction: Faction): string {
-  const units = (Object.keys(UNITS) as UnitTypeId[]).filter((u) => UNITS[u].faction === faction)
+  const all = Object.keys(UNITS) as UnitTypeId[];
+  const units = all.filter((u) => UNITS[u].faction === faction)
     .map((u) => `- ${u}: ${UNITS[u].role}, costs ${UNITS[u].cost / MILLI} Data, trained at ${UNITS[u].trainedAt}`);
+  const ownOfRole = (role: string) => all.find((u) => UNITS[u].faction === faction && UNITS[u].role === role);
+  const enemy = all.filter((u) => UNITS[u].faction !== faction).map((u) => {
+    const role = UNITS[u].role;
+    return role === 'worker' ? `- ${u}: worker` : `- ${u}: ${role}; beat it with ${COUNTER[role]} (${ownOfRole(COUNTER[role])})`;
+  });
   const tools = toolSpecs(faction).map((t) => {
     const args = Object.entries(t.params).map(([k, p]) => `${k}: ${p.kind === 'enum' ? p.values.join('|') : p.kind === 'int' ? `${p.min}-${p.max}` : 'text'}`);
     return `- ${t.name}(${args.join(', ')}): ${t.description}`;
@@ -32,6 +40,17 @@ export function systemPrompt(faction: Faction): string {
     `Your units (${BEATS}):`,
     ...units,
     `Your buildings: ${buildings.join(', ')}.`,
+    'Enemy units:',
+    ...enemy,
+    '',
+    'Digest: "cores" says where your core and the enemy core are. "army" is the Data value of your combat units; '
+      + 'threat "enemy"/"ours" use the same scale. "economy.data" is what you can spend right now.',
+    '',
+    'Strategy:',
+    '- Economy wins long games: keep 6-10 workers and claim data sources early. Idle workers earn nothing: use expand.',
+    '- Train only what economy.data covers; the rest of your Data is spent by your base between turns.',
+    '- Attack when your army clearly outweighs what you have seen of the enemy. Otherwise build up, and defend sectors under threat.',
+    '- Counter what you see: weight your army mix toward the units that beat the enemy units in the digest (see "Enemy units").',
     '',
     'Tools:',
     ...tools,

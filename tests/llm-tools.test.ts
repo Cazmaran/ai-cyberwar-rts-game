@@ -59,6 +59,8 @@ describe('LLM tool validation', () => {
     [{ tool: 'train', args: { unit: 'botnet_swarm', count: 1.5 } }, 'integer'],
     [{ tool: 'train', args: { unit: 'botnet_swarm', count: 99 } }, 'integer'],
     [{ tool: 'taunt', args: { message: 'x'.repeat(500) } }, 'up to'],
+    // A plan with no workers would end the economy; the floor is 2.
+    [{ tool: 'set_build_plan', args: { workers: 0, racks: 0, defenses: 0 } }, 'integer 2-16'],
     ['attack', 'must be an object'],
   ])('rejects %j', (raw, why) => {
     expect(validateCall('ai', raw)).toContain(why);

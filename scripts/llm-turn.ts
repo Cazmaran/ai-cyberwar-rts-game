@@ -1,7 +1,7 @@
 // One LLM General turn against a real model, for checking a model before batch runs.
 // Plays scripted bots to a mid-game state, sends that faction's digest, and prints the reply,
 // validation result, planned commands and latency.
-// Usage: npm run llm-turn -- --model qwen3:8b [--url http://localhost:11434] [--minutes 4] [--faction ai] [--seed 3] [--no-think]
+// Usage: npm run llm-turn -- --model qwen3:8b [--url http://localhost:11434] [--minutes 4] [--faction ai] [--seed 3] [--no-think] [--digest]
 import { parseArgs } from 'node:util';
 import { createLlmBrain, createOllamaClient } from '../src/ai/llm/client.ts';
 import { planTurn } from '../src/ai/llm/plan.ts';
@@ -19,6 +19,7 @@ const { values } = parseArgs({
     faction: { type: 'string', default: 'ai' },
     seed: { type: 'string', default: '3' },
     'no-think': { type: 'boolean', default: false },
+    digest: { type: 'boolean', default: false },
   },
 });
 const faction = values.faction as Faction;
@@ -38,6 +39,7 @@ const client = createOllamaClient({ model: values.model, url: values.url, ...(va
 const brain = createLlmBrain(client, faction, { timeoutMs: 120_000 });
 
 console.log(`model ${client.name}, ${faction} at ${digest.t}; system prompt ${systemPrompt(faction).length} chars, digest ${JSON.stringify(digest).length} chars`);
+if (values.digest) console.log(`digest: ${JSON.stringify(digest)}`);
 const start = performance.now();
 let reply: unknown;
 try {

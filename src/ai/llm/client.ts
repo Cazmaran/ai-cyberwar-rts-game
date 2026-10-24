@@ -26,6 +26,8 @@ export interface OllamaOptions {
   temperature?: number;
   /** Thinking models (e.g. Qwen3): false skips the slow reasoning pass. Omitted by default. */
   think?: boolean;
+  /** How long Ollama keeps the model loaded after a call. Default 30m: a reload mid-match takes over a minute. */
+  keepAlive?: string;
   /** Injected in tests. */
   fetch?: typeof fetch;
 }
@@ -45,6 +47,7 @@ export function createOllamaClient(opts: OllamaOptions): LlmClient {
           format: req.schema,
           stream: false,
           options: { temperature: opts.temperature ?? 0.7 },
+          keep_alive: opts.keepAlive ?? '30m',
           ...(opts.think === undefined ? {} : { think: opts.think }),
         }),
         signal,

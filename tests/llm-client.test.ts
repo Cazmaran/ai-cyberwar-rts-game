@@ -26,9 +26,12 @@ describe('General prompt', () => {
     const p = systemPrompt('ai');
     for (const t of toolSpecs('ai')) expect(p).toContain(`- ${t.name}(`);
     expect(p).toContain('botnet_swarm');
-    expect(p).not.toContain('red_team');
+    expect(p).toContain('train(unit: maintenance_drone|botnet_swarm|hunter_drone|industrial_robot,');
     expect(p).not.toContain('pull_the_plug');
     expect(systemPrompt('human')).toContain('pull_the_plug');
+    // Enemy units come with their role and our counter, so the model can counter-build.
+    expect(p).toContain('- counter_drone_team: fast; beat it with tank (industrial_robot)');
+    expect(systemPrompt('human')).toContain('- industrial_robot: tank; beat it with ranged (red_team)');
   });
 
   it('sends only the digest as the user message', () => {
@@ -55,6 +58,7 @@ describe('Ollama client', () => {
     const { fetch, calls } = fakeFetch(() => ok('{}'));
     await createOllamaClient({ model: 'm', fetch }).complete({ system: 's', user: 'u', schema: {} });
     expect(calls[0]!.body).not.toHaveProperty('think');
+    expect(calls[0]!.body.keep_alive).toBe('30m');
     expect(calls[0]!.url).toBe('http://localhost:11434/api/chat');
   });
 

@@ -29,7 +29,7 @@ const count = (description: string, max: number): Param => ({ kind: 'int', min: 
 export function toolSpecs(faction: Faction): ToolSpec[] {
   const unitTypes = (Object.keys(UNITS) as UnitTypeId[]).filter((u) => UNITS[u].faction === faction);
   const specs: ToolSpec[] = [
-    { name: 'attack_sector', description: 'All combat units attack-move to a sector, fighting anything on the way.', params: { sector: sector('Target sector.') } },
+    { name: 'attack_sector', description: 'All combat units attack-move to a sector, fighting anything on the way. A small army sent into a bigger one is lost.', params: { sector: sector('Target sector.') } },
     { name: 'defend_sector', description: 'All combat units return to a sector and hold it.', params: { sector: sector('Sector to hold.') } },
     { name: 'retreat', description: 'All combat units fall back to the sector of your core.', params: {} },
     { name: 'expand', description: 'One idle worker claims the nearest site you do not own.', params: {} },
@@ -43,13 +43,14 @@ export function toolSpecs(faction: Faction): ToolSpec[] {
     },
     {
       name: 'set_build_plan',
-      description: 'Targets your workers build toward between turns: worker count, server racks (Compute), static defenses'
-        + (faction === 'human' ? ', barricades.' : '.'),
+      description: 'Totals your base builds toward between turns, counting what you already have: workers, server racks (Compute), static defenses'
+        + (faction === 'human' ? ', barricades.' : '.') + ' Lower than you have just stops building more; nothing is removed.',
       params: {
-        workers: count('Target worker count.', 16),
-        racks: count('Target server racks.', 6),
-        defenses: count('Target static defenses.', 6),
-        ...(faction === 'human' ? { barricades: count('Target barricades.', 6) } : {}),
+        // At least 2 workers, so a bad plan can stall the economy but never end it.
+        workers: { kind: 'int', min: 2, max: 16, description: 'Total workers to keep (you have workers.total).' },
+        racks: count('Total server racks.', 6),
+        defenses: count('Total static defenses.', 6),
+        ...(faction === 'human' ? { barricades: count('Total barricades.', 6) } : {}),
       },
     },
     {

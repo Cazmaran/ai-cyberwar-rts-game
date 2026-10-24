@@ -140,7 +140,7 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
 
 ### Phase 2 — The LLM General (4–6 weeks)
 - ✅ M2.1 State digest: `digestView()` in `src/sim/digest.ts`, a ~400-token JSON summary by named sector with pre-computed threat levels (fog-safe, deterministic).
-- M2.2 Command schema: the M1.1b high-level orders exposed as 10–15 LLM tools (`set_economy_focus`, `attack_sector`, `research`, `taunt`…), enforced via structured output.
+- ✅ M2.2 Command schema: 11 LLM tools (10 for the AI) in `src/ai/llm/tools.ts` as provider-neutral JSON Schema (native tool calling or one structured-output turn schema), a strict validator, and `planTurn()` in `src/ai/llm/plan.ts` turning calls into ordinary commands plus a standing directive (build plan, army mix) for the scripted operational layer. `research` dropped: no research system exists yet.
 - M2.3 Validator + fallback: invalid/late command → scripted behavior for that cycle; all calls logged.
 - M2.3b Latency in ticks: an LLM decision applies a fixed or measured number of ticks after the request, never instantly. Headless sims replay the measured latency distribution, so batch results match real-time play.
 - M2.4 `AICommanderClient` provider switch: Ollama local / cloud via proxy.

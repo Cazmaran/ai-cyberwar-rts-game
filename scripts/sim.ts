@@ -2,7 +2,7 @@
 // Usage: npm run sim -- --matches 10 --minutes 20 --seed 1 --human boom --ai rush [--max-ms 10000] [--verbose]
 // --max-ms: performance budget per match; exits non-zero if any match is slower (used by CI).
 import { parseArgs } from 'node:util';
-import { createScriptedBot, STRATEGIES } from '../src/ai/scripted.ts';
+import { createScriptedBot, OPPONENTS } from '../src/ai/scripted.ts';
 import { runMatch } from '../src/harness/match.ts';
 import { describeView, factionView, hashWorld, TICK_RATE } from '../src/sim/index.ts';
 
@@ -18,10 +18,10 @@ const { values } = parseArgs({
   },
 });
 
-const humanStrategy = STRATEGIES[values.human];
-const aiStrategy = STRATEGIES[values.ai];
+const humanStrategy = OPPONENTS[values.human];
+const aiStrategy = OPPONENTS[values.ai];
 if (!humanStrategy || !aiStrategy) {
-  console.error(`unknown strategy; choose from: ${Object.keys(STRATEGIES).join(', ')}`);
+  console.error(`unknown strategy; choose from: ${Object.keys(OPPONENTS).join(', ')}`);
   process.exit(2);
 }
 

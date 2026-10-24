@@ -1,5 +1,5 @@
 // Browser entry: human plays through the UI; the AI faction is a scripted bot or the LLM General.
-// URL options: ?ai=training|rush|boom|turtle&seed=123&stress=300 (stress spawns N fighting units to check frame rate)
+// URL options: ?ai=training|brutal|rush|boom|turtle&seed=123&stress=300 (stress spawns N fighting units to check frame rate)
 // LLM General: ?ai=llm&model=qwen3:8b[&base=boom][&ollama=http://localhost:11434] (needs `ollama serve`; if the
 // model is unreachable the General's base plays on as the scripted bot). Blind test (Gate 2): ?ai=blind picks
 // the LLM General or scripted boom at random, hides which and hides chat, and reveals it after the match.
@@ -9,7 +9,7 @@ import { Application, Container, Graphics } from 'pixi.js';
 import { createLlmBrain, createOllamaClient } from './ai/llm/client.ts';
 import { filterChat } from './ai/llm/filter.ts';
 import { createGeneral } from './ai/llm/general.ts';
-import { createScriptedBot, STRATEGIES, TRAINING } from './ai/scripted.ts';
+import { createScriptedBot, OPPONENTS, STRATEGIES, TRAINING } from './ai/scripted.ts';
 import { createChatPanel } from './render/chat.ts';
 import { createSession, tickSession } from './harness/session.ts';
 import { createStats, recordStats } from './harness/stats.ts';
@@ -26,7 +26,7 @@ const aiParam = params.get('ai') ?? 'training';
 const blind = aiParam === 'blind';
 // Outside the sim, so Math.random is fine: the blind pick must not be guessable from the seed.
 const useLlm = aiParam === 'llm' || (blind && Math.random() < 0.5);
-const strategy = useLlm || blind ? STRATEGIES[params.get('base') ?? 'boom'] ?? STRATEGIES.boom! : STRATEGIES[aiParam] ?? TRAINING;
+const strategy = useLlm || blind ? STRATEGIES[params.get('base') ?? 'boom'] ?? STRATEGIES.boom! : OPPONENTS[aiParam] ?? TRAINING;
 const seed = Number(params.get('seed') ?? Date.now() % 100000);
 const humanBot = STRATEGIES[params.get('human') ?? ''];
 // Ollama model names use only these characters; anything else is dropped (the name is shown in HTML).

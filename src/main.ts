@@ -1,9 +1,16 @@
-// Browser entry: human plays through the UI, the AI faction is a scripted bot (LLM General comes in Phase 2).
+// Browser entry: human plays through the UI; the AI faction is a scripted bot or the LLM General.
 // URL options: ?ai=training|brutal|rush|boom|turtle&seed=123&stress=300 (stress spawns N fighting units to check frame rate)
+// LLM General: ?ai=llm&model=qwen3:8b[&base=boom][&ollama=http://localhost:11434] (needs `ollama serve`; if the
+// model is unreachable the General's base plays on as the scripted bot). Blind test (Gate 2): ?ai=blind picks
+// the LLM General or scripted boom at random, hides which and hides chat, and reveals it after the match.
 // Testing: &human=rush|boom|turtle lets a bot play your side (to watch or screenshot), &autostart skips the start screen,
 // &skip=60 fast-forwards 60 seconds before the first frame.
 import { Application, Container, Graphics } from 'pixi.js';
+import { createLlmBrain, createOllamaClient } from './ai/llm/client.ts';
+import { filterChat } from './ai/llm/filter.ts';
+import { createGeneral } from './ai/llm/general.ts';
 import { createScriptedBot, OPPONENTS, STRATEGIES, TRAINING } from './ai/scripted.ts';
+import { createChatPanel } from './render/chat.ts';
 import { createSession, tickSession } from './harness/session.ts';
 import { createStats, recordStats } from './harness/stats.ts';
 import { attachSummaryHover, summaryHtml } from './render/summary.ts';
@@ -15,11 +22,22 @@ import { boxSelect, describeAt, describeMode, key, modeClick, pickOwn, rightClic
 import { applyCommand, factionView, issue, spawnUnit, TICK_RATE, TILE, toReplay, type Command } from './sim/index.ts';
 
 const params = new URLSearchParams(location.search);
-const strategy = OPPONENTS[params.get('ai') ?? 'training'] ?? TRAINING;
+const aiParam = params.get('ai') ?? 'training';
+const blind = aiParam === 'blind';
+// Outside the sim, so Math.random is fine: the blind pick must not be guessable from the seed.
+const useLlm = aiParam === 'llm' || (blind && Math.random() < 0.5);
+const strategy = useLlm || blind ? STRATEGIES[params.get('base') ?? 'boom'] ?? STRATEGIES.boom! : OPPONENTS[aiParam] ?? TRAINING;
 const seed = Number(params.get('seed') ?? Date.now() % 100000);
 const humanBot = STRATEGIES[params.get('human') ?? ''];
+// Ollama model names use only these characters; anything else is dropped (the name is shown in HTML).
+const model = (params.get('model') ?? 'qwen3:8b').replace(/[^\w.:/-]/g, '');
+const ollama = params.get('ollama');
+const general = useLlm
+  ? createGeneral('ai', createLlmBrain(createOllamaClient({ model, think: false, ...(ollama ? { url: ollama } : {}) }), 'ai'), strategy, { seed })
+  : null;
+const aiName = blind ? 'AI (blind test)' : general ? `The Model (${model})` : `AI (${strategy.name})`;
 const session = createSession({ seed, controllers: {
-  ai: createScriptedBot('ai', strategy, seed),
+  ai: general ?? createScriptedBot('ai', strategy, seed),
   ...(humanBot ? { human: createScriptedBot('human', humanBot, seed) } : {}),
 } });
 const { game } = session;
@@ -51,7 +69,8 @@ app.stage.addChild(stage, box);
 const hudRoot = document.createElement('div');
 hudRoot.id = 'hud';
 document.body.appendChild(hudRoot);
-const hud = createHud(hudRoot, `AI (${strategy.name})`);
+const hud = createHud(hudRoot, aiName);
+const chat = createChatPanel(hudRoot, 'The Model', TICK_RATE);
 
 // Camera: world units -> screen pixels.
 const cam = { x: 0, y: 0, zoom: 1 };
@@ -166,6 +185,8 @@ window.addEventListener('keydown', (e) => {
 // Fixed-timestep loop: the sim advances at TICK_RATE × speed regardless of frame rate.
 let accumulator = 0;
 let seenRejections = 0;
+let seenTurns = 0;
+let offlineWarned = false;
 const stats = createStats();
 let summaryShown = false;
 app.ticker.add((ticker) => {
@@ -186,6 +207,16 @@ app.ticker.add((ticker) => {
     }
     if (steps >= 8) accumulator = 0;
   }
+  // The General's turns: taunts go to the chat panel (filtered); chat never becomes commands.
+  for (; general && seenTurns < general.log.length; seenTurns++) {
+    const turn = general.log[seenTurns]!;
+    if (turn.fallback === 'error' && !offlineWarned) {
+      offlineWarned = true;
+      const note = `General offline (${turn.errors[0] ?? 'no reply'}): its base plays on as the scripted bot`;
+      if (blind) console.warn(note); else hud.message(note);
+    }
+    if (!blind) for (const m of turn.chat) { const clean = filterChat(m); if (clean) chat.push(turn.tick, clean); }
+  }
   for (; seenRejections < game.rejected.length; seenRejections++) {
     const r = game.rejected[seenRejections]!;
     if (r.cmd.faction === 'human' && !humanBot) hud.message(`✗ ${r.cmd.command.type}: ${r.reason}`);
@@ -203,7 +234,8 @@ app.ticker.add((ticker) => {
   hud.update(world, view, ui.selected, describeMode(ui.mode), speed, paused, Math.round(app.ticker.FPS));
   if (world.winner && !summaryShown) {
     summaryShown = true;
-    hud.showSummary(summaryHtml(stats, world.winner), (el) => {
+    const reveal = blind ? `<p><b>Blind test:</b> you played ${general ? `the LLM General (${model})` : `the scripted ${strategy.name} bot`}.</p>` : '';
+    hud.showSummary(reveal + summaryHtml(stats, world.winner), (el) => {
       attachSummaryHover(el, stats);
       el.querySelector('#save-replay')?.addEventListener('click', () => {
         // Seed + command log + versions: enough to re-run the match exactly.

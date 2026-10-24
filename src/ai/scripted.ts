@@ -78,6 +78,11 @@ const CORE: Record<Faction, BuildingTypeId> = { human: 'noc', ai: 'primary_clust
 const WORKER: Record<Faction, UnitTypeId> = { human: 'field_engineer', ai: 'maintenance_drone' };
 const DEFENSE: Record<Faction, BuildingTypeId> = { human: 'security_post', ai: 'sentry_gun' };
 /**
+ * A site is guarded while enemy combat units or static defenses are seen within `range` of it. Workers
+ * don't go to claim it, and the bot remembers it for `memoryTicks` after the guards drop out of sight.
+ */
+const GUARD = { range: 6 * TILE, memoryTicks: 60 * 20 };
+/**
  * Spare Data: production speed comes from Compute, shared by all production buildings, so a bot banking
  * more than `data` adds Server Racks (+Compute, up to its strategy's `spareRacks`) while `powerFree` Power is left.
  */
@@ -103,6 +108,10 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
   // neither repeats an order nor spends the same Data twice.
   const pendingUntil = new Map<number, number>(); // unit or building id -> last tick its order may be unseen
   let reserved: { until: number; cost: number }[] = [];
+  /** Site id -> last tick it counts as guarded (sending lone workers there just feeds them to the guards). */
+  const guardedUntil = new Map<string, number>();
+  /** Units sent to attack-move at a threat (no-micro defense), so they aren't re-ordered on the way. */
+  const defending = new Set<number>();
 
   const bot: ScriptedBot = {
     name: `${initial.name}${initial.focusFire || initial.counterBuild ? '' : '-sloppy'}`,
@@ -146,7 +155,10 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
         .sort((a, b) => dist2(a.x, a.y, core.x, core.y) - dist2(b.x, b.y, core.x, core.y) || a.id - b.id);
       // Only units not already fighting a threat get orders: at the APM cap, re-issuing the same order
       // every decision would starve production and worker jobs.
-      const defenders = army.filter((u) => !pending(u.id) && !threats.some((t) => t.id === u.target));
+      for (const id of defending) {
+        if (!pending(id) && !army.some((u) => u.id === id && u.order === 'attackMove')) defending.delete(id);
+      }
+      const defenders = army.filter((u) => !pending(u.id) && !defending.has(u.id) && !threats.some((t) => t.id === u.target));
       if (threats.length > 0 && defenders.length > 0) {
         if (strategy.focusFire) {
           for (const role of ['fast', 'ranged', 'tank'] as const) {
@@ -154,9 +166,12 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
             if (group.length > 0) order({ type: 'attack', units: group, target: pickTarget(role, threats).id }, group);
           }
         } else {
+          // No micro, but head for the threat: attack-moving to our own core left defenders idle there
+          // whenever attackers stood just out of their sight.
           const ids = defenders.map((u) => u.id);
-          const at = strategy.guardOutposts ? threats[0]! : core;
-          order({ type: 'attackMove', units: ids, x: at.x, y: at.y }, ids);
+          const t = threats[0]!; // nearest to the core (threats are sorted)
+          for (const id of ids) defending.add(id);
+          order({ type: 'attackMove', units: ids, x: t.x, y: t.y }, ids);
         }
       }
 
@@ -207,11 +222,16 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
         order({ type: 'train', building: core.id, unit: WORKER[faction] }, [core.id], UNITS[WORKER[faction]].cost);
       }
 
-      // 5. Jobs for idle workers.
+      // 5. Jobs for idle workers, away from guarded sites.
+      const guards = [...v.enemyUnits.filter((e) => e.role !== 'worker'), ...v.enemyBuildings.filter((b) => Object.values(DEFENSE).includes(b.type))];
+      for (const s of v.sites) {
+        if (guards.some((g) => dist2(g.x, g.y, s.x, s.y) < GUARD.range ** 2)) guardedUntil.set(s.id, v.tick + GUARD.memoryTicks);
+      }
+      const guarded = new Set([...guardedUntil].filter(([, until]) => until >= v.tick).map(([id]) => id));
       for (const w of workers) {
         if (w.order !== 'idle' || busy.has(w.id)) continue;
         const wantRelay = SIGNAL.enabled && faction === 'ai' && value(army) >= attackValue;
-        const job = nextJob(v, faction, strategy, core, prod, busy, rng, towardCenter, wantRelay);
+        const job = nextJob(v, faction, strategy, core, prod, busy, rng, towardCenter, wantRelay, guarded);
         if (!job) break;
         busy.set(w.id, job.key);
         if ('units' in job.cmd) job.cmd.units = [w.id];
@@ -283,7 +303,7 @@ type Job = { key: string; cmd: Command & { units?: number[] } };
 function nextJob(
   v: FactionView, faction: Faction, s: Strategy, core: FactionView['buildings'][number],
   prod: FactionView['buildings'][number] | undefined, busy: Map<number, string>, rng: Rng, toward: number,
-  wantRelay = false,
+  wantRelay = false, guarded: Set<string> = new Set(),
 ): Job | null {
   const taken = new Set(busy.values());
   const enemyCore = v.sites.find((x) => x.kind === 'core' && !(x.x === core.x && x.y === core.y));
@@ -331,7 +351,7 @@ function nextJob(
 
   // Claim (or retake) the nearest site on our half or in the center.
   const sites = v.sites
-    .filter((x) => x.kind !== 'core' && x.owner !== faction && !taken.has(`claim:${x.id}`)
+    .filter((x) => x.kind !== 'core' && x.owner !== faction && !taken.has(`claim:${x.id}`) && !guarded.has(x.id)
       // Workers stay on our half and the center; the far half is enemy territory.
       && (!enemyCore || dist2(x.x, x.y, core.x, core.y) <= dist2(x.x, x.y, enemyCore.x, enemyCore.y)))
     .sort((a, b) => dist2(a.x, a.y, core.x, core.y) - dist2(b.x, b.y, core.x, core.y)

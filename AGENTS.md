@@ -43,6 +43,7 @@ npm run build
 # Visual checks: with `npm run dev` running, open (or screenshot headless) e.g.
 # http://localhost:5173/?seed=3&human=boom&ai=turtle&autostart&skip=40
 # human=<strategy> lets a bot play your side, autostart skips the start screen, skip=N fast-forwards N seconds.
+# Play the LLM General (needs `ollama serve`): http://localhost:5173/?ai=llm&model=qwen3:8b  · blind test: ?ai=blind
 ```
 
 ## Definition of done

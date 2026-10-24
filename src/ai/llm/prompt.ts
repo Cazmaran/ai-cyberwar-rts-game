@@ -51,6 +51,7 @@ export function systemPrompt(faction: Faction): string {
     '- Train only what economy.data covers; the rest of your Data is spent by your base between turns.',
     '- Attack when your army clearly outweighs what you have seen of the enemy. Otherwise build up, and defend sectors under threat.',
     '- Counter what you see: weight your army mix toward the units that beat the enemy units in the digest (see "Enemy units").',
+    '- Talk: about once a minute, add a taunt in character to needle or bluff your opponent. One short sentence; no links.',
     '',
     'Tools:',
     ...tools,

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { createGeneral, directed, type Brain } from '../src/ai/llm/general.ts';
+import { createGeneral, DEFAULT_LATENCY, directed, measuredLatencies, TURN_TIMEOUT, type Brain } from '../src/ai/llm/general.ts';
 import { createScriptedBot, STRATEGIES } from '../src/ai/scripted.ts';
 import { runMatch } from '../src/harness/match.ts';
+import { createSession, tickSession } from '../src/harness/session.ts';
+import { FAIRNESS } from '../src/sim/index.ts';
 import type { Controller } from '../src/ai/controller.ts';
 
-// Phase 2 (M2.3): LLM turns steer a scripted operational layer; bad or missing turns fall back to it.
+// Phase 2 (M2.3, M2.3b): LLM turns steer a scripted operational layer after a latency; bad, missing or late turns fall back to it.
 const boom = STRATEGIES.boom!;
 const match = (ai: Controller, minutes = 6) => runMatch({
   seed: 5, maxTicks: minutes * 60 * 20, human: createScriptedBot('human', boom, 5), ai,
@@ -26,15 +28,45 @@ describe('LLM General', () => {
     expect(general.log.every((t) => t.fallback === why)).toBe(true);
   });
 
-  it('applies every ordered command despite the APM cap, ahead of scripted orders', () => {
+  it('applies every ordered command after its latency, one per decision, ahead of scripted orders', () => {
     const brain: Brain = ({ tick }) => tick === 0
-      ? turnOf({ tool: 'train', args: { unit: 'maintenance_drone', count: 1 } }, { tool: 'expand', args: {} }, { tool: 'taunt', args: { message: 'hello, meat' } })
+      ? turnOf({ tool: 'train', args: { unit: 'maintenance_drone', count: 2 } }, { tool: 'taunt', args: { message: 'hello, meat' } })
       : turnOf({ tool: 'wait', args: {} });
     const general = createGeneral('ai', brain, boom, { seed: 5 });
     const game = match(general, 1);
-    const ai = game.log.filter((c) => c.faction === 'ai').map((c) => c.command.type);
-    expect(ai.slice(0, 2)).toEqual(['train', 'expand']);
-    expect(general.log[0]).toMatchObject({ tick: 0, fallback: null, errors: [], chat: ['hello, meat'] });
+    // Reply lands at tick 40 (2 s); each command then waits the reaction delay.
+    const firstAt = (tick: number) => game.log.find((c) => c.faction === 'ai' && c.tick === tick)?.command;
+    expect(firstAt(DEFAULT_LATENCY + FAIRNESS.reactionDelay)).toMatchObject({ type: 'train', unit: 'maintenance_drone' });
+    expect(firstAt(DEFAULT_LATENCY + 2 * FAIRNESS.reactionDelay)).toMatchObject({ type: 'train', unit: 'maintenance_drone' });
+    expect(general.log[0]).toMatchObject({ tick: 0, latency: DEFAULT_LATENCY, fallback: null, errors: [], chat: ['hello, meat'] });
+  });
+
+  it('draws latency from measured samples, seeded', () => {
+    const brain: Brain = () => turnOf({ tool: 'wait', args: {} });
+    const play = () => {
+      const g = createGeneral('ai', brain, boom, { seed: 5, latency: [20, 60] });
+      match(g, 8);
+      return measuredLatencies(g.log);
+    };
+    const a = play();
+    expect(new Set(a)).toEqual(new Set([20, 60]));
+    expect(play()).toEqual(a);
+  });
+
+  it('a reply slower than the timeout is late, and play stays plain scripted', () => {
+    const brain: Brain = () => turnOf({ tool: 'set_army_mix', args: { fast: 0, ranged: 0, tank: 0 } });
+    const general = createGeneral('ai', brain, boom, { seed: 5, latency: [TURN_TIMEOUT + 20] });
+    expect(match(general).log).toEqual(match(createScriptedBot('ai', boom, 5)).log);
+    expect(general.log.every((t) => t.fallback === 'late' && t.latency === null)).toBe(true);
+  });
+
+  it('an async reply applies at the first decision after it arrives, with that latency logged', async () => {
+    const general = createGeneral('ai', () => Promise.resolve(turnOf({ tool: 'expand', args: {} })), boom, { seed: 5 });
+    const session = createSession({ seed: 5, controllers: { human: createScriptedBot('human', boom, 5), ai: general } });
+    tickSession(session);
+    await new Promise((r) => setTimeout(r, 0));
+    while (session.game.world.tick < 30) tickSession(session);
+    expect(general.log[0]).toMatchObject({ tick: 0, latency: session.interval, fallback: null });
   });
 
   it('keeps valid orders when some are invalid, and logs the rejects', () => {

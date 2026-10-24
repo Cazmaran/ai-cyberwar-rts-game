@@ -74,6 +74,8 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
   // neither repeats an order nor spends the same Data twice.
   const pendingUntil = new Map<number, number>(); // unit or building id -> last tick its order may be unseen
   let reserved: { until: number; cost: number }[] = [];
+  /** Units sent to attack-move at a threat (no-micro defense), so they aren't re-ordered on the way. */
+  const defending = new Set<number>();
 
   const bot: ScriptedBot = {
     name: `${initial.name}${initial.focusFire || initial.counterBuild ? '' : '-sloppy'}`,
@@ -117,7 +119,10 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
         .sort((a, b) => dist2(a.x, a.y, core.x, core.y) - dist2(b.x, b.y, core.x, core.y) || a.id - b.id);
       // Only units not already fighting a threat get orders: at the APM cap, re-issuing the same order
       // every decision would starve production and worker jobs.
-      const defenders = army.filter((u) => !pending(u.id) && !threats.some((t) => t.id === u.target));
+      for (const id of defending) {
+        if (!pending(id) && !army.some((u) => u.id === id && u.order === 'attackMove')) defending.delete(id);
+      }
+      const defenders = army.filter((u) => !pending(u.id) && !defending.has(u.id) && !threats.some((t) => t.id === u.target));
       if (threats.length > 0 && defenders.length > 0) {
         if (strategy.focusFire) {
           for (const role of ['fast', 'ranged', 'tank'] as const) {
@@ -125,9 +130,12 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
             if (group.length > 0) order({ type: 'attack', units: group, target: pickTarget(role, threats).id }, group);
           }
         } else {
+          // No micro, but head for the threat: attack-moving to our own core left defenders idle there
+          // whenever attackers stood just out of their sight.
           const ids = defenders.map((u) => u.id);
-          const at = strategy.guardOutposts ? threats[0]! : core;
-          order({ type: 'attackMove', units: ids, x: at.x, y: at.y }, ids);
+          const t = threats[0]!; // nearest to the core (threats are sorted)
+          for (const id of ids) defending.add(id);
+          order({ type: 'attackMove', units: ids, x: t.x, y: t.y }, ids);
         }
       }
 

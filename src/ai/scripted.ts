@@ -52,10 +52,15 @@ const CORE: Record<Faction, BuildingTypeId> = { human: 'noc', ai: 'primary_clust
 const WORKER: Record<Faction, UnitTypeId> = { human: 'field_engineer', ai: 'maintenance_drone' };
 const DEFENSE: Record<Faction, BuildingTypeId> = { human: 'security_post', ai: 'sentry_gun' };
 
-export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1): Controller {
+/** A scripted bot whose strategy can be swapped between decisions (the LLM General steers it this way). */
+export interface ScriptedBot extends Controller {
+  strategy: Strategy;
+}
+
+export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1): ScriptedBot {
   const rng = createRng(seed);
   // Small per-seed variation so batch matches differ.
-  const attackValue = strategy.attackValue + 50 * rng.int(-1, 2);
+  const attackJitter = 50 * rng.int(-1, 2);
   const busy = new Map<number, string>(); // worker id -> job key
   let attacking = false;
   let rallySet = false;
@@ -68,9 +73,12 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
   const pendingUntil = new Map<number, number>(); // unit or building id -> last tick its order may be unseen
   let reserved: { until: number; cost: number }[] = [];
 
-  return {
-    name: `${strategy.name}${strategy.focusFire || strategy.counterBuild ? '' : '-sloppy'}`,
+  const bot: ScriptedBot = {
+    name: `${initial.name}${initial.focusFire || initial.counterBuild ? '' : '-sloppy'}`,
+    strategy: initial,
     decide(raw: FactionView): Command[] {
+      const strategy = bot.strategy;
+      const attackValue = strategy.attackValue + attackJitter;
       const out: Command[] = [];
       reserved = reserved.filter((r) => r.until >= raw.tick);
       const v = { ...raw, data: raw.data - reserved.reduce((sum, r) => sum + r.cost, 0) };
@@ -151,7 +159,7 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
         }
         if (prod.queue.length < 2 && !pending(prod.id)) {
           const unit = pickArmyUnit(faction, strategy.counterBuild ? counterMix(strategy, seen) : strategy, army);
-          if (v.data >= UNITS[unit].cost) order({ type: 'train', building: prod.id, unit }, [prod.id], UNITS[unit].cost);
+          if (unit && v.data >= UNITS[unit].cost) order({ type: 'train', building: prod.id, unit }, [prod.id], UNITS[unit].cost);
         }
       }
 
@@ -185,6 +193,7 @@ export function createScriptedBot(faction: Faction, strategy: Strategy, seed = 1
       return out;
     },
   };
+  return bot;
 }
 
 /** The weakest enemy this role counters, else the weakest enemy. */
@@ -216,8 +225,9 @@ function counterMix(s: Strategy, seen: Record<Exclude<Role, 'worker'>, number>):
   return { ...s, mix };
 }
 
-function pickArmyUnit(faction: Faction, s: Strategy, army: UnitView[]): UnitTypeId {
-  let best: Exclude<Role, 'worker'> = 'fast';
+/** Next army unit by mix weight; null when every weight is zero (army production paused). */
+function pickArmyUnit(faction: Faction, s: Strategy, army: UnitView[]): UnitTypeId | null {
+  let best: Exclude<Role, 'worker'> | null = null;
   let bestScore = Infinity;
   for (const role of ['fast', 'ranged', 'tank'] as const) {
     const weight = s.mix[role] ?? 0;
@@ -225,7 +235,7 @@ function pickArmyUnit(faction: Faction, s: Strategy, army: UnitView[]): UnitType
     const score = army.filter((u) => u.role === role).length / weight;
     if (score < bestScore) { bestScore = score; best = role; }
   }
-  return ARMY_UNITS[faction][best];
+  return best ? ARMY_UNITS[faction][best] : null;
 }
 
 type Job = { key: string; cmd: Command & { units?: number[] } };

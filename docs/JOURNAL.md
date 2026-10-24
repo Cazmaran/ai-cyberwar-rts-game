@@ -2,6 +2,13 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-24 — A General with a safety net
+
+- M2.3: the General now plays whole matches. Every 20 s its brain reads the digest and gives orders; between turns the scripted bot runs the base, following the General's build plan and army mix. Attacks are the General's call.
+- Neat test: a brain that never answers, answers garbage, or throws produces exactly the same command log as the plain scripted bot. The fallback is provably the scripted AI, not something close to it.
+- Surprise: at the 120 APM cap the harness only applies about one command per decision, so a turn with five orders would have lost four. The General now queues its orders and releases one per decision, ahead of the scripted ones.
+- Next: M2.3b (latency measured in ticks) and M2.4 (Ollama / cloud client), then the first real LLM match.
+
 ## 2026-10-24 — The General gets its orders
 
 - M2.2: the LLM General now has a fixed set of tools (attack, defend, retreat, expand, train, build plan, army mix, rally, Pull the Plug for humans, taunt, wait). Tools are data, so one spec feeds Ollama, Claude and a single JSON turn schema.

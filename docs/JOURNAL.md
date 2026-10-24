@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-24 — Thinking takes time
+
+- M2.3b: the General's orders now land some ticks after it was asked, never on the same tick. It plans from a digest that is already a little old, and its orders are checked against the state when they arrive.
+- A real LLM call (a Promise) applies at the first decision after it answers, and that wait is logged. Feeding those logged waits back as `latency` samples makes headless matches feel the same delay as live play, while staying deterministic.
+- Next: M2.4, the Ollama / cloud client.
+
 ## 2026-10-24 — A General with a safety net
 
 - M2.3: the General now plays whole matches. Every 20 s its brain reads the digest and gives orders; between turns the scripted bot runs the base, following the General's build plan and army mix. Attacks are the General's call.

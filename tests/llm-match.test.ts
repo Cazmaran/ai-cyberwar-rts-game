@@ -3,6 +3,10 @@ import { createGeneral, type TurnLog } from '../src/ai/llm/general.ts';
 import { turnStats } from '../src/ai/llm/stats.ts';
 import { createScriptedBot, STRATEGIES } from '../src/ai/scripted.ts';
 import { runMatch, runMatchAsync } from '../src/harness/match.ts';
+import { attackEveryTurn } from '../src/ai/llm/control.ts';
+import { pressureTest } from '../src/harness/balance.ts';
+import { digestView, factionView } from '../src/sim/index.ts';
+import { newGame } from './helpers.ts';
 
 // Phase 2: full matches against a real (async) model, and the Gate 2 numbers from its turn log.
 const boom = STRATEGIES.boom!;
@@ -32,6 +36,20 @@ describe('async LLM matches', () => {
     const general = createGeneral('ai', slow, boom, { seed: 2, lockstep: true, timeout: 2 });
     await runMatchAsync({ seed: 2, maxTicks: 30, human: createScriptedBot('human', boom, 2), ai: general });
     expect(general.log[0]).toMatchObject({ fallback: 'late', latency: null });
+  });
+});
+
+describe('Gate 2 control (D-018)', () => {
+  it('orders an attack on the enemy core every turn', () => {
+    const d = digestView(factionView(newGame().world, 'ai'));
+    expect(JSON.parse(attackEveryTurn({ tick: 0, digest: d }) as string)).toEqual({ orders: [{ tool: 'attack_sector', args: { sector: 'W' } }] });
+  });
+
+  it('pressure test plays the control against every strategy on both sides', () => {
+    const r = pressureTest(1, 2);
+    expect(r).toHaveLength(Object.keys(STRATEGIES).length * 2);
+    for (const x of r) expect(x.controlWinPct).toBeGreaterThanOrEqual(0);
+    expect(r.every((x) => x.controlWinPct <= 100)).toBe(true);
   });
 });
 

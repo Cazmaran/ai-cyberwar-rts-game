@@ -1,4 +1,5 @@
 // Balance measurements (Tenet 4): equal-cost duels, strategy tournament, skill test.
+import { createControl } from '../ai/llm/control.ts';
 import { createScriptedBot, STRATEGIES, type Strategy } from '../ai/scripted.ts';
 import {
   advance, applyCommand, createGame, createRng, spawnUnit, TILE, UNITS, units, type Faction, type Role, type UnitTypeId,
@@ -113,6 +114,27 @@ export function skillTest(strategy: Strategy, seeds: number, minutes = 20, skill
     }
   }
   return Math.round((100 * score) / (4 * seeds));
+}
+
+/**
+ * Pressure test (D-018): the attack-every-turn control (boom base) against each scripted strategy, on both
+ * sides. Returns the control's win % per strategy and side; target at most 60%.
+ */
+export function pressureTest(seeds: number, minutes = 20, strategies: Strategy[] = Object.values(STRATEGIES)): { strategy: string; side: Faction; controlWinPct: number }[] {
+  const out: { strategy: string; side: Faction; controlWinPct: number }[] = [];
+  for (const s of strategies) {
+    for (const side of ['human', 'ai'] as const) {
+      let score = 0;
+      for (let seed = 1; seed <= seeds; seed++) {
+        const control = createControl(side === 'human' ? 'ai' : 'human', STRATEGIES.boom!, seed);
+        const bot = createScriptedBot(side, s, seed * 7919);
+        const r = runMatch({ seed, maxTicks: minutes * 60 * 20, human: side === 'human' ? bot : control, ai: side === 'ai' ? bot : control });
+        score += r.winner === null ? 1 : r.winner !== side ? 2 : 0;
+      }
+      out.push({ strategy: s.name, side, controlWinPct: Math.round((100 * score) / (2 * seeds)) });
+    }
+  }
+  return out;
 }
 
 export function countUnits(game: ReturnType<typeof createGame>, faction: Faction): number {

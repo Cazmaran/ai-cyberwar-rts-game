@@ -153,7 +153,10 @@ Timeboxes assume ~8 hrs/week. Overrunning a timebox by 50% triggers an owner rev
   - ✅ Runner: `npm run llm-match` plays full headless matches against a real model (lockstep: the sim waits for the reply, which then costs its measured latency in ticks), with `--control` for an attack-every-turn baseline.
   - First numbers (qwen3:8b, 3090, 10 seeds per strategy): LLM wins 80% / 90% / 100% vs boom / rush / turtle; 0 invalid orders out of 1,725; p95 latency 1.5 s. But the attack-every-turn control scores 90% / 80% / 100%, so the win rate does not yet show judgment (see JOURNAL).
 - **Gate 2 criteria:**
-  - Best local model beats scripted AI in ≥55% of headless matches.
+  - Win criteria (D-018), all on ≥30 seeds per opponent:
+    - Scripted bots survive pressure: the attack-every-turn control wins ≤60% against each strategy, on each side.
+    - Scripted mirrors are fair: each side wins 40–60%.
+    - Best local model's pooled win rate is ≥15 points above the control's on the same seeds.
   - Invalid-command rate <2%; p95 decision latency <3 s.
   - Owner blind test: LLM General feels noticeably different from scripted AI.
   - **Owner decision:** default model tier and whether cloud mode is in scope.

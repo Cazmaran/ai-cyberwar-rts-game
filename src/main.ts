@@ -18,6 +18,7 @@ import { drawWorld } from './render/draw.ts';
 import { createHud } from './render/hud.ts';
 import { buildCard } from './render/card.ts';
 import { createEffects, drawEffects, intel, updateEffects } from './render/effects.ts';
+import { createMood, createMusic, fighting, updateMood } from './render/music.ts';
 import { boxSelect, describeAt, describeMode, key, modeClick, pickOwn, rightClick, selectSameType, type UiState } from './render/input.ts';
 import { applyCommand, factionView, issue, spawnUnit, TICK_RATE, TILE, toReplay, type Command } from './sim/index.ts';
 
@@ -164,6 +165,12 @@ canvas.addEventListener('wheel', (e) => {
   cam.y = wy - e.offsetY / cam.zoom;
 }, { passive: false });
 
+// Music needs a user gesture before it may play; the Start button click is the usual one.
+const music = createMusic();
+const mood = createMood();
+window.addEventListener('pointerdown', () => music.start());
+window.addEventListener('keydown', () => music.start());
+
 const held = new Set<string>();
 window.addEventListener('keyup', (e) => held.delete(e.key));
 window.addEventListener('keydown', (e) => {
@@ -173,6 +180,7 @@ window.addEventListener('keydown', (e) => {
   if (k === '+' || k === '=') { speed = Math.min(4, speed * 2); return; }
   if (k === '-') { speed = Math.max(0.5, speed / 2); return; }
   if (k === 't') { hud.toggleTextView(); return; }
+  if (k === 'm') { hud.message(music.toggleMute() ? '♪ Music on' : '♪ Music off'); return; }
   if (k === 'home') { fit(); return; }
   if (e.ctrlKey && k === 'a') {
     e.preventDefault();
@@ -229,6 +237,7 @@ app.ticker.add((ticker) => {
   drawWorld(g, world, view, ui.selected);
   const now = performance.now();
   for (const a of updateEffects(fx, view, now)) hud.alert(a);
+  music.setCombat(world.winner === null && updateMood(mood, fighting(view), now));
   drawEffects(fxLayer, view, fx, now);
   hud.setIntel(intel(view));
   hud.update(world, view, ui.selected, describeMode(ui.mode), speed, paused, Math.round(app.ticker.FPS));

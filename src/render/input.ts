@@ -55,15 +55,25 @@ export function pickOwn(view: FactionView, x: number, y: number): number | null 
 
 /** Double-click: every own unit of the clicked unit's type inside the visible area (corners in world units). */
 export function selectSameType(view: FactionView, id: number, [x0, y0]: [number, number], [x1, y1]: [number, number]): number[] {
+  return sameTypeWhere(view, id, (x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1);
+}
+
+/** Same as selectSameType, for any visible-area test (tilted or isometric views aren't world rectangles). */
+export function sameTypeWhere(view: FactionView, id: number, inside: (x: number, y: number) => boolean): number[] {
   const type = view.units.find((u) => u.id === id)?.type;
   if (!type) return [];
-  return view.units.filter((u) => u.type === type && u.x >= x0 && u.x <= x1 && u.y >= y0 && u.y <= y1).map((u) => u.id);
+  return view.units.filter((u) => u.type === type && inside(u.x, u.y)).map((u) => u.id);
 }
 
 export function boxSelect(view: FactionView, x0: number, y0: number, x1: number, y1: number): number[] {
   const [lx, hx] = [Math.min(x0, x1), Math.max(x0, x1)];
   const [ly, hy] = [Math.min(y0, y1), Math.max(y0, y1)];
-  const inBox = view.units.filter((u) => u.x >= lx && u.x <= hx && u.y >= ly && u.y <= hy);
+  return boxSelectWhere(view, (x, y) => x >= lx && x <= hx && y >= ly && y <= hy);
+}
+
+/** Box selection for any box shape (the renderer decides what is inside the dragged screen box). */
+export function boxSelectWhere(view: FactionView, inside: (x: number, y: number) => boolean): number[] {
+  const inBox = view.units.filter((u) => inside(u.x, u.y));
   // Prefer combat units when a box catches both, like most RTS games.
   const army = inBox.filter((u) => u.role !== 'worker');
   return (army.length > 0 ? army : inBox).map((u) => u.id);

@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-24 — A line to a real model
+
+- M2.4 (local half): the General can now talk to a model through Ollama. The reply is forced into the turn schema (structured output), the prompt is fixed per faction, and the only thing that changes turn to turn is the digest. A request that fails or times out just means the scripted bot plays that turn.
+- The prompt came out at about 2,500 characters plus a 1,400-character digest: small enough for an 8B local model.
+- Not yet tried against a live model: Ollama isn't installed on the dev machine yet. `npm run llm-turn` is the first thing to run once it is.
+
 ## 2026-10-24 — Thinking takes time
 
 - M2.3b: the General's orders now land some ticks after it was asked, never on the same tick. It plans from a digest that is already a little old, and its orders are checked against the state when they arrive.

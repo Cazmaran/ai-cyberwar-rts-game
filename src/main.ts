@@ -3,9 +3,9 @@
 // LLM General: ?ai=llm&model=qwen3:8b[&base=boom][&ollama=http://localhost:11434] (needs `ollama serve`; if the
 // model is unreachable the General's base plays on as the scripted bot). Blind test (Gate 2): ?ai=blind picks
 // the LLM General or scripted boom at random, hides which and hides chat, and reveals it after the match.
+// &renderer=pixi|three|iso picks the view (M4.0 renderer spike, D-017); pixi (top-down 2D) is the default.
 // Testing: &human=rush|boom|turtle lets a bot play your side (to watch or screenshot), &autostart skips the start screen,
 // &skip=60 fast-forwards 60 seconds before the first frame.
-import { Application, Container, Graphics } from 'pixi.js';
 import { createLlmBrain, createOllamaClient } from './ai/llm/client.ts';
 import { filterChat } from './ai/llm/filter.ts';
 import { createGeneral } from './ai/llm/general.ts';
@@ -14,12 +14,12 @@ import { createChatPanel } from './render/chat.ts';
 import { createSession, tickSession } from './harness/session.ts';
 import { createStats, recordStats } from './harness/stats.ts';
 import { attachSummaryHover, summaryHtml } from './render/summary.ts';
-import { drawWorld } from './render/draw.ts';
 import { createHud } from './render/hud.ts';
 import { buildCard } from './render/card.ts';
-import { createEffects, drawEffects, intel, updateEffects } from './render/effects.ts';
+import { createEffects, intel, updateEffects } from './render/effects.ts';
 import { createMood, createMusic, fighting, updateMood } from './render/music.ts';
-import { boxSelect, describeAt, describeMode, key, modeClick, pickOwn, rightClick, selectSameType, type UiState } from './render/input.ts';
+import { boxSelectWhere, describeAt, describeMode, key, modeClick, pickOwn, rightClick, sameTypeWhere, type UiState } from './render/input.ts';
+import { createRenderer, rendererKind } from './render/renderer.ts';
 import { applyCommand, factionView, issue, spawnUnit, TICK_RATE, TILE, toReplay, type Command } from './sim/index.ts';
 
 const params = new URLSearchParams(location.search);
@@ -56,16 +56,9 @@ if (stress > 0) {
   }
 }
 
-const app = new Application();
-await app.init({ resizeTo: window, background: '#0b0e12', antialias: true });
-document.body.appendChild(app.canvas);
-const stage = new Container();
-const g = new Graphics();
-const fxLayer = new Graphics();
-const box = new Graphics();
-stage.addChild(g, fxLayer);
+const renderer = await createRenderer(rendererKind(params.get('renderer')), world.map.width, world.map.height);
+renderer.fit();
 const fx = createEffects();
-app.stage.addChild(stage, box);
 
 const hudRoot = document.createElement('div');
 hudRoot.id = 'hud';
@@ -73,27 +66,11 @@ document.body.appendChild(hudRoot);
 const hud = createHud(hudRoot, aiName);
 const chat = createChatPanel(hudRoot, 'The Model', TICK_RATE);
 
-// Camera: world units -> screen pixels.
-const cam = { x: 0, y: 0, zoom: 1 };
-/** Fit the map into the screen area right of the guide panel and above the command card. */
-function fit(): void {
-  const left = 320;
-  const bottom = 110;
-  const w = app.screen.width - left;
-  const h = app.screen.height - bottom;
-  cam.zoom = Math.min(w / (world.map.width * TILE), h / (world.map.height * TILE)) * 0.95;
-  cam.x = (world.map.width * TILE) / 2 - (left + w / 2) / cam.zoom;
-  cam.y = (world.map.height * TILE) / 2 - h / 2 / cam.zoom;
-}
-fit();
-const toWorld = (sx: number, sy: number): [number, number] =>
-  [Math.round(cam.x + sx / cam.zoom), Math.round(cam.y + sy / cam.zoom)];
-
 const ui: UiState = { selected: new Set(), mode: { type: 'none' } };
 hud.onNarrowSelection((ids) => { ui.selected = new Set(ids); });
 let cursor: [number, number] = [0, 0];
 let dragStart: [number, number] | null = null;
-let panStart: [number, number, number, number] | null = null;
+let panLast: [number, number] | null = null;
 let paused = stress === 0 && !params.has('autostart');
 if (paused) hud.showStart(() => { paused = false; });
 let speed = 1;
@@ -103,11 +80,20 @@ function send(cmds: Command[]): void {
   for (const c of cmds) issue(game, 'human', c);
 }
 
-const canvas = app.canvas;
+/** Whether a ground point shows up inside a screen rectangle (works for tilted and isometric views too). */
+function onScreenIn(x0: number, y0: number, x1: number, y1: number) {
+  const [lx, hx, ly, hy] = [Math.min(x0, x1), Math.max(x0, x1), Math.min(y0, y1), Math.max(y0, y1)];
+  return (x: number, y: number) => {
+    const [sx, sy] = renderer.toScreen(x, y);
+    return sx >= lx && sx <= hx && sy >= ly && sy <= hy;
+  };
+}
+
+const canvas = renderer.canvas;
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 canvas.addEventListener('pointerdown', (e) => {
-  const p = toWorld(e.offsetX, e.offsetY);
-  if (e.button === 1) { panStart = [e.offsetX, e.offsetY, cam.x, cam.y]; return; }
+  const p = renderer.toWorld(e.offsetX, e.offsetY);
+  if (e.button === 1) { panLast = [e.offsetX, e.offsetY]; return; }
   if (e.button === 2) {
     if (ui.mode.type !== 'none') { ui.mode = { type: 'none' }; return; }
     send(rightClick(factionView(world, 'human'), ui, p[0], p[1]));
@@ -117,52 +103,44 @@ canvas.addEventListener('pointerdown', (e) => {
   dragStart = [e.offsetX, e.offsetY];
 });
 canvas.addEventListener('pointermove', (e) => {
-  cursor = toWorld(e.offsetX, e.offsetY);
-  hud.tooltip(dragStart || panStart ? null : describeAt(factionView(world, 'human'), cursor[0], cursor[1]), e.clientX, e.clientY);
-  if (panStart) {
-    cam.x = panStart[2] - (e.offsetX - panStart[0]) / cam.zoom;
-    cam.y = panStart[3] - (e.offsetY - panStart[1]) / cam.zoom;
+  cursor = renderer.toWorld(e.offsetX, e.offsetY);
+  hud.tooltip(dragStart || panLast ? null : describeAt(factionView(world, 'human'), cursor[0], cursor[1]), e.clientX, e.clientY);
+  if (panLast) {
+    renderer.pan(e.offsetX - panLast[0], e.offsetY - panLast[1]);
+    panLast = [e.offsetX, e.offsetY];
   }
-  box.clear();
-  if (dragStart) {
-    box.rect(Math.min(dragStart[0], e.offsetX), Math.min(dragStart[1], e.offsetY),
-      Math.abs(e.offsetX - dragStart[0]), Math.abs(e.offsetY - dragStart[1])).stroke({ width: 1, color: 0xffffff });
-  }
+  renderer.setBox(dragStart ? { x0: dragStart[0], y0: dragStart[1], x1: e.offsetX, y1: e.offsetY } : null);
 });
 window.addEventListener('pointerup', (e) => {
-  panStart = null;
-  box.clear();
+  panLast = null;
+  renderer.setBox(null);
   if (!dragStart || e.button !== 0) return;
   const view = factionView(world, 'human');
-  const [ax, ay] = toWorld(dragStart[0], dragStart[1]);
-  const [bx, by] = toWorld(e.offsetX, e.offsetY);
   const small = Math.abs(e.offsetX - dragStart[0]) + Math.abs(e.offsetY - dragStart[1]) < 6;
   if (!e.shiftKey) ui.selected.clear();
   if (small) {
+    const [bx, by] = renderer.toWorld(e.offsetX, e.offsetY);
     const id = pickOwn(view, bx, by);
     if (id !== null) ui.selected.add(id);
   } else {
-    for (const id of boxSelect(view, ax, ay, bx, by)) ui.selected.add(id);
+    for (const id of boxSelectWhere(view, onScreenIn(dragStart[0], dragStart[1], e.offsetX, e.offsetY))) ui.selected.add(id);
   }
   dragStart = null;
 });
 canvas.addEventListener('dblclick', (e) => {
   // Select every unit of the clicked type that is on screen (shift adds to the selection).
   const view = factionView(world, 'human');
-  const [x, y] = toWorld(e.offsetX, e.offsetY);
+  const [x, y] = renderer.toWorld(e.offsetX, e.offsetY);
   const id = pickOwn(view, x, y);
   if (id === null) return;
-  const ids = selectSameType(view, id, toWorld(0, 0), toWorld(canvas.clientWidth, canvas.clientHeight));
+  const ids = sameTypeWhere(view, id, onScreenIn(0, 0, canvas.clientWidth, canvas.clientHeight));
   if (ids.length === 0) return;
   if (!e.shiftKey) ui.selected.clear();
   for (const i of ids) ui.selected.add(i);
 });
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
-  const [wx, wy] = toWorld(e.offsetX, e.offsetY);
-  cam.zoom *= e.deltaY < 0 ? 1.12 : 1 / 1.12;
-  cam.x = wx - e.offsetX / cam.zoom;
-  cam.y = wy - e.offsetY / cam.zoom;
+  renderer.zoomAt(e.offsetX, e.offsetY, e.deltaY < 0 ? 1.12 : 1 / 1.12);
 }, { passive: false });
 
 // Music needs a user gesture before it may play; the Start button click is the usual one.
@@ -181,7 +159,7 @@ window.addEventListener('keydown', (e) => {
   if (k === '-') { speed = Math.max(0.5, speed / 2); return; }
   if (k === 't') { hud.toggleTextView(); return; }
   if (k === 'm') { hud.message(music.toggleMute() ? '♪ Music on' : '♪ Music off'); return; }
-  if (k === 'home') { fit(); return; }
+  if (k === 'home') { renderer.fit(); return; }
   if (e.ctrlKey && k === 'a') {
     e.preventDefault();
     ui.selected = new Set(factionView(world, 'human').units.filter((u) => u.role !== 'worker').map((u) => u.id));
@@ -197,15 +175,20 @@ let seenTurns = 0;
 let offlineWarned = false;
 const stats = createStats();
 let summaryShown = false;
-app.ticker.add((ticker) => {
-  const pan = 900 / cam.zoom * (ticker.deltaMS / 1000);
-  if (held.has('ArrowLeft')) cam.x -= pan;
-  if (held.has('ArrowRight')) cam.x += pan;
-  if (held.has('ArrowUp')) cam.y -= pan;
-  if (held.has('ArrowDown')) cam.y += pan;
+let last = performance.now();
+let fps = 60;
+function frame(now: number): void {
+  const deltaMS = Math.min(250, now - last);
+  last = now;
+  if (deltaMS > 0) fps += (1000 / deltaMS - fps) * 0.05;
+
+  // Arrow keys pan at 900 screen pixels per second.
+  const pan = 900 * (deltaMS / 1000);
+  renderer.pan((held.has('ArrowLeft') ? pan : 0) - (held.has('ArrowRight') ? pan : 0),
+    (held.has('ArrowUp') ? pan : 0) - (held.has('ArrowDown') ? pan : 0));
 
   if (!paused && world.winner === null) {
-    accumulator += ticker.deltaMS * speed;
+    accumulator += deltaMS * speed;
     const msPerTick = 1000 / TICK_RATE;
     let steps = 0;
     while (accumulator >= msPerTick && steps++ < 8) {
@@ -232,15 +215,11 @@ app.ticker.add((ticker) => {
 
   const view = factionView(world, 'human');
   for (const id of ui.selected) if (!world.entities.has(id)) ui.selected.delete(id);
-  stage.scale.set(cam.zoom);
-  stage.position.set(-cam.x * cam.zoom, -cam.y * cam.zoom);
-  drawWorld(g, world, view, ui.selected);
-  const now = performance.now();
   for (const a of updateEffects(fx, view, now)) hud.alert(a);
   music.setCombat(world.winner === null && updateMood(mood, fighting(view), now));
-  drawEffects(fxLayer, view, fx, now);
+  renderer.render({ world, view, selected: ui.selected, fx, now });
   hud.setIntel(intel(view));
-  hud.update(world, view, ui.selected, describeMode(ui.mode), speed, paused, Math.round(app.ticker.FPS));
+  hud.update(world, view, ui.selected, describeMode(ui.mode), speed, paused, Math.round(fps));
   if (world.winner && !summaryShown) {
     summaryShown = true;
     const reveal = blind ? `<p><b>Blind test:</b> you played ${general ? `the LLM General (${model})` : `the scripted ${strategy.name} bot`}.</p>` : '';
@@ -261,4 +240,6 @@ app.ticker.add((ticker) => {
     setMode: (m) => { ui.mode = m; },
     select: (ids) => { ui.selected = new Set(ids); },
   }), (b) => send(b.run()));
-});
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);

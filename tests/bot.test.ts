@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScriptedBot, STRATEGIES } from '../src/ai/scripted.ts';
+import { createScriptedBot, STRATEGIES, TRAINING } from '../src/ai/scripted.ts';
 import { runMatch } from '../src/harness/match.ts';
 import { advance, applyCommand, buildings, factionView, FAIRNESS, spawnUnit, TILE, type Command } from '../src/sim/index.ts';
 import { newGame } from './helpers.ts';
@@ -11,6 +11,22 @@ const rushMirror = () => runMatch({
 const orders = (cmds: Command[]) => cmds.filter((c) => c.type === 'attack' || c.type === 'attackMove');
 
 describe('scripted bot', () => {
+  // D-018 pressure test: raiders picked off workers at outlying sites while the army waited at home,
+  // because bots only defended within 12 tiles of the core.
+  it('defends a worker raided far from the core; the training bot does not', () => {
+    const raid = () => {
+      const game = newGame();
+      const noc = buildings(game.world).find((b) => b.type === 'noc')!;
+      spawnUnit(game.world, 'red_team', 'human', noc.x + 2 * TILE, noc.y);
+      spawnUnit(game.world, 'field_engineer', 'human', noc.x + 14 * TILE, noc.y - 8 * TILE);
+      const raider = spawnUnit(game.world, 'botnet_swarm', 'ai', noc.x + 15 * TILE, noc.y - 8 * TILE);
+      return { view: factionView(game.world, 'human'), raider };
+    };
+    const { view, raider } = raid();
+    expect(orders(createScriptedBot('human', STRATEGIES.boom!, 1).decide(view))).toEqual([expect.objectContaining({ target: raider.id })]);
+    expect(orders(createScriptedBot('human', TRAINING, 1).decide(raid().view))).toEqual([]);
+  });
+
   // At the APM cap a bot gets about one action per decision. Re-issuing the same defense order every
   // decision starved production and worker jobs, so defenders lost every early fight (balance journal).
   it('does not re-issue defense orders to units already fighting the threat', () => {

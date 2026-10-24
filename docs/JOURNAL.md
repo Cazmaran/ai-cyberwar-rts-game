@@ -2,6 +2,13 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-24 — Why constant pressure wins
+
+- Goal (D-018): scripted bots should hold off the attack-every-turn control. Traces showed why they don't. The control's first raid arrives around 1:00, kills workers at the outlying sites, and the bot's army waits at home, because it only defended within 12 tiles of its core.
+- Kept: bots now defend workers, buildings and owned sites anywhere on their own half (`guardOutposts`; the gentle training bot is unchanged). The human rush bot now holds the control (90% down to 55%), and the rush mirror is fair (63% down to 50%).
+- Tried and dropped, each measured: an army-first mode after a raid (no gain), bots that never attack (worse), defending by attack-move instead of focus fire (mixed), doubled static-defense damage (no gain).
+- What's left is faction balance, not bot logic. In a plain boom mirror the AI side has its first army out about 45 s earlier (cheap, fast-building units), which lets it raid before humans can answer. And "boom economy plus constant attacks" beats "boom and wait" for both factions, so waiting to attack is the weak habit. Both bots also leave 5-7 workers idle once all sources are claimed.
+
 ## 2026-10-24 — The sim was quietly picking a side
 
 - Chasing the unfair mirrors (D-018), I put identical units on both sides in mirrored positions. They should split 50/50, but the AI side won up to 62% (over 200 seeds).

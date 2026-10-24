@@ -24,6 +24,8 @@ export interface TurnLog {
   latency: number | null;
   reply: unknown;
   calls: ToolCall[];
+  /** Orders rejected by the schema (the invalid-command rate counts these). */
+  rejected: number;
   /** Schema errors and orders that could not be carried out. */
   errors: string[];
   /** Why this cycle runs on plain scripted behavior, if it does. */
@@ -42,6 +44,12 @@ export interface GeneralOptions {
   latency?: number[];
   /** Ticks to wait for a reply before the turn counts as late. */
   timeout?: number;
+  /**
+   * Async brains in headless runs: the harness pauses the sim (`settle`) while a reply is out, and the
+   * reply applies at request tick + its measured wall-clock latency. Off: it applies at the first
+   * decision after it arrives (live play).
+   */
+  lockstep?: boolean;
   name?: string;
 }
 
@@ -79,6 +87,8 @@ interface Pending {
   arrived: boolean;
   reply: unknown;
   crashed: string | null;
+  /** Settles when an async reply arrives. */
+  inflight: Promise<void> | null;
 }
 
 export function createGeneral(faction: Faction, brain: Brain, base: Strategy, opts: GeneralOptions = {}): General {
@@ -96,11 +106,15 @@ export function createGeneral(faction: Faction, brain: Brain, base: Strategy, op
   let outbox: Command[] = [];
 
   function request(view: FactionView): Pending {
-    const p: Pending = { tick: view.tick, readyAt: null, arrived: false, reply: null, crashed: null };
+    const p: Pending = { tick: view.tick, readyAt: null, arrived: false, reply: null, crashed: null, inflight: null };
     try {
       const reply = brain({ tick: view.tick, digest: digestView(view) });
       if (reply instanceof Promise) {
-        reply.then((r) => { p.reply = r; }, (e) => { p.crashed = String(e); }).finally(() => { p.arrived = true; });
+        const start = performance.now();
+        p.inflight = reply.then((r) => { p.reply = r; }, (e) => { p.crashed = String(e); }).finally(() => {
+          p.arrived = true;
+          if (opts.lockstep) p.readyAt = p.tick + Math.max(1, Math.ceil(((performance.now() - start) * TICK_RATE) / 1000));
+        });
       } else {
         p.reply = reply;
         // No reply at all is known at once; an answer takes its (simulated) time.
@@ -116,7 +130,7 @@ export function createGeneral(faction: Faction, brain: Brain, base: Strategy, op
   function resolve(view: FactionView, p: Pending, timedOut: boolean): void {
     const answered = !timedOut && !p.crashed && p.reply !== null && p.reply !== undefined;
     const entry: TurnLog = {
-      tick: p.tick, latency: answered ? view.tick - p.tick : null, reply: p.reply, calls: [], errors: [], fallback: null, chat: [],
+      tick: p.tick, latency: answered ? view.tick - p.tick : null, reply: p.reply, calls: [], rejected: 0, errors: [], fallback: null, chat: [],
     };
     if (p.crashed && !timedOut) {
       entry.fallback = 'error';
@@ -126,6 +140,7 @@ export function createGeneral(faction: Faction, brain: Brain, base: Strategy, op
     } else {
       const { calls, errors } = parseTurn(faction, p.reply);
       entry.calls = calls;
+      entry.rejected = errors.length;
       entry.errors = errors;
       if (calls.length === 0 && errors.length > 0) entry.fallback = 'invalid';
     }
@@ -147,6 +162,7 @@ export function createGeneral(faction: Faction, brain: Brain, base: Strategy, op
   return {
     name: opts.name ?? `general(${base.name})`,
     log,
+    settle: async () => { await pending?.inflight; },
     decide(view: FactionView): Command[] {
       if (!pending && view.tick >= nextTurn) {
         nextTurn = view.tick + interval;

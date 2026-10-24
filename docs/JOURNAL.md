@@ -2,6 +2,13 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-24 — The General's first wars, and a humbling control
+
+- The LLM General played its first 30 full matches: qwen3:8b on the 3090 vs the scripted bots. The sim pauses while the model thinks, but each reply still costs its measured latency in game ticks. About 15 s of wall time per match.
+- On paper it already passes the Gate 2 numbers: it wins 90% overall (80% vs boom, 90% vs rush, 100% vs turtle), with 0 invalid orders out of 1,725 and p95 latency 1.5 s.
+- Then the control. A stub "brain" that only says "attack the enemy core" every turn, with no model at all, also wins 90% (90 / 80 / 100). The LLM's wins come from constant pressure plus the scripted bot running its base, not from its judgment. It did beat the scripted AI on rush (90% vs 40%), but so did the stub.
+- Two lessons. First, the scripted bots wait too long to attack, so relentless pressure beats them; that is a weakness of our opponents, not a strength of the model. Second, "beats the scripted AI" is too easy a bar for Gate 2. A better bar is "beats the attack-every-turn control", ideally on harder opponents.
+
 ## 2026-10-24 — First words from a real General
 
 - Ollama is installed and runs on the RTX 3090 (the 3080 Ti stays free for rendering). qwen3:8b answered every turn with schema-valid orders in about 0.6-1.2 s warm. The first call took 70 s because the model was loading, so the client now asks Ollama to keep it loaded for 30 minutes.

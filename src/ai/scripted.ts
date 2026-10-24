@@ -30,6 +30,16 @@ export interface Strategy {
   attackNotBefore?: number;
   /** Defend workers, buildings and owned sites anywhere on our half, not just the core (D-018 pressure test). */
   guardOutposts?: boolean;
+  /**
+   * Server Racks a bot may add when Data piles up (production is short of Compute, not Data). Off for the
+   * balance strategies: with it, rush snowballed and beat boom and turtle in nearly every match.
+   */
+  spareRacks?: number;
+  /**
+   * After an attack is wiped out, regroup and rebuild to full strength instead of sending reinforcements in
+   * small waves. Off for the balance strategies: on for them it pushed the rush and boom mirrors out of 40-60%.
+   */
+  regroup?: boolean;
 }
 
 export const STRATEGIES: Record<string, Strategy> = {
@@ -41,7 +51,7 @@ export const STRATEGIES: Record<string, Strategy> = {
 /** Gentle opponent for learning the game: slow economy, no micro, attacks late. Not part of balance runs. */
 export const TRAINING: Strategy = {
   name: 'training', workers: 4, racks: 0, barricades: 0, defenses: 0, mix: { fast: 1, ranged: 1, tank: 1 }, attackValue: 500,
-  focusFire: false, counterBuild: false, usePlug: false, attackNotBefore: 8 * 60 * 20,
+  focusFire: false, counterBuild: false, usePlug: false, attackNotBefore: 8 * 60 * 20, spareRacks: 4, regroup: true,
 };
 
 const ARMY_UNITS: Record<Faction, Record<Exclude<Role, 'worker'>, UnitTypeId>> = {
@@ -53,6 +63,11 @@ const PRODUCTION: Record<Faction, BuildingTypeId> = { human: 'soc', ai: 'trainin
 const CORE: Record<Faction, BuildingTypeId> = { human: 'noc', ai: 'primary_cluster' };
 const WORKER: Record<Faction, UnitTypeId> = { human: 'field_engineer', ai: 'maintenance_drone' };
 const DEFENSE: Record<Faction, BuildingTypeId> = { human: 'security_post', ai: 'sentry_gun' };
+/**
+ * Spare Data: production speed comes from Compute, shared by all production buildings, so a bot banking
+ * more than `data` adds Server Racks (+Compute, up to its strategy's `spareRacks`) while `powerFree` Power is left.
+ */
+const SURPLUS = { data: 300 * MILLI, powerFree: 4 };
 
 /** A scripted bot whose strategy can be swapped between decisions (the LLM General steers it this way). */
 export interface ScriptedBot extends Controller {
@@ -74,6 +89,8 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
   // neither repeats an order nor spends the same Data twice.
   const pendingUntil = new Map<number, number>(); // unit or building id -> last tick its order may be unseen
   let reserved: { until: number; cost: number }[] = [];
+  /** Units sent to attack-move at a threat (no-micro defense), so they aren't re-ordered on the way. */
+  const defending = new Set<number>();
 
   const bot: ScriptedBot = {
     name: `${initial.name}${initial.focusFire || initial.counterBuild ? '' : '-sloppy'}`,
@@ -117,7 +134,10 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
         .sort((a, b) => dist2(a.x, a.y, core.x, core.y) - dist2(b.x, b.y, core.x, core.y) || a.id - b.id);
       // Only units not already fighting a threat get orders: at the APM cap, re-issuing the same order
       // every decision would starve production and worker jobs.
-      const defenders = army.filter((u) => !pending(u.id) && !threats.some((t) => t.id === u.target));
+      for (const id of defending) {
+        if (!pending(id) && !army.some((u) => u.id === id && u.order === 'attackMove')) defending.delete(id);
+      }
+      const defenders = army.filter((u) => !pending(u.id) && !defending.has(u.id) && !threats.some((t) => t.id === u.target));
       if (threats.length > 0 && defenders.length > 0) {
         if (strategy.focusFire) {
           for (const role of ['fast', 'ranged', 'tank'] as const) {
@@ -125,9 +145,12 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
             if (group.length > 0) order({ type: 'attack', units: group, target: pickTarget(role, threats).id }, group);
           }
         } else {
+          // No micro, but head for the threat: attack-moving to our own core left defenders idle there
+          // whenever attackers stood just out of their sight.
           const ids = defenders.map((u) => u.id);
-          const at = strategy.guardOutposts ? threats[0]! : core;
-          order({ type: 'attackMove', units: ids, x: at.x, y: at.y }, ids);
+          const t = threats[0]!; // nearest to the core (threats are sorted)
+          for (const id of ids) defending.add(id);
+          order({ type: 'attackMove', units: ids, x: t.x, y: t.y }, ids);
         }
       }
 
@@ -193,6 +216,9 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
       const idleArmy = army.filter((u) => u.order === 'idle' && !pending(u.id));
       const mayAttack = v.tick >= (strategy.attackNotBefore ?? 0);
       // Reinforcements go out in waves worth about three average units.
+      // An attack that was wiped out regroups and rebuilds to full strength; feeding a few units at a
+      // time into a standing army just loses them one by one.
+      if (strategy.regroup && attacking && value(army) < attackValue / 3) attacking = false;
       if (enemyCore && mayAttack && (attacking ? value(idleArmy) >= 150 : value(army) >= attackValue)) {
         const group = attacking ? idleArmy : army;
         attacking = true;
@@ -275,6 +301,14 @@ function nextJob(
     .sort((a, b) => linkDist(a, siteById, core) - linkDist(b, siteById, core) || a.index - b.index);
   if (links[0]) return { key: `link:${links[0].index}`, cmd: { type: 'lightLink', units: [], link: links[0].index } };
 
+  // Data piling up means production is short of Compute, not Data: add a Server Rack.
+  const racks = v.buildings.filter((b) => b.type === 'server_rack').length;
+  if (v.data >= SURPLUS.data && racks < (s.spareRacks ?? 0) && v.powerCap - v.powerUsed >= SURPLUS.powerFree
+    && !taken.has('new:rack')) {
+    const [x, y] = spot(v, core, toward, rng);
+    return { key: 'new:rack', cmd: { type: 'build', units: [], building: 'server_rack', x, y } };
+  }
+
   // Signal range (proposal 0001): before an attack, extend the Model's signal toward the enemy core.
   if (wantRelay && enemyCore && v.data >= BUILDINGS.signal_relay.cost && !taken.has('new:relay')) {
     const at = relaySpot(v, core, enemyCore);
@@ -298,7 +332,6 @@ function nextJob(
       || side(core, enemyCore, a) - side(core, enemyCore, b) || a.id.localeCompare(b.id));
   if (sites[0]) return { key: `claim:${sites[0].id}`, cmd: { type: 'claim', units: [], site: sites[0].id } };
 
-  const racks = v.buildings.filter((b) => b.type === 'server_rack').length;
   if (racks < s.racks && v.data >= BUILDINGS.server_rack.cost && !taken.has('new:rack')) {
     const [x, y] = spot(v, core, toward, rng);
     return { key: 'new:rack', cmd: { type: 'build', units: [], building: 'server_rack', x, y } };

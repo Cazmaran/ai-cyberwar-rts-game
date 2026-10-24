@@ -2,13 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
-## 2026-10-24 — The Model speaks
+## 2026-10-24 — The AI that sat on 7,500 Data
 
-- You can now play the LLM General in the browser (`?ai=llm`). Its taunts appear in a chat panel: "You think you can hide from me? I see through your lies." The browser talks to Ollama directly; no proxy needed for local play.
-- At first it never taunted. The tool existed, but nothing in the prompt invited it. One line ("about once a minute, add a taunt in character") fixed that. It repeats itself, because it can't see what it said before; feeding back its last few lines is a follow-up.
-- Model text is treated as hostile. The panel only ever sets text, never HTML. A filter drops links and contact details, strips invisible characters, caps length and masks slurs.
-- For the Gate 2 blind test, `?ai=blind` secretly picks the LLM or the scripted bot, hides the chat (taunts would give it away), and says which it was after the match.
-- Checking the browser headlessly needed a small DevTools-protocol script: Edge's one-shot screenshot fires before the game loop has run, so the first picture showed 0:01 and an empty map.
+- Two playtests against the training AI: a loss at 9:48, then a win at 17:03. Feeding the downloaded replays to `npm run replay` showed the AI ending the win with 7,500 Data it never spent.
+- The obvious fix (more Training Clusters) would have done nothing: all production buildings share one pool of Compute. The AI was training on its core's 10 Compute alone. Now the training AI builds Server Racks when Data piles up, and regroups after its attack is wiped out instead of sending 3 units at a time into a standing army.
+- Surprise: giving every strategy spare-Data racks broke the tournament. Rush snowballed and beat boom and turtle in 90–100% of matches, even with the threshold raised to 1,000 Data. So spare racks are a per-strategy switch, on for training only. Regroup got the same treatment: on for every bot it pushed the rush and boom mirrors out of 40–60%.
+- Lesson: read the replay and the production rules before trusting the obvious fix, and run the balance check before trusting a "harmless" AI fix.
 
 ## 2026-10-24 — The General beats the control, head-to-head
 

@@ -30,3 +30,18 @@ export function runMatch(opts: MatchOptions): MatchResult {
   while (world.tick < maxTicks && world.winner === null) tickSession(session);
   return { winner: world.winner, ticks: world.tick, game: session.game };
 }
+
+/**
+ * Same as `runMatch`, but the sim waits for async controllers (real LLM calls) before each tick, so a
+ * slow model costs game ticks (its measured latency) rather than skipped turns.
+ */
+export async function runMatchAsync(opts: MatchOptions): Promise<MatchResult> {
+  const session = createSession({ ...opts, controllers: { human: opts.human, ai: opts.ai } });
+  const maxTicks = opts.maxTicks ?? 20 * 60 * TICK_RATE;
+  const { world } = session.game;
+  while (world.tick < maxTicks && world.winner === null) {
+    for (const p of session.players) await p.controller.settle?.();
+    tickSession(session);
+  }
+  return { winner: world.winner, ticks: world.tick, game: session.game };
+}

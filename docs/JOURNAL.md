@@ -2,6 +2,13 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-24 — First words from a real General
+
+- Ollama is installed and runs on the RTX 3090 (the 3080 Ti stays free for rendering). qwen3:8b answered every turn with schema-valid orders in about 0.6-1.2 s warm. The first call took 70 s because the model was loading, so the client now asks Ollama to keep it loaded for 30 minutes.
+- The first replies showed what a small model misreads. It set `workers: 0` in every turn, reading "target worker count" as "workers to add". It countered the wrong units because the prompt never said which role each enemy unit has. And it ordered units it couldn't afford.
+- Fixes: the build plan now says "total to keep" with a floor of 2 workers. The digest says where both cores are, our army's value, and the worker total. The prompt lists enemy units with the counter for each, plus four strategy lines. After that, no zero-worker plans in 9 live turns, and it picked the right counter where it had seen the enemy.
+- It still attacks in most turns. Next: full matches against the scripted AI will show whether that's a problem or just aggression.
+
 ## 2026-10-24 — A line to a real model
 
 - M2.4 (local half): the General can now talk to a model through Ollama. The reply is forced into the turn schema (structured output), the prompt is fixed per faction, and the only thing that changes turn to turn is the digest. A request that fails or times out just means the scripted bot plays that turn.

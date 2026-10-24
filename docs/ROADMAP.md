@@ -75,7 +75,7 @@ Owner constraints: light coding (owner's own workflow: agents write most code), 
 | Language / build / tests | TypeScript, Vite, Vitest | 0 | Free |
 | Rendering | PixiJS v8 | 1 | Free |
 | Pathfinding | Own grid A* + flow fields (no dependency) | 1 | Free |
-| Local LLM runtime | Ollama (structured JSON output) — pin to 3080 Ti via `CUDA_VISIBLE_DEVICES` | 2 | Free |
+| Local LLM runtime | Ollama (structured JSON output) — pin to the 3090 (the 3080 Ti renders) via `CUDA_DEVICE_ORDER=PCI_BUS_ID`, `CUDA_VISIBLE_DEVICES=0`, `GGML_VK_VISIBLE_DEVICES=-1` | 2 | Free |
 | Local models | Bake-off: ~8B, ~14B, ~32B instruct models with strong tool calling (Qwen/Gemma class) | 2 | Free |
 | Cloud LLM (optional "Frontier" difficulty) | Claude API key (Haiku/Sonnet tier) via small local proxy so the key never ships in browser code | 2–4 | Pay-per-use |
 | Placeholder art | Kenney.nl asset packs, simple vector shapes | 1–3 | Free |

@@ -25,6 +25,8 @@ export interface Threat { sector: SectorId; enemy: number; ours: number; level: 
 export interface Digest {
   t: string;
   you: Faction;
+  /** Sectors of both cores (public map knowledge): where home is and what to attack. */
+  cores: { ours: SectorId | null; enemy: SectorId | null };
   economy: {
     data: number;
     /** Data per minute arriving at the core. */
@@ -36,7 +38,9 @@ export interface Digest {
   plugReadyIn?: number;
   /** AI: resistance percent by attacker type, and whether retraining is running. */
   adaptation?: { resist: Partial<Record<UnitTypeId, number>>; retraining: boolean };
-  /** Workers by what they are doing. */
+  /** Data value of our combat units (same scale as threat strengths). */
+  army: number;
+  /** Total workers, then counts by what they are doing. */
   workers: Record<string, number>;
   /** "building: unit Ns (+queued)" for each building that is training. */
   production: string[];
@@ -90,7 +94,9 @@ export function digestView(v: FactionView): Digest {
   }
   threats.sort((a, b) => b.enemy - a.enemy || SECTORS.indexOf(a.sector) - SECTORS.indexOf(b.sector));
 
-  const workers: Record<string, number> = {};
+  const workers: Record<string, number> = { total: v.units.filter((u) => u.role === 'worker').length };
+  const core = v.buildings.find((b) => b.type === 'noc' || b.type === 'primary_cluster');
+  const enemyCore = v.sites.find((s) => s.kind === 'core' && !(core && s.x === core.x && s.y === core.y));
   for (const u of v.units) {
     if (u.role !== 'worker') continue;
     const k = !u.job ? 'idle' : !u.job.working ? 'walking' : u.job.contested ? 'contested' : u.job.kind;
@@ -104,12 +110,14 @@ export function digestView(v: FactionView): Digest {
   const d: Digest = {
     t: `${Math.trunc(secs / 60)}:${String(secs % 60).padStart(2, '0')}`,
     you: v.faction,
+    cores: { ours: core?.sector ?? null, enemy: enemyCore?.sector ?? null },
     economy: {
       data: Math.trunc(v.data / MILLI),
       incomePerMin: Math.trunc((v.income * TICK_RATE * 60) / MILLI),
       power: { used: v.powerUsed, cap: v.powerCap, full: powerHeadroom(v) === 0 },
       compute: v.compute,
     },
+    army: strength(v.units),
     workers,
     production,
     sectors,

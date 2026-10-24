@@ -43,4 +43,15 @@ describe('state digest for the LLM General', () => {
     // Sites carry their owner as the AI sees them; unseen ones say so.
     expect(d.sectors.flatMap((s) => s.sites).some((x) => x.endsWith('=unseen'))).toBe(true);
   });
+
+  it('says where both cores are, our army value, and the worker total', () => {
+    const game = newGame();
+    const core = game.world.sites.get('a_core')!;
+    spawnUnit(game.world, 'industrial_robot', 'ai', core.x, core.y + 2 * TILE);
+    const d = digestView(factionView(game.world, 'ai'));
+    expect(d.cores).toEqual({ ours: 'E', enemy: 'W' });
+    expect(d.army).toBe(65);
+    expect(d.workers.total).toBe(factionView(game.world, 'ai').units.filter((u) => u.role === 'worker').length);
+    expect(digestView(factionView(game.world, 'human')).cores).toEqual({ ours: 'W', enemy: 'E' });
+  });
 });

@@ -2,6 +2,12 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-24 — The General gets its orders
+
+- M2.2: the LLM General now has a fixed set of tools (attack, defend, retreat, expand, train, build plan, army mix, rally, Pull the Plug for humans, taunt, wait). Tools are data, so one spec feeds Ollama, Claude and a single JSON turn schema.
+- Model output is treated as hostile input: unknown tools, extra arguments and out-of-range numbers are rejected with a reason, valid orders in the same turn still go through. Taunts only ever reach chat, even when they contain JSON orders.
+- Next: M2.3, wiring the directive into the scripted bot as the operational layer, with scripted fallback when a turn is invalid or late.
+
 ## 2026-10-23 — Public
 
 - The repo is public. Before the flip: the history scan was clean, issue templates and six good first issues (#1–#6) were added, plus a DCO sign-off check, and a Code of Conduct contact. After: `main` requires pull requests with CI and DCO passing.

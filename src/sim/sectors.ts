@@ -12,7 +12,7 @@ export function sectorOf(map: GameMap, x: number, y: number): SectorId {
 }
 
 /** Center of a sector in world units. */
-export function sectorCenter(map: GameMap, sector: SectorId): [number, number] {
+export function sectorCenter(map: Pick<GameMap, 'width' | 'height'>, sector: SectorId): [number, number] {
   const i = SECTORS.indexOf(sector);
   const col = i % 3;
   const row = Math.trunc(i / 3);

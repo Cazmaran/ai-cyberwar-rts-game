@@ -1,9 +1,9 @@
 // Browser entry: human plays through the UI, the AI faction is a scripted bot (LLM General comes in Phase 2).
-// URL options: ?ai=training|rush|boom|turtle&seed=123&stress=300 (stress spawns N fighting units to check frame rate)
+// URL options: ?ai=training|brutal|rush|boom|turtle&seed=123&stress=300 (stress spawns N fighting units to check frame rate)
 // Testing: &human=rush|boom|turtle lets a bot play your side (to watch or screenshot), &autostart skips the start screen,
 // &skip=60 fast-forwards 60 seconds before the first frame.
 import { Application, Container, Graphics } from 'pixi.js';
-import { createScriptedBot, STRATEGIES, TRAINING } from './ai/scripted.ts';
+import { createScriptedBot, OPPONENTS, STRATEGIES, TRAINING } from './ai/scripted.ts';
 import { createSession, tickSession } from './harness/session.ts';
 import { createStats, recordStats } from './harness/stats.ts';
 import { attachSummaryHover, summaryHtml } from './render/summary.ts';
@@ -15,7 +15,7 @@ import { boxSelect, describeAt, describeMode, key, modeClick, pickOwn, rightClic
 import { applyCommand, factionView, issue, spawnUnit, TICK_RATE, TILE, toReplay, type Command } from './sim/index.ts';
 
 const params = new URLSearchParams(location.search);
-const strategy = STRATEGIES[params.get('ai') ?? 'training'] ?? TRAINING;
+const strategy = OPPONENTS[params.get('ai') ?? 'training'] ?? TRAINING;
 const seed = Number(params.get('seed') ?? Date.now() % 100000);
 const humanBot = STRATEGIES[params.get('human') ?? ''];
 const session = createSession({ seed, controllers: {

@@ -54,6 +54,20 @@ export const TRAINING: Strategy = {
   focusFire: false, counterBuild: false, usePlug: false, attackNotBefore: 8 * 60 * 20, spareRacks: 4, regroup: true,
 };
 
+/**
+ * Hard opponent for players who beat the training AI: fast-heavy army on 3 Server Racks (more when Data
+ * piles up), no static defenses, full micro, outpost defense, no grace period. Tuned on 40 unseen seeds
+ * against the bot strategies: wins ~68% vs rush, 100% vs boom and turtle (the boom AI: ~25/78/98%).
+ * No cheats: same commands, APM cap and reaction delay as every bot. Not part of balance runs.
+ */
+export const BRUTAL: Strategy = {
+  name: 'brutal', workers: 5, racks: 3, barricades: 0, defenses: 0, mix: { fast: 3, ranged: 1, tank: 1 }, attackValue: 600,
+  focusFire: true, counterBuild: true, usePlug: true, spareRacks: 4, regroup: true, guardOutposts: true,
+};
+
+/** Every opponent a player can pick (`?ai=` in the browser, `--ai` in the sim). */
+export const OPPONENTS: Record<string, Strategy> = { ...STRATEGIES, training: TRAINING, brutal: BRUTAL };
+
 const ARMY_UNITS: Record<Faction, Record<Exclude<Role, 'worker'>, UnitTypeId>> = {
   human: { fast: 'counter_drone_team', ranged: 'red_team', tank: 'armored_vehicle' },
   ai: { fast: 'botnet_swarm', ranged: 'hunter_drone', tank: 'industrial_robot' },

@@ -2,6 +2,14 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-24 — The Model speaks
+
+- You can now play the LLM General in the browser (`?ai=llm`). Its taunts appear in a chat panel: "You think you can hide from me? I see through your lies." The browser talks to Ollama directly; no proxy needed for local play.
+- At first it never taunted. The tool existed, but nothing in the prompt invited it. One line ("about once a minute, add a taunt in character") fixed that. It repeats itself, because it can't see what it said before; feeding back its last few lines is a follow-up.
+- Model text is treated as hostile. The panel only ever sets text, never HTML. A filter drops links and contact details, strips invisible characters, caps length and masks slurs.
+- For the Gate 2 blind test, `?ai=blind` secretly picks the LLM or the scripted bot, hides the chat (taunts would give it away), and says which it was after the match.
+- Checking the browser headlessly needed a small DevTools-protocol script: Edge's one-shot screenshot fires before the game loop has run, so the first picture showed 0:01 and an empty map.
+
 ## 2026-10-24 — The General beats the control, head-to-head
 
 - Three more bot experiments (attacking sooner, a safe opening, a second production building) helped the human side but never the AI side. They were discarded, and nothing was committed. I'd promised to stop if an attempt didn't clearly help, and stopping kept the work honest.

@@ -27,6 +27,15 @@ describe('LLM tool schema', () => {
     }
   });
 
+  // Ablation 2026-10-24: "Total workers to keep (you have workers.total)" made qwen3:8b copy its starting
+  // count (3-4 workers, 0 racks) and starve its economy; with healthy targets it beat the control by 37 points.
+  it('build plan wording points at a healthy economy, not at the current count', () => {
+    const plan = toolSpecs('ai').find((s) => s.name === 'set_build_plan')!;
+    const text = [plan.description, ...Object.values(plan.params).map((p) => p.description)].join(' ');
+    expect(text).not.toMatch(/workers.total/);
+    expect(text).toMatch(/8 workers/);
+  });
+
   it('only offers each faction its own units and abilities', () => {
     const ai = toolSpecs('ai');
     expect(ai.map((s) => s.name)).not.toContain('pull_the_plug');

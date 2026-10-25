@@ -43,13 +43,15 @@ export function toolSpecs(faction: Faction): ToolSpec[] {
     },
     {
       name: 'set_build_plan',
-      description: 'Totals your base builds toward between turns, counting what you already have: workers, server racks (Compute), static defenses'
-        + (faction === 'human' ? ', barricades.' : '.') + ' Lower than you have just stops building more; nothing is removed.',
+      description: 'Targets your base grows toward between turns: workers, server racks (Compute), static defenses'
+        + (faction === 'human' ? ', barricades' : '') + '. A strong economy is about 8 workers and 2 racks; '
+        + 'low targets starve your economy and production. Lower than you have just stops building more; nothing is removed.',
       params: {
-        // At least 2 workers, so a bad plan can stall the economy but never end it.
-        workers: { kind: 'int', min: 2, max: 16, description: 'Total workers to keep (you have workers.total).' },
-        racks: count('Total server racks.', 6),
-        defenses: count('Total static defenses.', 6),
+        // At least 2 workers, so a bad plan can stall the economy but never end it. No "you have N" here: the
+        // model copied its current count (3-4 at the start) and starved its economy (ablation, 2026-10-24).
+        workers: { kind: 'int', min: 2, max: 16, description: 'Target workers (about 8 for a strong economy).' },
+        racks: count('Target server racks (each adds Compute, which speeds production).', 6),
+        defenses: count('Target static defenses.', 6),
         ...(faction === 'human' ? { barricades: count('Total barricades.', 6) } : {}),
       },
     },

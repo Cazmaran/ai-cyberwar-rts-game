@@ -2,6 +2,14 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-24 — Five words that cost 60 points
+
+- After the General learned to mass its army, it lost to the control (33% vs 58%). Guessing didn't help: a prompt making the enemy core its default target changed where it attacked, but not how often it won.
+- So, an ablation. Run the LLM but honor only some of its tools: attacks only 53%, plus build plan 17%, plus army mix 33%, plus training 23% (control 60%). The build plan was the culprit.
+- Its plans were `3-4 workers, 0 racks, 0 defenses`, set early and kept. The tool said "Total workers to keep (you have workers.total)", and the model dutifully copied its starting count. Rewording it to targets ("about 8 workers and 2 racks; low targets starve your economy") got plans of 6-8 / 2 / 1-3.
+- Result: 95% vs 58% over 60 seeds (+37), consistent across both halves. Gate 2's win criterion is met for real this time. The best fixed policy found, the control plus a 6/2/2 build plan, reaches 82%, so the model is adding judgment on top of a good economy.
+- Lessons: measure before guessing (headless stubs answered "is it the mix? the rally?" in seconds each), and a hint in a tool description is an instruction to a small model.
+
 ## 2026-10-24 — The General learns to mass, and loses its lead
 
 - Owner playtest (replay seed 88632): the owner built towers near the center, and the LLM General sent units at them one or two at a time. It built 64 units but never had more than 3 alive. Two causes. `attack_sector` sent every combat unit out every turn, so each fresh unit walked in alone. And the digest counted enemy strength from units only, so towers were invisible to its threat math.

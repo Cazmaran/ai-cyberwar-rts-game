@@ -1,8 +1,8 @@
 // Scripted strategy bots. They play either faction through the same commands and view a human or LLM gets.
 // Strategies are data, so new ones (and balance experiments) need no new logic.
 import {
-  BUILDINGS, createRng, FAIRNESS, isqrt, MILLI, SIGNAL, UNITS, TILE, dist2, type BuildingTypeId, type Command, type Faction, type FactionView,
-  type Rng, type Role, type SiteView, type UnitTypeId, type UnitView,
+  BUILDINGS, createRng, FAIRNESS, isqrt, MILLI, SIGNAL, UNITS, TILE, dist2, sectorCenter, type BuildingTypeId, type Command, type Faction, type FactionView,
+  type Rng, type Role, type SectorId, type SiteView, type UnitTypeId, type UnitView,
 } from '../sim/index.ts';
 import type { Controller } from './controller.ts';
 
@@ -40,6 +40,8 @@ export interface Strategy {
    * small waves. Off for the balance strategies: on for them it pushed the rush and boom mirrors out of 40-60%.
    */
   regroup?: boolean;
+  /** Attack this sector instead of the enemy core (the LLM General's target; its waves still mass first). */
+  attackAt?: SectorId;
 }
 
 export const STRATEGIES: Record<string, Strategy> = {
@@ -99,6 +101,7 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
   const attackJitter = 50 * rng.int(-1, 2);
   const busy = new Map<number, string>(); // worker id -> job key
   let attacking = false;
+  let lastTarget: [number, number] | null = null;
   let rallySet = false;
   /** Most enemy units of each role seen at once (scouting memory, used for counter-building). */
   const seen: Record<Exclude<Role, 'worker'>, number> = { fast: 0, ranged: 0, tank: 0 };
@@ -241,14 +244,25 @@ export function createScriptedBot(faction: Faction, initial: Strategy, seed = 1)
       // 6. Attack once the army is big enough; keep feeding reinforcements.
       const idleArmy = army.filter((u) => u.order === 'idle' && !pending(u.id));
       const mayAttack = v.tick >= (strategy.attackNotBefore ?? 0);
+      // The LLM General picks the target sector (attackAt); otherwise go for the enemy core.
+      const target: [number, number] | null = strategy.attackAt
+        ? sectorCenter({ width: v.mapWidth, height: v.mapHeight }, strategy.attackAt) : enemyCore ? [enemyCore.x, enemyCore.y] : null;
+      // No attack wanted (the General called it off): stop sending waves.
+      if (!Number.isFinite(attackValue)) attacking = false;
+      // A new target turns the marching army with it, so waves don't split between old and new targets.
+      if (attacking && target && lastTarget && (target[0] !== lastTarget[0] || target[1] !== lastTarget[1])) {
+        const marching = army.filter((u) => u.order === 'attackMove' && !pending(u.id)).map((u) => u.id);
+        if (marching.length > 0) order({ type: 'attackMove', units: marching, x: target[0], y: target[1] }, marching);
+      }
+      lastTarget = target;
       // Reinforcements go out in waves worth about three average units.
       // An attack that was wiped out regroups and rebuilds to full strength; feeding a few units at a
       // time into a standing army just loses them one by one.
       if (strategy.regroup && attacking && value(army) < attackValue / 3) attacking = false;
-      if (enemyCore && mayAttack && (attacking ? value(idleArmy) >= 150 : value(army) >= attackValue)) {
+      if (target && mayAttack && (attacking ? value(idleArmy) >= 150 : value(army) >= attackValue)) {
         const group = attacking ? idleArmy : army;
         attacking = true;
-        if (group.length > 0) order({ type: 'attackMove', units: group.map((u) => u.id), x: enemyCore.x, y: enemyCore.y }, group.map((u) => u.id));
+        if (group.length > 0) order({ type: 'attackMove', units: group.map((u) => u.id), x: target[0], y: target[1] }, group.map((u) => u.id));
       }
       return out;
     },

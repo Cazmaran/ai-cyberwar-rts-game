@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createScriptedBot, STRATEGIES } from '../src/ai/scripted.ts';
 import { runMatch } from '../src/harness/match.ts';
-import { digestView, factionView, spawnUnit, TILE } from '../src/sim/index.ts';
+import { digestView, factionView, spawnBuilding, spawnUnit, TILE } from '../src/sim/index.ts';
 import { newGame } from './helpers.ts';
 
 // Phase 2 (M2.1, issue #6): the compact state an LLM General reads each turn.
@@ -53,5 +53,16 @@ describe('state digest for the LLM General', () => {
     expect(d.army).toBe(65);
     expect(d.workers.total).toBe(factionView(game.world, 'ai').units.filter((u) => u.role === 'worker').length);
     expect(digestView(factionView(game.world, 'human')).cores).toEqual({ ours: 'W', enemy: 'E' });
+  });
+
+  // Replay seed 88632: towers weren't counted, so the General saw no threat and sent units in one by one.
+  it('counts visible enemy static defenses as enemy strength and threat', () => {
+    const game = newGame();
+    const [x, y] = [24 * TILE, 16 * TILE];
+    spawnBuilding(game.world, 'security_post', 'human', x - 2 * TILE, y).built = true;
+    spawnUnit(game.world, 'botnet_swarm', 'ai', x + 2 * TILE, y);
+    const d = digestView(factionView(game.world, 'ai'));
+    expect(d.sectors.find((s) => s.sector === 'C')!.enemyStrength).toBe(70);
+    expect(d.threats.find((t) => t.sector === 'C')).toMatchObject({ enemy: 70, ours: 35, level: 'high' });
   });
 });

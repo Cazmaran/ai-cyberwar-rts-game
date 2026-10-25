@@ -60,17 +60,24 @@ export const DEFAULT_LATENCY = 2 * TICK_RATE;
 /** Default wait for a reply: 10 s. (Gate 2 asks for p95 under 3 s.) */
 export const TURN_TIMEOUT = 10 * TICK_RATE;
 
-/** The scripted strategy while the General is in command: its directive applied, attacks left to the General. */
+/**
+ * The scripted strategy while the General is in command: its directive applied. The General picks if and
+ * where to attack; the base masses the first wave (its strategy's attackValue), sends reinforcements in
+ * groups and regroups after a lost attack, so units never trickle in one at a time.
+ */
 export function directed(base: Strategy, d: Directive): Strategy {
+  const { attackAt: _, ...rest } = base;
   return {
-    ...base,
+    ...rest,
     workers: d.workers ?? base.workers,
     racks: d.racks ?? base.racks,
     defenses: d.defenses ?? base.defenses,
     barricades: d.barricades ?? base.barricades,
     // An explicit mix is followed as given, not shifted by scouting.
     ...(d.mix ? { mix: d.mix, counterBuild: false } : {}),
-    attackValue: Infinity,
+    attackValue: d.attack ? base.attackValue : Infinity,
+    ...(d.attack ? { attackAt: d.attack } : {}),
+    regroup: true,
   };
 }
 

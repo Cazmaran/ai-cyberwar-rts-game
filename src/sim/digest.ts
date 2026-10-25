@@ -3,8 +3,8 @@
 // so fog of war holds. Integers only; key order is fixed so turn-to-turn diffs stay readable.
 import { MILLI } from './fixed.ts';
 import { SECTORS, type SectorId } from './sectors.ts';
-import { powerHeadroom, training, type FactionView, type UnitView } from './view.ts';
-import { UNITS, type Faction, type UnitTypeId } from './data.ts';
+import { powerHeadroom, training, type BuildingView, type FactionView, type UnitView } from './view.ts';
+import { BUILDINGS, UNITS, type Faction, type UnitTypeId } from './data.ts';
 import { TICK_RATE } from './world.ts';
 
 export type ThreatLevel = 'low' | 'medium' | 'high';
@@ -16,6 +16,8 @@ export interface SectorDigest {
   enemy?: Partial<Record<UnitTypeId, number>>;
   /** Own buildings, and enemy buildings in sight ("enemy:<type>"). */
   buildings?: string[];
+  /** Visible enemy strength here: combat units plus static defenses, at Data value (same scale as `army`). */
+  enemyStrength?: number;
   /** "site_id=ours|enemy|neutral|unseen", plus "(issue)" when an own Data source isn't feeding home. */
   sites: string[];
 }
@@ -51,6 +53,11 @@ export interface Digest {
 
 /** Army strength: Data value of combat units. */
 const strength = (us: UnitView[]) => us.filter((u) => u.role !== 'worker').reduce((s, u) => s + Math.trunc(UNITS[u.type].cost / MILLI), 0);
+/**
+ * Static defenses (buildings with a weapon) at Data value. Without this, towers were invisible to the
+ * General's threat math and it sent units into them one at a time (replay seed 88632).
+ */
+const defenseStrength = (bs: BuildingView[]) => bs.filter((b) => b.built && BUILDINGS[b.type].weapon).reduce((s, b) => s + Math.trunc(BUILDINGS[b.type].cost / MILLI), 0);
 
 function counts(us: UnitView[]): Partial<Record<UnitTypeId, number>> | undefined {
   if (us.length === 0) return undefined;
@@ -81,13 +88,14 @@ export function digestView(v: FactionView): Digest {
     if (o) entry.ours = o;
     if (e) entry.enemy = e;
     if (buildings.length) entry.buildings = buildings;
+    const enemyStrength = strength(enemy) + defenseStrength(v.enemyBuildings.filter((b) => b.sector === sector));
+    if (enemyStrength > 0) entry.enemyStrength = enemyStrength;
     sectors.push(entry);
 
-    // Threat: visible enemy combat units where we have something to lose.
-    const enemyStrength = strength(enemy);
+    // Threat: visible enemy combat units and defenses where we have something to lose.
     const assets = ours.length > 0 || v.buildings.some((b) => b.sector === sector) || sites.some((x) => x.includes('=ours'));
     if (enemyStrength > 0 && assets) {
-      const ourStrength = strength(ours);
+      const ourStrength = strength(ours) + defenseStrength(v.buildings.filter((b) => b.sector === sector));
       const level: ThreatLevel = enemyStrength * 2 >= ourStrength * 3 ? 'high' : enemyStrength * 10 >= ourStrength * 7 ? 'medium' : 'low';
       threats.push({ sector, enemy: enemyStrength, ours: ourStrength, level });
     }

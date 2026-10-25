@@ -2,6 +2,13 @@
 
 The story of building this game, newest first. Wins, failures, surprises, and what the agents did well or badly. Anyone can add an entry.
 
+## 2026-10-24 — The General learns to mass, and loses its lead
+
+- Owner playtest (replay seed 88632): the owner built towers near the center, and the LLM General sent units at them one or two at a time. It built 64 units but never had more than 3 alive. Two causes. `attack_sector` sent every combat unit out every turn, so each fresh unit walked in alone. And the digest counted enemy strength from units only, so towers were invisible to its threat math.
+- Fixes: `attack_sector` now sets a target, and the base masses a wave (the strategy's attack value), sends reinforcements in groups and regroups after a lost attack. Towers count as enemy strength. When the target changes, the marching army turns with it. "Attacking" your own core sector is rejected. The prompt says mass before you attack, at least twice the target's strength, and stick to one target.
+- Then Gate 2 fell over. The old +17 was measured against a control that trickled exactly like the LLM. Now the control masses too: it always throws its full army at the enemy core. qwen3:8b went to 58% vs 58% (no gain), and after the stick-to-a-target fixes 33% vs 58% (−25). Turn logs show the model hopping between side sectors (N, S, C) while the control simply goes for the throat.
+- Lesson: a benchmark is only as good as its baseline. When both sides share a bug, the comparison flatters the model. The new number is the honest one.
+
 ## 2026-10-24 — The AI that sat on 7,500 Data
 
 - Two playtests against the training AI: a loss at 9:48, then a win at 17:03. Feeding the downloaded replays to `npm run replay` showed the AI ending the win with 7,500 Data it never spent.

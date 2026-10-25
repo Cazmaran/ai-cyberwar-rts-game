@@ -3,7 +3,8 @@ import { createGeneral, DEFAULT_LATENCY, directed, measuredLatencies, TURN_TIMEO
 import { createScriptedBot, STRATEGIES } from '../src/ai/scripted.ts';
 import { runMatch } from '../src/harness/match.ts';
 import { createSession, tickSession } from '../src/harness/session.ts';
-import { FAIRNESS } from '../src/sim/index.ts';
+import { DUEL_MAP, factionView, FAIRNESS, sectorCenter, spawnUnit, TILE } from '../src/sim/index.ts';
+import { command, newGame, run } from './helpers.ts';
 import type { Controller } from '../src/ai/controller.ts';
 
 // Phase 2 (M2.3, M2.3b): LLM turns steer a scripted operational layer after a latency; bad, missing or late turns fall back to it.
@@ -95,6 +96,41 @@ describe('LLM General', () => {
     const a = match(createGeneral('ai', brain, boom, { seed: 5 }));
     const b = match(createGeneral('ai', brain, boom, { seed: 5 }));
     expect(a.log).toEqual(b.log);
-    expect(a.log.some((c) => c.faction === 'ai' && c.command.type === 'attackSector')).toBe(true);
+    const [wx, wy] = sectorCenter(DUEL_MAP, 'W');
+    expect(a.log.some((c) => c.faction === 'ai' && c.command.type === 'attackMove' && c.command.x === wx && c.command.y === wy)).toBe(true);
+  });
+
+  // Replay seed 88632 (owner playtest): the General ordered attack_sector every turn against towers, and
+  // every unit trained in between walked in alone; the AI never had more than 3 units alive.
+  it('attacking every turn masses waves instead of feeding units in one at a time', () => {
+    const [cx, cy] = sectorCenter(DUEL_MAP, 'C');
+    const general = createGeneral('ai', () => turnOf({ tool: 'attack_sector', args: { sector: 'C' } }), boom, { seed: 5 });
+    const game = runMatch({ seed: 5, maxTicks: 8 * 60 * 20, human: createScriptedBot('human', STRATEGIES.turtle!, 5), ai: general }).game;
+    const waves = game.log.filter((c) => c.faction === 'ai' && c.command.type === 'attackMove' && c.command.x === cx && c.command.y === cy);
+    expect(waves.length).toBeGreaterThan(0);
+    // The first wave waits for the base strategy's full army; later waves go in groups, never alone.
+    expect(waves[0]!.tick).toBeGreaterThan(2 * 60 * 20);
+    for (const w of waves) expect(w.command.type === 'attackMove' && w.command.units.length).toBeGreaterThanOrEqual(2);
+  });
+
+  // Live matches: the model switched targets almost every turn, and waves split between old and new targets.
+  it('a new target turns the marching army with it', () => {
+    const [nx, ny] = sectorCenter(DUEL_MAP, 'N');
+    const bot = createScriptedBot('ai', { ...boom, attackValue: 0, attackAt: 'C' }, 5);
+    const game = newGame(5);
+    const core = game.world.sites.get('a_core')!;
+    for (let i = 0; i < 3; i++) spawnUnit(game.world, 'botnet_swarm', 'ai', core.x - 3 * TILE, core.y + i * TILE);
+    for (const c of bot.decide(factionView(game.world, 'ai'))) command(game, 'ai', c);
+    run(game, FAIRNESS.reactionDelay + 1);
+    bot.strategy = { ...bot.strategy, attackAt: 'N' };
+    const turned = bot.decide(factionView(game.world, 'ai')).filter((c) => c.type === 'attackMove');
+    expect(turned).toEqual([expect.objectContaining({ x: nx, y: ny })]);
+    expect(turned[0]!.type === 'attackMove' && turned[0]!.units).toHaveLength(3);
+  });
+
+  it('defend_sector and retreat call an attack off', () => {
+    expect(directed(boom, { attack: 'C' })).toMatchObject({ attackAt: 'C', attackValue: boom.attackValue, regroup: true });
+    expect(directed(boom, { attack: null }).attackValue).toBe(Infinity);
+    expect(directed(boom, { attack: null })).not.toHaveProperty('attackAt');
   });
 });

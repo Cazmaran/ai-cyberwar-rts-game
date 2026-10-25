@@ -29,9 +29,9 @@ const count = (description: string, max: number): Param => ({ kind: 'int', min: 
 export function toolSpecs(faction: Faction): ToolSpec[] {
   const unitTypes = (Object.keys(UNITS) as UnitTypeId[]).filter((u) => UNITS[u].faction === faction);
   const specs: ToolSpec[] = [
-    { name: 'attack_sector', description: 'All combat units attack-move to a sector, fighting anything on the way. A small army sent into a bigger one is lost.', params: { sector: sector('Target sector.') } },
-    { name: 'defend_sector', description: 'All combat units return to a sector and hold it.', params: { sector: sector('Sector to hold.') } },
-    { name: 'retreat', description: 'All combat units fall back to the sector of your core.', params: {} },
+    { name: 'attack_sector', description: 'Set the attack target. Your base gathers the army and sends it in waves, fighting anything on the way. A small army sent into a bigger one is lost.', params: { sector: sector('Target sector.') } },
+    { name: 'defend_sector', description: 'All combat units return to a sector and hold it. Calls off any attack.', params: { sector: sector('Sector to hold.') } },
+    { name: 'retreat', description: 'All combat units fall back to the sector of your core. Calls off any attack.', params: {} },
     { name: 'expand', description: 'One idle worker claims the nearest site you do not own.', params: {} },
     {
       name: 'train',

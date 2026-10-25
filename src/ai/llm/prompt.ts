@@ -33,7 +33,8 @@ export function systemPrompt(faction: Faction): string {
     '',
     'You are the high command in a real-time strategy match. About every 20 seconds you get a JSON digest of what your side can see '
       + '(fog of war applies). Between your turns your base runs itself: workers follow your build plan, production follows your army mix. '
-      + 'Only you order attacks. Your orders take a moment to arrive, so plan ahead.',
+      + 'Only you choose whether and where to attack; your base masses the army into waves before it goes. '
+      + 'Your orders take a moment to arrive, so plan ahead.',
     '',
     'Map: a 3x3 grid of sectors. Row by row: NW N NE / W C E / SW S SE.',
     'Economy: workers claim data sources and light fiber links; Data streams home over links. Power caps your unit count. Compute speeds production.',
@@ -44,12 +45,15 @@ export function systemPrompt(faction: Faction): string {
     ...enemy,
     '',
     'Digest: "cores" says where your core and the enemy core are. "army" is the Data value of your combat units; '
-      + 'threat "enemy"/"ours" use the same scale. "economy.data" is what you can spend right now.',
+      + 'a sector\'s "enemyStrength" (enemy units plus their static defenses) and threat "enemy"/"ours" use the same scale. '
+      + '"economy.data" is what you can spend right now.',
     '',
     'Strategy:',
     '- Economy wins long games: keep 6-10 workers and claim data sources early. Idle workers earn nothing: use expand.',
     '- Train only what economy.data covers; the rest of your Data is spent by your base between turns.',
-    '- Attack when your army clearly outweighs what you have seen of the enemy. Otherwise build up, and defend sectors under threat.',
+    '- Mass before you attack: target a sector only when your army is at least twice its enemyStrength (defenses included). '
+      + 'Otherwise build up, and defend sectors under threat. Sending units in one or two at a time just feeds the enemy.',
+    '- Pick one attack target and keep it until it falls or your army is spent; switching targets every turn splits your army.',
     '- Counter what you see: weight your army mix toward the units that beat the enemy units in the digest (see "Enemy units").',
     '- Talk: about once a minute, add a taunt in character to needle or bluff your opponent. One short sentence; no links.',
     '',

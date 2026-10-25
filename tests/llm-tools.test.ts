@@ -100,7 +100,7 @@ describe('LLM plans become ordinary commands', () => {
       .toEqual(['train: not enough data']);
   });
 
-  it('retreat holds the core sector; set_build_plan and set_army_mix only change the directive', () => {
+  it('retreat holds the core sector and calls off attacks; set_build_plan and set_army_mix only change the directive', () => {
     const game = newGame();
     const plan = planTurn(factionView(game.world, 'ai'), turn('ai', [
       { tool: 'retreat', args: {} },
@@ -108,7 +108,22 @@ describe('LLM plans become ordinary commands', () => {
       { tool: 'set_army_mix', args: { fast: 0, ranged: 1, tank: 3 } },
     ]).calls);
     expect(plan.commands).toEqual([{ type: 'defendSector', sector: 'E' }]);
-    expect(plan.directive).toEqual({ workers: 8, racks: 2, defenses: 1, mix: { fast: 0, ranged: 1, tank: 3 } });
+    expect(plan.directive).toEqual({ attack: null, workers: 8, racks: 2, defenses: 1, mix: { fast: 0, ranged: 1, tank: 3 } });
+  });
+
+  // Replay seed 88632: attack_sector used to send every combat unit at once, every turn, so each new unit
+  // walked into the enemy's towers alone. Now it only sets the target; the base masses waves.
+  it('attack_sector sets the target and orders nobody out yet', () => {
+    const plan = planTurn(factionView(newGame().world, 'ai'), turn('ai', [{ tool: 'attack_sector', args: { sector: 'C' } }]).calls);
+    expect(plan.commands).toEqual([]);
+    expect(plan.directive).toEqual({ attack: 'C' });
+  });
+
+  // Live matches: the model sometimes "attacked" its own core sector (E for the AI) instead of defending.
+  it('attack_sector on our own core sector is rejected', () => {
+    const plan = planTurn(factionView(newGame().world, 'ai'), turn('ai', [{ tool: 'attack_sector', args: { sector: 'E' } }]).calls);
+    expect(plan.directive).toEqual({});
+    expect(plan.errors).toEqual(['attack_sector: that is your own core sector; use defend_sector']);
   });
 
   it('pull_the_plug targets the visible cluster in a sector, only when ready', () => {

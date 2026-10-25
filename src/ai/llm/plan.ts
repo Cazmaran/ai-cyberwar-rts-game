@@ -12,6 +12,11 @@ export interface Directive {
   defenses?: number;
   barricades?: number;
   mix?: Partial<Record<Exclude<Role, 'worker'>, number>>;
+  /**
+   * Sector to attack; null calls the attack off. The operational layer masses a wave before it goes and
+   * sends reinforcements in groups, so new units never walk in one at a time (replay seed 88632).
+   */
+  attack?: SectorId | null;
 }
 
 export interface Plan {
@@ -35,15 +40,20 @@ export function planTurn(view: FactionView, calls: ToolCall[]): Plan {
     const a = call.args;
     const fail = (why: string) => plan.errors.push(`${call.tool}: ${why}`);
     switch (call.tool) {
-      case 'attack_sector':
-        plan.commands.push({ type: 'attackSector', sector: a.sector as SectorId });
+      case 'attack_sector': {
+        const home = view.buildings.find((b) => CORES.has(b.type))?.sector;
+        if (a.sector === home) { fail('that is your own core sector; use defend_sector'); break; }
+        plan.directive.attack = a.sector as SectorId;
         break;
+      }
       case 'defend_sector':
+        plan.directive.attack = null;
         plan.commands.push({ type: 'defendSector', sector: a.sector as SectorId });
         break;
       case 'retreat': {
         const core = view.buildings.find((b) => CORES.has(b.type));
         if (!core) { fail('no core'); break; }
+        plan.directive.attack = null;
         plan.commands.push({ type: 'defendSector', sector: core.sector });
         break;
       }
